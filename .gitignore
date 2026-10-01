@@ -1,0 +1,36 @@
+# Compilados de Maven
+target/
+
+# Archivos compilados
+*.class
+*.war
+*.jar
+*.ear
+
+# NetBeans (configuración personal de cada uno)
+nbproject/
+nbactions.xml
+nb-configuration.xml
+nbbuild/
+nbdist/
+.nb-gradle/
+
+# Otros IDEs
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# Configuración local del servidor (cada uno la tiene fuera del repo)
+postgresql.xml
+
+# Logs y temporales
+*.log
+*.tmp
+*~
+
+# Sistema operativo
+.DS_Store
+Thumbs.db

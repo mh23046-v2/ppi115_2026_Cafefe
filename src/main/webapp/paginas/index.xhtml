@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Página de inicio. El menú lateral ya viene en la plantilla general. -->
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:p="primefaces"
+                xmlns:ui="jakarta.faces.facelets"
+                template="/WEB-INF/plantillas/general.xhtml">
+
+    <ui:define name="leyenda">#{tradcrud['menu.inicio']}</ui:define>
+
+    <ui:define name="contenido">
+        <p:panel header="#{tradcrud['inicio.bienvenida']}">
+            <div class="inicio">
+                <p:graphicImage library="imagenes" name="cafefe_logo_200px_140926.png" alt="Cafefe"/>
+                <p>
+                    <h:outputText value="#{tradcrud['inicio.instrucciones']}"/>
+                </p>
+            </div>
+        </p:panel>
+    </ui:define>
+
+</ui:composition>

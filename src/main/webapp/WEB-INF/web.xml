@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+   version="6.0">
+
+    <!-- Modo desarrollo de JSF: muestra más información al depurar.
+         Cambiar a Production al entregar/desplegar. -->
+    <context-param>
+        <param-name>jakarta.faces.PROJECT_STAGE</param-name>
+        <param-value>Development</param-value>
+    </context-param>
+
+    <!-- Los campos de texto vacíos se guardan como NULL en vez de "" -->
+    <context-param>
+        <param-name>jakarta.faces.INTERPRET_EMPTY_STRING_SUBMITTED_VALUES_AS_NULL</param-name>
+        <param-value>true</param-value>
+    </context-param>
+
+    <!-- Tema visual de PrimeFaces ("saga" es el tema por defecto de PrimeFaces 15) -->
+    <context-param>
+        <param-name>primefaces.THEME</param-name>
+        <param-value>saga</param-value>
+    </context-param>
+
+    <!-- Íconos PrimeIcons (pi pi-plus, pi pi-trash, ...) usados en los botones -->
+    <context-param>
+        <param-name>primefaces.PRIME_ICONS</param-name>
+        <param-value>true</param-value>
+    </context-param>
+
+    <!-- Servlet de JSF -->
+    <servlet>
+        <servlet-name>FacesServlet</servlet-name>
+        <servlet-class>jakarta.faces.webapp.FacesServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <!-- Las páginas se piden como *.jsf y Faces las resuelve al .xhtml -->
+    <servlet-mapping>
+        <servlet-name>FacesServlet</servlet-name>
+        <url-pattern>*.jsf</url-pattern>
+    </servlet-mapping>
+
+    <session-config>
+        <session-timeout>
+            30
+        </session-timeout>
+    </session-config>
+
+    <!-- Página de inicio: redirige al menú de paginas/index.jsf -->
+    <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+    </welcome-file-list>
+</web-app>

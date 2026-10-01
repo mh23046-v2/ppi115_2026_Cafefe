@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html>
+<!--
+    Componente compuesto: botones que van junto al LISTADO.
+    Uso: <botones:botones-arriba modelo="#{xModel}" actualizarListado="..." actualizarDetalle="..."/>
+    (xmlns:botones="jakarta.faces.composite/botones")
+-->
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:p="primefaces"
+      xmlns:cc="jakarta.faces.composite">
+
+    <!-- INTERFACE: los "parámetros" que recibe el componente -->
+    <cc:interface>
+        <cc:attribute name="modelo" required="true"/>
+        <cc:attribute name="actualizarListado" required="true"/>
+        <cc:attribute name="actualizarDetalle" required="true"/>
+    </cc:interface>
+
+    <!-- IMPLEMENTATION: lo que se dibuja.
+         resetValues="true" en Cancelar: limpia los valores que quedaron en los
+         campos por un error de validación, para que no reaparezcan. -->
+    <cc:implementation>
+        <p:commandButton value="#{tradcrud['jsf.crud.nuevo']} #{cc.attrs.modelo.nombreBean()}"
+                         styleClass="boton-cafe" icon="pi pi-plus"
+                         actionListener="#{cc.attrs.modelo.btnNuevoHandler}"
+                         process="@this"
+                         update="#{cc.attrs.actualizarDetalle} #{cc.attrs.actualizarListado}"
+                         rendered="#{cc.attrs.modelo.estado == 'NINGUNO'}"/>
+
+        <p:commandButton value="#{tradcrud['jsf.crud.cancelar']}"
+                         styleClass="boton-cafe" icon="pi pi-times"
+                         actionListener="#{cc.attrs.modelo.btnCancelarHandler}"
+                         process="@this" resetValues="true"
+                         update="#{cc.attrs.actualizarDetalle} #{cc.attrs.actualizarListado}"
+                         rendered="#{cc.attrs.modelo.estado != 'NINGUNO'}"/>
+    </cc:implementation>
+</html>

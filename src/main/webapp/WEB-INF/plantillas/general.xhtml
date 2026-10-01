@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<!--
+    Plantilla general (Facelets) de Cafefe.
+    Cada página la usa con <ui:composition template="/WEB-INF/plantillas/general.xhtml">
+    y rellena los huecos (ui:insert) con <ui:define name="...">:
+      - leyenda:        título de la página (cabecera)
+      - menuNavegacion: menú lateral (por defecto, el menú de abajo)
+      - contenido:      el área de trabajo (tabla + formulario)
+      - pie:            pie de página
+    Está dentro de WEB-INF para que el navegador no pueda pedirla directamente.
+-->
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:p="primefaces"
+      xmlns:ui="jakarta.faces.facelets">
+    <f:view locale="#{sesionUsuario.idiomaSeleccionado}">
+        <h:head>
+            <meta charset="UTF-8"/>
+            <meta name="viewport" content="width=device-width, initial-scale=1"/>
+            <title>Cafefe</title>
+            <h:outputStylesheet library="css" name="default.css"/>
+            <h:outputStylesheet library="css" name="cssLayout.css"/>
+        </h:head>
+        <h:body>
+            <!-- Mensajes (éxito, error, validación). autoUpdate = se refresca
+                 solo después de cada petición ajax, sin tener que ponerlo en "update". -->
+            <p:growl id="mensajes" showDetail="true" life="5000">
+                <p:autoUpdate/>
+            </p:growl>
+
+            <!-- Diálogo de confirmación global: lo usan los botones con <p:confirm> -->
+            <p:confirmDialog global="true" showEffect="fade" hideEffect="fade">
+                <p:commandButton value="#{tradcrud['jsf.crud.si']}" type="button"
+                                 styleClass="ui-confirmdialog-yes boton-cafe" icon="pi pi-check"/>
+                <p:commandButton value="#{tradcrud['jsf.crud.no']}" type="button"
+                                 styleClass="ui-confirmdialog-no ui-button-flat" icon="pi pi-times"/>
+            </p:confirmDialog>
+
+            <div class="contenedor">
+
+                <!-- ENCABEZADO -->
+                <header class="cabecera">
+                    <div class="logo">
+                        <h:link outcome="/Paginas/index">
+                            <p:graphicImage library="imagenes" name="cafefe_logo_200px_140926.png"
+                                            alt="Cafefe" height="70"/>
+                        </h:link>
+                    </div>
+                    <div class="nombre">
+                        <h1>
+                            <ui:insert name="leyenda">Cafefe</ui:insert>
+                        </h1>
+                    </div>
+                    <div class="menu-superior">
+                        <h:form id="frmCambiarIdioma">
+                            <p:selectOneMenu value="#{sesionUsuario.idiomaSeleccionado}">
+                                <f:selectItems value="#{sesionUsuario.opcionesIdioma}"/>
+                                <p:ajax listener="#{sesionUsuario.cambiarIdioma}" update="@all"/>
+                            </p:selectOneMenu>
+                        </h:form>
+                    </div>
+                </header>
+
+                <!-- CUERPO: navegación + área de trabajo -->
+                <div class="cuerpo">
+                    <nav class="menu-navegacion">
+                        <ui:insert name="menuNavegacion">
+                            <h:form id="frmMenu">
+                                <p:menu styleClass="menu-cafe">
+                                    <p:menuitem value="#{tradcrud['menu.inicio']}" outcome="/Paginas/index" icon="pi pi-home"/>
+
+                                    <p:submenu label="#{tradcrud['menu.catalogo']}">
+                                        <p:menuitem value="#{tradcrud['entidad.producto']}" outcome="/Paginas/producto"/>
+                                        <p:menuitem value="#{tradcrud['entidad.tipoProducto']}" outcome="/Paginas/tipoProducto"/>
+                                        <p:menuitem value="#{tradcrud['entidad.productoTipoProducto']}" outcome="/Paginas/productoTipoProducto"/>
+                                        <p:menuitem value="#{tradcrud['entidad.tipoCaracteristica']}" outcome="/Paginas/tipoCaracteristica"/>
+                                        <p:menuitem value="#{tradcrud['entidad.caracteristica']}" outcome="/Paginas/caracteristica"/>
+                                        <p:menuitem value="#{tradcrud['entidad.productoCaracteristica']}" outcome="/Paginas/productoCaracteristica"/>
+                                    </p:submenu>
+
+                                    <p:submenu label="#{tradcrud['menu.descuentos']}">
+                                        <p:menuitem value="#{tradcrud['entidad.tipoDescuento']}" outcome="/Paginas/tipoDescuento"/>
+                                        <p:menuitem value="#{tradcrud['entidad.descuento']}" outcome="/Paginas/descuento"/>
+                                        <p:menuitem value="#{tradcrud['entidad.descuentoProducto']}" outcome="/Paginas/descuentoProducto"/>
+                                    </p:submenu>
+
+                                    <p:submenu label="#{tradcrud['menu.personal']}">
+                                        <p:menuitem value="#{tradcrud['entidad.empleado']}" outcome="/Paginas/empleado"/>
+                                        <p:menuitem value="#{tradcrud['entidad.rol']}" outcome="/Paginas/rol"/>
+                                        <p:menuitem value="#{tradcrud['entidad.caja']}" outcome="/Paginas/caja"/>
+                                    </p:submenu>
+
+                                    <p:submenu label="#{tradcrud['menu.ventas']}">
+                                        <p:menuitem value="#{tradcrud['entidad.orden']}" outcome="/Paginas/orden"/>
+                                        <p:menuitem value="#{tradcrud['entidad.ordenProducto']}" outcome="/Paginas/ordenProducto"/>
+                                        <p:menuitem value="#{tradcrud['entidad.factura']}" outcome="/Paginas/factura"/>
+                                        <p:menuitem value="#{tradcrud['entidad.facturaOrdenProducto']}" outcome="/Paginas/facturaOrdenProducto"/>
+                                        <p:menuitem value="#{tradcrud['entidad.pago']}" outcome="/Paginas/pago"/>
+                                        <p:menuitem value="#{tradcrud['entidad.pagoDetalle']}" outcome="/Paginas/pagoDetalle"/>
+                                    </p:submenu>
+                                </p:menu>
+                            </h:form>
+                        </ui:insert>
+                    </nav>
+
+                    <main class="area-trabajo">
+                        <ui:insert name="contenido">
+                            <h:outputText value="No se definió contenido para esta página."/>
+                        </ui:insert>
+                    </main>
+                </div>
+
+                <!-- PIE DE PÁGINA -->
+                <footer class="pie-pagina">
+                    <ui:insert name="pie">
+                        &#169; Cafefe - #{tradcrud['pie.derechos']}
+                    </ui:insert>
+                </footer>
+
+            </div>
+        </h:body>
+    </f:view>
+</html>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Configuración de Jakarta Faces.
+    - locale-config: idiomas que soporta la aplicación.
+    - resource-bundle: archivos traducciones/CRUD*.properties, disponibles en
+      todas las páginas con la variable #{tradcrud['clave']}.
+-->
+<faces-config xmlns="https://jakarta.ee/xml/ns/jakartaee"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
+                                  https://jakarta.ee/xml/ns/jakartaee/web-facesconfig_4_1.xsd"
+              version="4.1">
+
+    <application>
+        <locale-config>
+            <default-locale>es</default-locale>
+            <supported-locale>es</supported-locale>
+            <supported-locale>en_US</supported-locale>
+            <supported-locale>de_DE</supported-locale>
+        </locale-config>
+        <resource-bundle>
+            <base-name>traducciones.CRUD</base-name>
+            <var>tradcrud</var>
+        </resource-bundle>
+    </application>
+
+</faces-config>

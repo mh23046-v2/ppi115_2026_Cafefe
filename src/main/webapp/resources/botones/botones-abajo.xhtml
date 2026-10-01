@@ -1,0 +1,48 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html>
+<!--
+    Componente compuesto: botones que van debajo del FORMULARIO de mantenimiento.
+    Uso: <botones:botones-abajo modelo="#{xModel}" actualizarListado="..." actualizarDetalle="..."/>
+-->
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:p="primefaces"
+      xmlns:cc="jakarta.faces.composite">
+
+    <cc:interface>
+        <cc:attribute name="modelo" required="true"/>
+        <cc:attribute name="actualizarListado" required="true"/>
+        <cc:attribute name="actualizarDetalle" required="true"/>
+        <!-- Qué se envía al servidor con Crear/Actualizar. Por defecto el formulario
+             completo; en un maestro-detalle se pasa solo el panel del detalle. -->
+        <cc:attribute name="procesar" default="@form"/>
+    </cc:interface>
+
+    <cc:implementation>
+        <!-- Crear y Actualizar envían lo indicado en "procesar" (por defecto @form) -->
+        <p:commandButton value="#{tradcrud['jsf.crud.crear']} #{cc.attrs.modelo.nombreBean()}"
+                         styleClass="boton-cafe" icon="pi pi-save"
+                         actionListener="#{cc.attrs.modelo.btnCrearHandler}"
+                         process="#{cc.attrs.procesar}"
+                         update="#{cc.attrs.actualizarDetalle} #{cc.attrs.actualizarListado}"
+                         rendered="#{cc.attrs.modelo.estado == 'CREAR'}"/>
+
+        <p:commandButton value="#{tradcrud['jsf.crud.actualizar']} #{cc.attrs.modelo.nombreBean()}"
+                         styleClass="boton-cafe" icon="pi pi-refresh"
+                         actionListener="#{cc.attrs.modelo.btnModificarHandler}"
+                         process="#{cc.attrs.procesar}"
+                         update="#{cc.attrs.actualizarDetalle} #{cc.attrs.actualizarListado}"
+                         rendered="#{cc.attrs.modelo.estado == 'MODIFICAR'}"/>
+
+        <!-- Eliminar no necesita validar los campos (process="@this") y pide confirmación -->
+        <p:commandButton value="#{tradcrud['jsf.crud.eliminar']} #{cc.attrs.modelo.nombreBean()}"
+                         styleClass="boton-cafe boton-peligro" icon="pi pi-trash"
+                         actionListener="#{cc.attrs.modelo.btnEliminarHandler}"
+                         process="@this" resetValues="true"
+                         update="#{cc.attrs.actualizarDetalle} #{cc.attrs.actualizarListado}"
+                         rendered="#{cc.attrs.modelo.estado == 'MODIFICAR'}">
+            <p:confirm header="#{tradcrud['jsf.crud.eliminar']}"
+                       message="#{tradcrud['jsf.crud.confirmarEliminar']}"
+                       icon="pi pi-exclamation-triangle"/>
+        </p:commandButton>
+    </cc:implementation>
+</html>

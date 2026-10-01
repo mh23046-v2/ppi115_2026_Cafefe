@@ -1,0 +1,116 @@
+/* ============================================================
+   Estilos generales de Cafefe (basado en la versión de Johnny)
+   Color principal (café): #a06c3f
+   ============================================================ */
+
+body {
+    background-color: #faf7f2;
+    font-size: 14px;
+    font-family: Verdana, Arial, "Helvetica", sans-serif;
+    color: #222222;
+    margin: 0;
+}
+
+h1 {
+    font-family: Arial, "Helvetica", sans-serif;
+    font-size: 22px;
+    font-weight: bold;
+    margin: 0;
+    color: #4a2f1a;
+}
+
+h2 {
+    font-family: Arial, "Helvetica", sans-serif;
+    font-size: 18px;
+    color: #4a2f1a;
+    margin: 20px 0 10px 0;
+}
+
+a:link, a:visited {
+    color: #7a4f2a;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+a:link:hover, a:visited:hover {
+    text-decoration: underline;
+}
+
+/* ---- Botones color café ---- */
+.ui-button.boton-cafe {
+    background-color: #a06c3f !important;
+    border-color: #a06c3f !important;
+    color: #ffffff !important;
+    font-weight: bold;
+    margin: 5px 5px 5px 0;
+}
+
+.ui-button.boton-cafe:hover,
+.ui-button.boton-cafe:focus,
+.ui-button.boton-cafe:active {
+    background-color: #85572f !important;
+    border-color: #85572f !important;
+}
+
+/* Botón de eliminar: rojo para que se distinga */
+.ui-button.boton-cafe.boton-peligro {
+    background-color: #b3261e !important;
+    border-color: #b3261e !important;
+}
+
+.ui-button.boton-cafe.boton-peligro:hover {
+    background-color: #8c1d18 !important;
+    border-color: #8c1d18 !important;
+}
+
+/* ---- Checkbox color café ---- */
+.check-cafe .ui-chkbox-box.ui-state-active,
+.check-cafe .ui-chkbox-box.ui-state-active:hover {
+    background-color: #a06c3f !important;
+    border-color: #a06c3f !important;
+}
+
+.check-cafe .ui-chkbox-box.ui-state-focus {
+    box-shadow: 0 0 0 0.2rem rgba(160, 108, 63, 0.25) !important;
+}
+
+/* ---- Tablas: fila seleccionada y cursor de "clic" ---- */
+.ui-datatable .ui-datatable-selectable {
+    cursor: pointer;
+}
+
+.ui-datatable tbody tr.ui-state-highlight {
+    background-color: #a06c3f !important;
+    color: #ffffff !important;
+}
+
+/* ---- Formularios ---- */
+.formulario-cafe {
+    max-width: 700px;
+}
+
+.formulario-cafe .ui-inputfield,
+.formulario-cafe .ui-selectonemenu,
+.formulario-cafe .ui-datepicker,
+.formulario-cafe .ui-calendar {
+    width: 100%;
+}
+
+/* ---- Tabla del formulario (panelGrid) ---- */
+.grid-formulario td {
+    padding: 6px 10px 6px 0;
+    vertical-align: middle;
+}
+
+.grid-formulario td:first-child {
+    width: 35%;
+    font-weight: bold;
+}
+
+/* ---- Página de inicio ---- */
+.inicio {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+    flex-wrap: wrap;
+}
