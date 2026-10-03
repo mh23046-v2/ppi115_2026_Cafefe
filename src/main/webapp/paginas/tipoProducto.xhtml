@@ -10,8 +10,6 @@
     <ui:define name="leyenda">#{tradcrud['entidad.tipoProducto']}</ui:define>
 
     <ui:define name="contenido">
-
-        <!-- ===== LISTADO (visible cuando estado == NINGUNO) ===== -->
         <h:form id="frmListado">
             <h:panelGroup id="pnlListado" layout="block">
                 <p:dataTable id="tblListado" value="#{tipoProductoModel.lazyModel}" var="fila"
@@ -26,6 +24,9 @@
                     </f:facet>
                     <p:ajax event="rowSelect" listener="#{tipoProductoModel.onRowSelect}"
                             update=":frmMantenimiento:pnlDetalle :frmListado:pnlListado"/>
+                    <p:column headerText="Id">
+                        <h:outputText value="#{fila.idTipoProducto}"/>
+                    </p:column>
                     <p:column headerText="Nombre">
                         <h:outputText value="#{fila.nombre}"/>
                     </p:column>
@@ -43,13 +44,15 @@
             </h:panelGroup>
         </h:form>
 
-        <!-- ===== FORMULARIO (visible cuando estado == CREAR o MODIFICAR) ===== -->
         <h:form id="frmMantenimiento">
             <h:panelGroup id="pnlDetalle" layout="block">
                 <h:panelGroup rendered="#{tipoProductoModel.estado != 'NINGUNO'}" layout="block" styleClass="formulario-cafe">
                     <h2>#{tradcrud['jsf.crud.mantenimiento']} #{tipoProductoModel.nombreBean()}</h2>
 
                     <p:panelGrid columns="2" styleClass="ui-noborder grid-formulario">
+                        <p:outputLabel value="ID" for="id"/>
+                        <p:inputText id="id" value="#{tipoProductoModel.registro.idTipoProducto}" disabled="true"/>
+                           
                         <p:outputLabel value="Nombre" for="nombre"/>
                         <p:inputText id="nombre" value="#{tipoProductoModel.registro.nombre}"/>
 

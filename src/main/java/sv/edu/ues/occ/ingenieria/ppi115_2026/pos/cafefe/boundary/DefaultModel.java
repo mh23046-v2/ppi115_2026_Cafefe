@@ -13,31 +13,6 @@ import org.primefaces.model.LazyDataModel;
 import org.primefaces.model.SortMeta;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.AbstractDataAccess;
 
-
-/**
- * Model genérico para las pantallas de mantenimiento (CRUD) con PrimeFaces.
- *
- * Patrón "Template Method": esta clase implementa todo lo que es igual en
- * todas las pantallas (listado paginado, crear, modificar, eliminar,
- * cancelar, mensajes) y deja a cada Model concreto solo lo que cambia:
- * <ul>
- * <li>{@link #getDAO()}: qué DAO usar.</li>
- * <li>{@link #getId(Object)}: cómo obtener el UUID de la entidad.</li>
- * <li>{@link #nuevoRegistro()}: cómo se crea un registro vacío.</li>
- * <li>{@link #nombreBean()}: el nombre que se muestra en botones y títulos.</li>
- * <li>{@link #cargarOpciones()} (opcional): llenar los combos de relaciones.</li>
- * <li>{@link #cargarDatos(int, int)} / {@link #contarDatos()} (opcional): qué
- * registros muestra la tabla. Por defecto todos; un Model de detalle los
- * sobrescribe para filtrar (ej. solo los roles de un empleado).</li>
- * <li>{@link #registroCambio()} (opcional): se ejecuta cada vez que cambia el
- * registro seleccionado (útil en maestro-detalle).</li>
- * </ul>
- *
- * Basado en el DefaultModel del proyecto de clase, adaptado a nuestro
- * AbstractDataAccess (create/modify/delete/findRange/count).
- *
- * @param <T> entidad JPA que administra la pantalla
- */
 public abstract class DefaultModel<T> implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -46,40 +21,33 @@ public abstract class DefaultModel<T> implements Serializable {
     protected T registro;
     protected LazyDataModel<T> lazyModel;
 
-    // ---- lo que cada Model concreto debe definir ----
-
     protected abstract AbstractDataAccess<T> getDAO();
-
     protected abstract UUID getId(T entidad);
 
-    /** Crea un registro nuevo con su UUID y valores por defecto. */
     protected abstract T nuevoRegistro();
-
     public abstract String nombreBean();
 
-    /** Llena los combos (selectOneMenu) de relaciones. Por defecto no hace nada. */
+    //Llena los combos (selectOneMenu) de relaciones. Por defecto no hace nada. 
     protected void cargarOpciones() {
     }
 
-    /** Registros de la página que pide la tabla. Por defecto, todos los de la tabla. */
+    //Registros de la página que pide la tabla. Por defecto, todos los de la tabla.
     protected List<T> cargarDatos(int first, int max) {
         return getDAO().findRange(first, max);
     }
 
-    /** Total de registros (para el paginador). Debe ser coherente con cargarDatos. */
+    //Total de registros (para el paginador). Debe ser coherente con cargarDatos. 
     protected int contarDatos() {
         return (int) getDAO().count();
     }
 
-    /** Gancho: se llama cada vez que cambia el registro seleccionado. */
+    // Gancho: se llama cada vez que cambia el registro seleccionado.
     protected void registroCambio() {
     }
 
-    // ---- inicialización ----
 
     @PostConstruct
     public void inicializar() {
-        // LazyDataModel: la tabla pide a la BD solo la página que se está viendo
         this.lazyModel = new LazyDataModel<T>() {
             private static final long serialVersionUID = 1L;
 
@@ -106,9 +74,9 @@ public abstract class DefaultModel<T> implements Serializable {
         cargarOpciones();
     }
 
-    // ---- manejadores de eventos (botones y tabla) ----
 
-    /** Al hacer clic en una fila de la tabla se abre el formulario en modo MODIFICAR. */
+
+    //Al hacer clic en una fila de la tabla se abre el formulario en modo MODIFICAR.
     public void onRowSelect(SelectEvent<T> event) {
         if (event != null && event.getObject() != null) {
             setRegistro(event.getObject());
@@ -174,7 +142,6 @@ public abstract class DefaultModel<T> implements Serializable {
         return t.getMessage();
     }
 
-    // ---- getters y setters para la vista ----
 
     public LazyDataModel<T> getLazyModel() {
         return lazyModel;

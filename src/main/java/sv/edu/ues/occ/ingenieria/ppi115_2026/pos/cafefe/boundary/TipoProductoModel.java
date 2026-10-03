@@ -34,6 +34,7 @@ public class TipoProductoModel extends DefaultModel<TipoProducto> {
     @Override
     protected TipoProducto nuevoRegistro() {
         TipoProducto nuevo = new TipoProducto(UUID.randomUUID());
+        nuevo.setActivo(true);
         return nuevo;
     }
 
