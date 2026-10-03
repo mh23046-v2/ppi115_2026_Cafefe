@@ -14,64 +14,64 @@ import org.mockito.Mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
-import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.TipoCaracteristica;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.TipoDescuento;
 
 /**
  *
  * @author johnyv
  */
 @ExtendWith(MockitoExtension.class)
-public class TipoCaracteristicaDAOTest {
-
+public class TipoDescuentoDAOTest {
+    
     @Mock
     private EntityManager em;
 
     @Mock
-    private TypedQuery<TipoCaracteristica> typedQuery;
+    private TypedQuery<TipoDescuento> typedQuery;
 
     @InjectMocks
-    private TipoCaracteristicaDAO tipoCaracteristicaDAO;
+    private TipoDescuentoDAO tipoDescuentoDAO;
 
     @Test
     @DisplayName("Verifica que el EntityManager está correctamente inyectado")
     void testGetEntityManager() {
-        assertNotNull(tipoCaracteristicaDAO.getEntityManager());
-        assertEquals(em, tipoCaracteristicaDAO.getEntityManager());
+        assertNotNull(tipoDescuentoDAO.getEntityManager());
+        assertEquals(em, tipoDescuentoDAO.getEntityManager());
     }
 
     @Test
     @DisplayName("findByActivo debe retornar la lista correspondiente al filtro")
     void testFindByActivo() {
         Boolean activo = true;
-        List<TipoCaracteristica> esperados = Collections.singletonList(new TipoCaracteristica());
+        List<TipoDescuento> esperados = Collections.singletonList(new TipoDescuento());
 
-        when(em.createNamedQuery("TipoCaracteristica.findByActivo", TipoCaracteristica.class)).thenReturn(typedQuery);
+        when(em.createNamedQuery("TipoDescuento.findByActivo", TipoDescuento.class)).thenReturn(typedQuery);
         when(typedQuery.setParameter("activo", activo)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(esperados);
 
-        List<TipoCaracteristica> resultado = tipoCaracteristicaDAO.findByActivo(activo);
+        List<TipoDescuento> resultado = tipoDescuentoDAO.findByActivo(activo);
 
         assertNotNull(resultado);
         assertEquals(1, resultado.size());
-        verify(em).createNamedQuery("TipoCaracteristica.findByActivo", TipoCaracteristica.class);
+        verify(em).createNamedQuery("TipoDescuento.findByActivo", TipoDescuento.class);
         verify(typedQuery).setParameter("activo", activo);
     }
 
     @Test
-    @DisplayName("findByNombre consulta con el paramétro nombre y devuelve el resultado")
+    @DisplayName("findByNombre consulta con el parámetro nombre y devuelve el resultado")
     void testFindByNombre() {
-        String nombre = "Volumen";
-        List<TipoCaracteristica> esperados = Collections.singletonList(new TipoCaracteristica());
+        String nombre = "Navideño";
+        List<TipoDescuento> esperados = Collections.singletonList(new TipoDescuento());
 
-        when(em.createNamedQuery("TipoCaracteristica.findByNombre", TipoCaracteristica.class)).thenReturn(typedQuery);
+        when(em.createNamedQuery("TipoDescuento.findByNombre", TipoDescuento.class)).thenReturn(typedQuery);
         when(typedQuery.setParameter(eq("nombre"), eq(nombre))).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(esperados);
 
-        List<TipoCaracteristica> resultado = tipoCaracteristicaDAO.findByNombre(nombre);
+        List<TipoDescuento> resultado = tipoDescuentoDAO.findByNombre(nombre);
 
         assertNotNull(resultado);
         assertEquals(1, resultado.size());
-        verify(em).createNamedQuery("TipoCaracteristica.findByNombre", TipoCaracteristica.class);
+        verify(em).createNamedQuery("TipoDescuento.findByNombre", TipoDescuento.class);
         verify(typedQuery).setParameter("nombre", nombre);
     }
 }
