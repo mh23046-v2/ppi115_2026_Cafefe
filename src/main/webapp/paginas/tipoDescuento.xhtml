@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:p="primefaces"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:botones="jakarta.faces.composite/botones"
+                template="/WEB-INF/plantillas/general.xhtml">
+
+    <ui:define name="leyenda">#{tradcrud['entidad.tipoDescuento']}</ui:define>
+
+    <ui:define name="contenido">
+
+        <!-- ===== LISTADO (visible cuando estado == NINGUNO) ===== -->
+        <h:form id="frmListado">
+            <h:panelGroup id="pnlListado" layout="block">
+                <p:dataTable id="tblListado" value="#{tipoDescuentoModel.lazyModel}" var="fila"
+                             lazy="true" paginator="true" rows="10"
+                             rowsPerPageTemplate="5,10,25"
+                             paginatorPosition="bottom"
+                             selectionMode="single"
+                             emptyMessage="#{tradcrud['jsf.crud.sinRegistros']}"
+                             rendered="#{tipoDescuentoModel.estado == 'NINGUNO'}">
+                    <f:facet name="header">
+                        #{tradcrud['jsf.crud.ayudaSeleccion']}
+                    </f:facet>
+                    <p:ajax event="rowSelect" listener="#{tipoDescuentoModel.onRowSelect}"
+                            update=":frmMantenimiento:pnlDetalle :frmListado:pnlListado"/>
+                    <p:column headerText="ID">
+                        <h:outputText value="#{fila.idTipoDescuento}"/>
+                    </p:column>
+                    <p:column headerText="Nombre">
+                        <h:outputText value="#{fila.nombre}"/>
+                    </p:column>
+                    <p:column headerText="Descuento Máximo">
+                        <h:outputText value="#{fila.descuentoMaximo}"/>
+                    </p:column>
+                    <p:column headerText="Activo">
+                        <h:outputText value="#{fila.activo ? 'Sí' : 'No'}"/>
+                    </p:column>
+                    <p:column headerText="Observaciones">
+                        <h:outputText value="#{fila.observaciones}"/>
+                    </p:column>
+                </p:dataTable>
+
+                <botones:botones-arriba modelo="#{tipoDescuentoModel}"
+                                        actualizarListado=":frmListado:pnlListado"
+                                        actualizarDetalle=":frmMantenimiento:pnlDetalle"/>
+            </h:panelGroup>
+        </h:form>
+
+        <!-- ===== FORMULARIO (visible cuando estado == CREAR o MODIFICAR) ===== -->
+        <h:form id="frmMantenimiento">
+            <h:panelGroup id="pnlDetalle" layout="block">
+                <h:panelGroup rendered="#{tipoDescuentoModel.estado != 'NINGUNO'}" layout="block" styleClass="formulario-cafe">
+                    <h2>#{tradcrud['jsf.crud.mantenimiento']} #{tipoDescuentoModel.nombreBean()}</h2>
+
+                    <p:panelGrid columns="2" styleClass="ui-noborder grid-formulario">
+
+                        <p:outputLabel value="ID" for="idtipoDescuento"/>
+                        <p:inputText id="idtipoDescuento" value="#{tipoDescuentoModel.registro.idTipoDescuento}" disabled="true"/>
+
+                        <p:outputLabel value="Nombre" for="nombre"/>
+                        <p:inputText id="nombre" value="#{tipoDescuentoModel.registro.nombre}"
+                                     required="true" requiredMessage="El campo de nombre es obligatorio"
+                                     maxlength="155"/>
+
+                        <p:outputLabel value="Descuento máximo" for="descuentoMaximo"/>
+                        <h:panelGrid columns="1" style="width: 100%">
+                            <p:inputText id="descuentoMaximo" value="#{tipoDescuentoModel.registro.descuentoMaximo}"/>
+                            <p:slider for="descuentoMaximo" 
+                                      minValue="0" 
+                                      maxValue="100" 
+                                      step="1" />
+                        </h:panelGrid>
+
+                        <p:outputLabel value="Activo" for="activo"/>
+                        <p:selectBooleanCheckbox id="activo" value="#{tipoDescuentoModel.registro.activo}" styleClass="check-cafe"/>
+
+                        <p:outputLabel value="Observaciones" for="observaciones"/>
+                        <p:inputTextarea id="observaciones" value="#{tipoDescuentoModel.registro.observaciones}" rows="3" autoResize="false"/>
+                    </p:panelGrid>
+
+                    <botones:botones-abajo modelo="#{tipoDescuentoModel}"
+                                           actualizarListado=":frmListado:pnlListado"
+                                           actualizarDetalle=":frmMantenimiento:pnlDetalle"/>
+                </h:panelGroup>
+            </h:panelGroup>
+        </h:form>
+
+    </ui:define>
+
+</ui:composition>
+
