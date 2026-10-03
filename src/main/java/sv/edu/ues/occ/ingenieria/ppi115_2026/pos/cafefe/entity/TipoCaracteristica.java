@@ -9,6 +9,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -82,6 +84,14 @@ public class TipoCaracteristica implements Serializable {
         this.expresionRegular = expresionRegular;
     }
 
+    @PrePersist
+    @PreUpdate
+    void aplicarExpresionPorDefecto() {
+        if (this.expresionRegular == null || this.expresionRegular.isBlank()) {
+            this.expresionRegular = ".*";
+        }
+    }
+    
     public Boolean getActivo() {
         return activo;
     }
