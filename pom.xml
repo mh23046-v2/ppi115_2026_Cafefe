@@ -20,15 +20,26 @@
             <version>${jakartaee}</version>
             <scope>provided</scope>
         </dependency>
-        
         <dependency>
             <groupId>org.primefaces</groupId>
             <artifactId>primefaces</artifactId>
             <version>15.0.17</version>
             <classifier>jakarta</classifier>
             <scope>provided</scope>
+        </dependency> 
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.11.4</version>
+            <scope>test</scope>
         </dependency>
-    </dependencies>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>5.14.2</version>
+            <scope>test</scope>
+        </dependency>
+            </dependencies>
 
     <build>
         <plugins>
@@ -54,6 +65,11 @@
                     <installDirectory>/usr/local/openliberty/wlp_26.0.0.8</installDirectory>
                     <serverName>ppi115_2026</serverName>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.2</version>
             </plugin>
         </plugins>
     </build>
