@@ -57,7 +57,7 @@
                         <p:inputText id="nombre" value="#{rolModel.registro.nombre}"/>
 
                         <p:outputLabel value="Activo" for="activo"/>
-                        <p:selectBooleanCheckbox id="activo" value="#{rolModel.registro.activo}" styleClass="check-cafe"/>
+                        <p:toggleSwitch id="activo" value="#{rolModel.registro.activo}" onIcon = "pi pi-check" offIcon="pi pi-times" styleClass="check-cafe"/>
 
                         <p:outputLabel value="Observaciones" for="observaciones"/>
                         <p:inputTextarea id="observaciones" value="#{rolModel.registro.observaciones}" rows="3" autoResize="false"/>

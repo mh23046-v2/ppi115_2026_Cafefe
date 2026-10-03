@@ -57,8 +57,8 @@
                         <p:inputText id="nombre" value="#{tipoProductoModel.registro.nombre}"/>
 
                         <p:outputLabel value="Activo" for="activo"/>
-                        <p:selectBooleanCheckbox id="activo" value="#{tipoProductoModel.registro.activo}" styleClass="check-cafe"/>
-
+                        <p:toggleSwitch id="activo" value="#{tipoProductoModel.registro.activo}" onIcon = "pi pi-check" offIcon="pi pi-times" styleClass="check-cafe"/>      
+                        
                         <p:outputLabel value="Observaciones" for="observaciones"/>
                         <p:inputTextarea id="observaciones" value="#{tipoProductoModel.registro.observaciones}" rows="3" autoResize="false"/>
                     </p:panelGrid>
