@@ -23,7 +23,7 @@
         <p:commandButton value="#{tradcrud['jsf.crud.nuevo']} #{cc.attrs.modelo.nombreBean()}"
                          styleClass="boton-cafe" icon="pi pi-plus"
                          actionListener="#{cc.attrs.modelo.btnNuevoHandler}"
-                         process="@this"
+                         process="@this" resetValues="true"
                          update="#{cc.attrs.actualizarDetalle} #{cc.attrs.actualizarListado}"
                          rendered="#{cc.attrs.modelo.estado == 'NINGUNO'}"/>
 

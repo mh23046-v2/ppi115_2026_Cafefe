@@ -8,6 +8,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.io.Serializable;
@@ -39,6 +41,9 @@ public class TipoDescuento implements Serializable {
     private String nombre;
     @Column(name = "activo")
     private Boolean activo;
+
+    @Min(value = 0, message = "El descuento no puede ser menor a 0")
+    @Max(value = 100, message = "El descuento no puede ser mayor a 100")
     @Column(name = "descuento_maximo")
     private Integer descuentoMaximo;
     @Size(max = 2147483647)
@@ -116,5 +121,5 @@ public class TipoDescuento implements Serializable {
     public String toString() {
         return "sv.edu.ues.ingenieria.pos.ppi115_2026.cafefe.entity.TipoDescuento[ idTipoDescuento=" + idTipoDescuento + " ]";
     }
-    
+
 }

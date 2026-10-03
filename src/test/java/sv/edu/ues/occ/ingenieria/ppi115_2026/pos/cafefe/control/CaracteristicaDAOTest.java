@@ -8,70 +8,69 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.extension.ExtendWith;
-import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
-import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.TipoCaracteristica;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Caracteristica;
 
 /**
  *
  * @author johnyv
  */
 @ExtendWith(MockitoExtension.class)
-public class TipoCaracteristicaDAOTest {
+public class CaracteristicaDAOTest {
 
     @Mock
     private EntityManager em;
 
     @Mock
-    private TypedQuery<TipoCaracteristica> typedQuery;
+    private TypedQuery<Caracteristica> typedQuery;
 
     @InjectMocks
-    private TipoCaracteristicaDAO tipoCaracteristicaDAO;
+    private CaracteristicaDAO caracteristicaDAO;
 
     @Test
     @DisplayName("Verifica que el EntityManager está correctamente inyectado")
     void testGetEntityManager() {
-        assertNotNull(tipoCaracteristicaDAO.getEntityManager());
-        assertEquals(em, tipoCaracteristicaDAO.getEntityManager());
+        assertNotNull(caracteristicaDAO.getEntityManager());
+        assertEquals(em, caracteristicaDAO.getEntityManager());
     }
 
     @Test
     @DisplayName("findByActivo debe retornar la lista correspondiente al filtro")
     void testFindByActivo() {
         Boolean activo = true;
-        List<TipoCaracteristica> esperados = Collections.singletonList(new TipoCaracteristica());
+        List<Caracteristica> esperados = Collections.singletonList(new Caracteristica());
 
-        when(em.createNamedQuery("TipoCaracteristica.findByActivo", TipoCaracteristica.class)).thenReturn(typedQuery);
+        when(em.createNamedQuery("Caracteristica.findByActivo", Caracteristica.class)).thenReturn(typedQuery);
         when(typedQuery.setParameter("activo", activo)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(esperados);
 
-        List<TipoCaracteristica> resultado = tipoCaracteristicaDAO.findByActivo(activo);
+        List<Caracteristica> resultado = caracteristicaDAO.findByActivo(activo);
 
         assertNotNull(resultado);
         assertEquals(1, resultado.size());
-        verify(em).createNamedQuery("TipoCaracteristica.findByActivo", TipoCaracteristica.class);
+        verify(em).createNamedQuery("Caracteristica.findByActivo", Caracteristica.class);
         verify(typedQuery).setParameter("activo", activo);
     }
 
     @Test
-    @DisplayName("findByNombre consulta con el paramétro nombre y devuelve el resultado")
+    @DisplayName("findByNombre consulta con el parámetro nombre y devuelve el resultado")
     void testFindByNombre() {
-        String nombre = "Volumen";
-        List<TipoCaracteristica> esperados = Collections.singletonList(new TipoCaracteristica());
+        String nombre = "Tamaño";
+        List<Caracteristica> esperados = Collections.singletonList(new Caracteristica());
 
-        when(em.createNamedQuery("TipoCaracteristica.findByNombre", TipoCaracteristica.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter(eq("nombre"), eq(nombre))).thenReturn(typedQuery);
+        when(em.createNamedQuery("Caracteristica.findByNombre", Caracteristica.class)).thenReturn(typedQuery);
+        when(typedQuery.setParameter("nombre", nombre)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(esperados);
 
-        List<TipoCaracteristica> resultado = tipoCaracteristicaDAO.findByNombre(nombre);
+        List<Caracteristica> resultado = caracteristicaDAO.findByNombre(nombre);
 
         assertNotNull(resultado);
         assertEquals(1, resultado.size());
-        verify(em).createNamedQuery("TipoCaracteristica.findByNombre", TipoCaracteristica.class);
+        verify(em).createNamedQuery("Caracteristica.findByNombre", Caracteristica.class);
         verify(typedQuery).setParameter("nombre", nombre);
     }
 }
