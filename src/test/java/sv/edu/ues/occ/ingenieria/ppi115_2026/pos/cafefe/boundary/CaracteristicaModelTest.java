@@ -1,6 +1,7 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.boundary;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -8,6 +9,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.CaracteristicaDAO;
@@ -21,7 +23,7 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.TipoCaracteristic
  */
 @ExtendWith(MockitoExtension.class)
 public class CaracteristicaModelTest {
-    
+
     @Mock
     private CaracteristicaDAO caracteristicaDAO;
 
@@ -79,5 +81,18 @@ public class CaracteristicaModelTest {
 
         assertNotNull(caracteristicaModel.getOpcionesIdTipoCaracteristica());
         assertEquals(1, caracteristicaModel.getOpcionesIdTipoCaracteristica().size());
+        assertEquals("Volumen", caracteristicaModel.getOpcionesIdTipoCaracteristica().get(0).getLabel());
+        verify(tipoCaracteristicaDAO).findAll();
+    }
+
+    @Test
+    @DisplayName("cargarOpciones maneja una lista vacía de TipoCaracteristica")
+    void testCargarOpcionesVacio() {
+        when(tipoCaracteristicaDAO.findAll()).thenReturn(Collections.emptyList());
+
+        caracteristicaModel.cargarOpciones();
+
+        assertNotNull(caracteristicaModel.getOpcionesIdTipoCaracteristica());
+        assertTrue(caracteristicaModel.getOpcionesIdTipoCaracteristica().isEmpty());
     }
 }
