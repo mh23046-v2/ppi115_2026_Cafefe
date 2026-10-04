@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:p="primefaces"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:botones="jakarta.faces.composite/botones"
+                template="/WEB-INF/plantillas/general.xhtml">
+
+    <ui:define name="leyenda">#{tradcrud['entidad.orden']}</ui:define>
+
+    <ui:define name="contenido">
+
+        <!-- ===== LISTADO DE ÓRDENES (visible cuando estado == NINGUNO) ===== -->
+        <h:form id="frmListado">
+            <h:panelGroup id="pnlListado" layout="block">
+                <p:dataTable id="tblListado" value="#{ordenModel.lazyModel}" var="fila"
+                             lazy="true" paginator="true" rows="10"
+                             rowsPerPageTemplate="5,10,25"
+                             paginatorPosition="bottom"
+                             selectionMode="single"
+                             emptyMessage="#{tradcrud['jsf.crud.sinRegistros']}"
+                             rendered="#{ordenModel.estado == 'NINGUNO'}">
+                    <f:facet name="header">
+                        #{tradcrud['jsf.crud.ayudaSeleccion']}
+                    </f:facet>
+                    <p:ajax event="rowSelect" listener="#{ordenModel.onRowSelect}"
+                            update=":frmMantenimiento:pnlDetalle :frmListado:pnlListado"/>
+                    <p:column headerText="ID">
+                        <h:outputText value="#{fila.idOrden}"/>
+                    </p:column>
+                    <p:column headerText="Fecha de orden">
+                        <h:outputText value="#{ordenModel.formatoFecha(fila.fechaCreacion)}"/>
+                    </p:column>
+                    <p:column headerText="Empleado">
+                        <h:outputText value="#{etiquetas.empleadoRol(fila.idEmpleadoRol)}"/>
+                    </p:column>
+                </p:dataTable>
+
+                <botones:botones-arriba modelo="#{ordenModel}"
+                                        actualizarListado=":frmListado:pnlListado"
+                                        actualizarDetalle=":frmMantenimiento:pnlDetalle"/>
+            </h:panelGroup>
+        </h:form>
+
+        <h:form id="frmMantenimiento">
+            <h:panelGroup id="pnlDetalle" layout="block">
+                <h:panelGroup rendered="#{ordenModel.estado != 'NINGUNO'}" layout="block">
+                    <h2>#{tradcrud['jsf.crud.mantenimiento']} #{ordenModel.nombreBean()}</h2>
+
+                    <p:tabView id="tabView" dynamic="true" cache="false"
+                               activeIndex="#{ordenModel.tabActiva}">
+
+                        <!-- PESTAÑA 1: GENERALIDADES (maestro) -->
+                        <p:tab title="Generalidades">
+                            <h:panelGroup id="pnlGeneralidades" layout="block" styleClass="formulario-cafe">
+                                <p:panelGrid columns="2" styleClass="ui-noborder grid-formulario">
+                                    <p:outputLabel value="ID"/>
+                                    <p:inputText id="id" value="#{ordenModel.registro.idOrden}" disabled="true"/>
+
+                                    <p:outputLabel value="Empleado" for="empleado"/>
+                                    <p:selectOneMenu id="empleado" value="#{ordenModel.registro.idEmpleadoRol}"
+                                                     converter="#{entidadConverter}" required="true"
+                                                     disabled="#{ordenModel.estado ne 'CREAR'}"
+                                                     requiredMessage="Seleccione el empleado que toma la orden">
+                                        <f:selectItem itemLabel="Seleccione un empleado" noSelectionOption="true"/>
+                                        <f:selectItems value="#{ordenModel.opcionesEmpleado}"/>
+                                    </p:selectOneMenu>
+
+                                    <p:outputLabel value="Fecha de orden" for="fecha"/>
+                                    <p:datePicker id="fecha" value="#{ordenModel.registro.fechaCreacion}"
+                                                  showTime="true" showSeconds="true"
+                                                  pattern="dd/MM/yyyy HH:mm:ss" required="true"
+                                                  requiredMessage="La fecha de la orden es obligatoria"/>
+                                </p:panelGrid>
+
+                                <!-- procesar: solo los campos de la orden, no los de productos -->
+                                <botones:botones-abajo modelo="#{ordenModel}"
+                                                       procesar=":frmMantenimiento:tabView:pnlGeneralidades"
+                                                       actualizarListado=":frmListado:pnlListado"
+                                                       actualizarDetalle=":frmMantenimiento:pnlDetalle"/>
+                            </h:panelGroup>
+                        </p:tab>
+
+                        <!-- PESTAÑA 2: PRODUCTOS (detalle). Se habilita cuando la orden ya existe. -->
+                        <p:tab title="Productos" disabled="#{ordenModel.estado == 'CREAR'}">
+
+                            <!-- Tabla de productos de la orden -->
+                            <h:panelGroup id="pnlListadoProd" layout="block">
+                                <p:dataTable id="tblOrdenProducto" value="#{ordenModel.ordenProductoModel.lazyModel}" var="op"
+                                             lazy="true" paginator="true" rows="5"
+                                             paginatorPosition="both"
+                                             selectionMode="single"
+                                             emptyMessage="#{tradcrud['jsf.crud.sinRegistros']}"
+                                             rendered="#{ordenModel.ordenProductoModel.estado == 'NINGUNO'}">
+                                    <p:ajax event="rowSelect" listener="#{ordenModel.ordenProductoModel.onRowSelect}"
+                                            update=":frmMantenimiento:tabView:pnlDetalleProd :frmMantenimiento:tabView:pnlListadoProd"/>
+                                    <p:column headerText="ID">
+                                        <h:outputText value="#{op.idOrdenProducto}"/>
+                                    </p:column>
+                                    <p:column headerText="Producto">
+                                        <h:outputText value="#{etiquetas.producto(op.idProducto)}"/>
+                                    </p:column>
+                                    <p:column headerText="Precio">
+                                        <h:outputText value="#{op.precio}">
+                                            <f:convertNumber type="currency" currencySymbol="$" locale="es_SV"/>
+                                        </h:outputText>
+                                    </p:column>
+                                    <p:column headerText="Observaciones">
+                                        <h:outputText value="#{op.observaciones}"/>
+                                    </p:column>
+                                    <f:facet name="footer">
+                                        Total:
+                                        <h:outputText value="#{ordenModel.ordenProductoModel.total}">
+                                            <f:convertNumber type="currency" currencySymbol="$" locale="es_SV"/>
+                                        </h:outputText>
+                                    </f:facet>
+                                </p:dataTable>
+
+                                <botones:botones-arriba modelo="#{ordenModel.ordenProductoModel}"
+                                                        actualizarListado=":frmMantenimiento:tabView:pnlListadoProd"
+                                                        actualizarDetalle=":frmMantenimiento:tabView:pnlDetalleProd"/>
+
+                                <h:panelGroup rendered="#{ordenModel.ordenProductoModel.estado == 'NINGUNO'}" layout="block">
+                                    <p:commandButton value="Aplicar Descuento" icon="pi pi-percentage"
+                                                     styleClass="boton-cafe"
+                                                     actionListener="#{ordenModel.ordenProductoModel.prepararDescuentos}"
+                                                     process="@this" update=":frmDescuento:pnlDescuento"
+                                                     oncomplete="PF('dlgDescuento').show()"/>
+                                </h:panelGroup>
+                            </h:panelGroup>
+
+                            <!-- Formulario para agregar / editar un producto de la orden -->
+                            <h:panelGroup id="pnlDetalleProd" layout="block">
+                                <h:panelGroup rendered="#{ordenModel.ordenProductoModel.estado != 'NINGUNO'}"
+                                              layout="block" styleClass="formulario-cafe">
+                                    <h3>#{tradcrud['jsf.crud.mantenimiento']} #{ordenModel.ordenProductoModel.nombreBean()}</h3>
+
+                                    <p:panelGrid columns="2" styleClass="ui-noborder grid-formulario">
+                                        <p:outputLabel value="ID"/>
+                                        <p:inputText id="idDetalleProd"
+                                                     value="#{ordenModel.ordenProductoModel.registro.idOrdenProducto}"
+                                                     disabled="true"/>
+
+                                        <p:outputLabel value="Producto"/>
+                                        <h:panelGroup id="grpProducto" layout="block" styleClass="campo-con-boton">
+                                            <p:inputText id="nombreProducto" readonly="true"
+                                                         value="#{etiquetas.producto(ordenModel.ordenProductoModel.registro.idProducto)}"/>
+                                            <p:commandButton value="Seleccionar" icon="pi pi-search"
+                                                             styleClass="boton-cafe" type="button"
+                                                             disabled="#{ordenModel.ordenProductoModel.estado ne 'CREAR'}"
+                                                             onclick="PF('dlgProducto').show()"/>
+                                        </h:panelGroup>
+
+                                        <p:outputLabel value="Precio"/>
+                                        <p:inputText id="precio" readonly="true"
+                                                     value="#{ordenModel.ordenProductoModel.registro.precio}"/>
+
+                                        <p:outputLabel value="Observaciones" for="prodObservaciones"/>
+                                        <p:inputTextarea id="prodObservaciones"
+                                                         value="#{ordenModel.ordenProductoModel.registro.observaciones}"
+                                                         rows="3" autoResize="false"/>
+                                    </p:panelGrid>
+
+                                    <!-- procesar: solo los campos del producto, no los de la orden -->
+                                    <botones:botones-abajo modelo="#{ordenModel.ordenProductoModel}"
+                                                           procesar=":frmMantenimiento:tabView:pnlDetalleProd"
+                                                           actualizarListado=":frmMantenimiento:tabView:pnlListadoProd"
+                                                           actualizarDetalle=":frmMantenimiento:tabView:pnlDetalleProd"/>
+                                </h:panelGroup>
+                            </h:panelGroup>
+
+                        </p:tab>
+
+                    </p:tabView>
+                </h:panelGroup>
+            </h:panelGroup>
+        </h:form>
+
+        <!-- ===== DIÁLOGO: SELECCIONAR PRODUCTO =====
+             Va en su propio formulario (no se pueden anidar h:form). -->
+        <p:dialog header="Seleccionar Producto" widgetVar="dlgProducto" modal="true"
+                  width="650" resizable="false" closeOnEscape="true">
+            <h:form id="frmProducto">
+                <p:dataTable id="tblProductos" value="#{ordenModel.ordenProductoModel.productosDisponibles}"
+                             var="p" paginator="true" rows="8" paginatorPosition="bottom"
+                             emptyMessage="No hay productos activos registrados">
+                    <p:column headerText="Producto" filterBy="#{p.nombre}" filterMatchMode="contains">
+                        <h:outputText value="#{p.nombre}"/>
+                    </p:column>
+                    <p:column headerText="Precio sugerido" style="width:9rem">
+                        <h:outputText value="#{p.precioSugerido}">
+                            <f:convertNumber type="currency" currencySymbol="$" locale="es_SV"/>
+                        </h:outputText>
+                    </p:column>
+                    <p:column style="width:8rem">
+                        <p:commandButton value="Seleccionar" icon="pi pi-check" styleClass="boton-cafe"
+                                         actionListener="#{ordenModel.ordenProductoModel.seleccionarProducto(p)}"
+                                         process="@this"
+                                         update=":frmMantenimiento:tabView:grpProducto :frmMantenimiento:tabView:precio"
+                                         oncomplete="PF('dlgProducto').hide()"/>
+                    </p:column>
+                </p:dataTable>
+            </h:form>
+        </p:dialog>
+
+        <!-- ===== DIÁLOGO: APLICAR DESCUENTO ===== -->
+        <p:dialog header="Aplicar Descuento" widgetVar="dlgDescuento" modal="true"
+                  resizable="false" closeOnEscape="true">
+            <h:form id="frmDescuento">
+                <h:panelGroup id="pnlDescuento" layout="block" styleClass="formulario-cafe">
+                    <p:panelGrid columns="2" styleClass="ui-noborder grid-formulario">
+                        <p:outputLabel value="Descuento aplicable" for="descuento"/>
+                        <p:selectOneMenu id="descuento"
+                                         value="#{ordenModel.ordenProductoModel.descuentoSeleccionado}"
+                                         converter="#{entidadConverter}">
+                            <f:selectItem itemLabel="Seleccione un descuento" noSelectionOption="true"/>
+                            <f:selectItems value="#{ordenModel.ordenProductoModel.opcionesDescuento}"/>
+                        </p:selectOneMenu>
+                    </p:panelGrid>
+                    <p:commandButton value="Aplicar" icon="pi pi-check" styleClass="boton-cafe"
+                                     actionListener="#{ordenModel.ordenProductoModel.aplicarDescuento}"
+                                     process="@form"
+                                     update=":frmMantenimiento:tabView:pnlListadoProd"
+                                     oncomplete="if (args &amp;&amp; !args.validationFailed) PF('dlgDescuento').hide()"/>
+                </h:panelGroup>
+            </h:form>
+        </p:dialog>
+
+    </ui:define>
+
+</ui:composition>

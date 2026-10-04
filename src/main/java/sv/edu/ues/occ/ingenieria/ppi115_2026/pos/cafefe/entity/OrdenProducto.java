@@ -12,6 +12,8 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.io.Serializable;
@@ -28,7 +30,11 @@ import java.util.UUID;
 @NamedQueries({
     @NamedQuery(name = "OrdenProducto.findAll", query = "SELECT o FROM OrdenProducto o"),
     @NamedQuery(name = "OrdenProducto.findByPrecio", query = "SELECT o FROM OrdenProducto o WHERE o.precio = :precio"),
-    @NamedQuery(name = "OrdenProducto.findByObservaciones", query = "SELECT o FROM OrdenProducto o WHERE o.observaciones = :observaciones")})
+    @NamedQuery(name = "OrdenProducto.findByObservaciones", query = "SELECT o FROM OrdenProducto o WHERE o.observaciones = :observaciones"),
+    // Productos de una orden (pestaña "Productos" de la pantalla de Orden)
+    @NamedQuery(name = "OrdenProducto.findByIdOrden", query = "SELECT o FROM OrdenProducto o LEFT JOIN o.idProducto p WHERE o.idOrden.idOrden = :idOrden ORDER BY p.nombre ASC"),
+    @NamedQuery(name = "OrdenProducto.countByIdOrden", query = "SELECT COUNT(o) FROM OrdenProducto o WHERE o.idOrden.idOrden = :idOrden"),
+    @NamedQuery(name = "OrdenProducto.sumPrecioByIdOrden", query = "SELECT SUM(o.precio) FROM OrdenProducto o WHERE o.idOrden.idOrden = :idOrden")})
 public class OrdenProducto implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -38,7 +44,9 @@ public class OrdenProducto implements Serializable {
     @Convert(converter = UUIDConverter.class)
     @Column(name = "id_orden_producto")
     private UUID idOrdenProducto;
-    // @Max(value=?)  @Min(value=?)//if you know range of your decimal fields consider using these annotations to enforce field validation
+    @NotNull(message = "El precio es obligatorio")
+    @DecimalMin(value = "0.00", message = "El precio no puede ser negativo")
+    @Digits(integer = 6, fraction = 2, message = "El precio admite hasta 6 enteros y 2 decimales")
     @Column(name = "precio")
     private BigDecimal precio;
     @Size(max = 2147483647)
@@ -49,6 +57,7 @@ public class OrdenProducto implements Serializable {
     @JoinColumn(name = "id_orden", referencedColumnName = "id_orden")
     @ManyToOne(fetch = FetchType.LAZY)
     private Orden idOrden;
+    @NotNull(message = "Seleccione un producto")
     @JoinColumn(name = "id_producto", referencedColumnName = "id_producto")
     @ManyToOne(fetch = FetchType.LAZY)
     private Producto idProducto;

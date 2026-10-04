@@ -67,36 +67,39 @@
                 <div class="cuerpo">
                     <nav class="menu-navegacion">
                         <ui:insert name="menuNavegacion">
+                            <!--
+                                Menú lateral. Cada p:menuitem con "outcome" genera un enlace
+                                normal (GET) a la página: outcome="/paginas/rol" -> /paginas/rol.jsf
+                                OJO: solo enlazar páginas que EXISTEN; si el .xhtml no existe,
+                                JSF deja el enlace deshabilitado y muestra una advertencia.
+                                Las pantallas que aún no existen van dentro de ui:remove
+                                (un comentario normal de HTML NO sirve: JSF igual evalúa
+                                las expresiones que contiene).
+                            -->
                             <h:form id="frmMenu">
-                                <p:menu styleClass="menu-cafe">
+                                <p:menu styleClass="menu-cafe" toggleable="true">
                                     <p:menuitem value="#{tradcrud['menu.inicio']}" outcome="/paginas/index" icon="pi pi-home"/>
-                                    
-                                    <!-- comment 
+
                                     <p:submenu label="#{tradcrud['menu.catalogo']}">
-                                        <p:menuitem value="#{tradcrud['entidad.producto']}" outcome="/paginas/producto"/>
-                                        <p:menuitem value="#{tradcrud['entidad.tipoProducto']}" outcome="/paginas/tipoProducto"/>
-                                        <p:menuitem value="#{tradcrud['entidad.productoTipoProducto']}" outcome="/paginas/productoTipoProducto"/>
-                                        <p:menuitem value="#{tradcrud['entidad.tipoCaracteristica']}" outcome="/paginas/tipoCaracteristica"/>
-                                        <p:menuitem value="#{tradcrud['entidad.caracteristica']}" outcome="/paginas/caracteristica"/>
-                                        <p:menuitem value="#{tradcrud['entidad.productoCaracteristica']}" outcome="/paginas/productoCaracteristica"/>
+                                        <p:menuitem value="#{tradcrud['entidad.producto']}" outcome="/paginas/producto" icon="pi pi-box"/>
+                                        <p:menuitem value="#{tradcrud['entidad.tipoProducto']}" outcome="/paginas/tipoProducto" icon="pi pi-tags"/>
+                                        <p:menuitem value="#{tradcrud['entidad.tipoCaracteristica']}" outcome="/paginas/tipoCaracteristica" icon="pi pi-list"/>
+                                        <p:menuitem value="#{tradcrud['entidad.caracteristica']}" outcome="/paginas/caracteristica" icon="pi pi-sliders-h"/>
                                     </p:submenu>
 
                                     <p:submenu label="#{tradcrud['menu.descuentos']}">
-                                        <p:menuitem value="#{tradcrud['entidad.tipoDescuento']}" outcome="/paginas/tipoDescuento"/>
-                                        <p:menuitem value="#{tradcrud['entidad.descuento']}" outcome="/paginas/descuento"/>
-                                        <p:menuitem value="#{tradcrud['entidad.descuentoProducto']}" outcome="/paginas/descuentoProducto"/>
+                                        <p:menuitem value="#{tradcrud['entidad.tipoDescuento']}" outcome="/paginas/tipoDescuento" icon="pi pi-percentage"/>
+                                        <p:menuitem value="#{tradcrud['entidad.descuento']}" outcome="/paginas/descuento" icon="pi pi-ticket"/>
                                     </p:submenu>
 
                                     <p:submenu label="#{tradcrud['menu.personal']}">
-                                        <p:menuitem value="#{tradcrud['entidad.empleado']}" outcome="/paginas/empleado"/>
-                                        <p:menuitem value="#{tradcrud['entidad.rol']}" outcome="/paginas/rol"/>
+                                        <p:menuitem value="#{tradcrud['entidad.empleado']}" outcome="/paginas/empleado" icon="pi pi-users"/>
+                                        <p:menuitem value="#{tradcrud['entidad.rol']}" outcome="/paginas/rol" icon="pi pi-id-card"/>
                                     </p:submenu>
 
                                     <p:submenu label="#{tradcrud['menu.ventas']}">
-                                        <p:menuitem value="#{tradcrud['entidad.orden']}" outcome="/paginas/orden"/>
-                                        <p:menuitem value="#{tradcrud['entidad.ordenProducto']}" outcome="/paginas/ordenProducto"/>
+                                        <p:menuitem value="#{tradcrud['entidad.orden']}" outcome="/paginas/orden" icon="pi pi-shopping-cart"/>
                                     </p:submenu>
-                                    -->
                                 </p:menu>
                             </h:form>
                         </ui:insert>

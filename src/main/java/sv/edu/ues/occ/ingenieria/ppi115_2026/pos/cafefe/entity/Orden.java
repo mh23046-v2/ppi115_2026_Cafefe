@@ -28,7 +28,9 @@ import java.util.UUID;
 @Table(name = "orden")
 @NamedQueries({
     @NamedQuery(name = "Orden.findAll", query = "SELECT o FROM Orden o"),
-    @NamedQuery(name = "Orden.findByFechaCreacion", query = "SELECT o FROM Orden o WHERE o.fechaCreacion = :fechaCreacion")})
+    @NamedQuery(name = "Orden.findByFechaCreacion", query = "SELECT o FROM Orden o WHERE o.fechaCreacion = :fechaCreacion"),
+    @NamedQuery(name = "Orden.findAllOrdenado", query = "SELECT o FROM Orden o ORDER BY o.fechaCreacion DESC")}) 
+
 public class Orden implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -38,11 +40,13 @@ public class Orden implements Serializable {
     @Convert(converter = UUIDConverter.class)
     @Column(name = "id_orden")
     private UUID idOrden;
+    @NotNull(message = "La fecha de la orden es obligatoria")
     @Column(name = "fecha_creacion")
     @Temporal(TemporalType.TIMESTAMP)
     private Date fechaCreacion;
     @OneToMany(mappedBy = "idOrden", fetch = FetchType.LAZY)
     private List<OrdenProducto> ordenProductoList;
+    @NotNull(message = "Seleccione el empleado que toma la orden")
     @JoinColumn(name = "id_empleado_rol", referencedColumnName = "id_empleado_rol")
     @ManyToOne(fetch = FetchType.LAZY)
     private EmpleadoRol idEmpleadoRol;
