@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:p="primefaces"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:botones="jakarta.faces.composite/botones"
+                template="/WEB-INF/plantillas/general.xhtml">
+
+    <ui:define name="leyenda">#{tradcrud['entidad.empleado']}</ui:define>
+
+    <ui:define name="contenido">
+
+        <!-- ===== LISTADO DE EMPLEADOS (visible cuando estado == NINGUNO) ===== -->
+        <h:form id="frmListado">
+            <h:panelGroup id="pnlListado" layout="block">
+                <p:dataTable id="tblListado" value="#{empleadoModel.lazyModel}" var="fila"
+                             lazy="true" paginator="true" rows="10"
+                             rowsPerPageTemplate="5,10,25"
+                             paginatorPosition="bottom"
+                             selectionMode="single"
+                             emptyMessage="#{tradcrud['jsf.crud.sinRegistros']}"
+                             rendered="#{empleadoModel.estado == 'NINGUNO'}">
+                    <f:facet name="header">
+                        #{tradcrud['jsf.crud.ayudaSeleccion']}
+                    </f:facet>
+                    <p:ajax event="rowSelect" listener="#{empleadoModel.onRowSelect}"
+                            update=":frmMantenimiento:pnlDetalle :frmListado:pnlListado"/>
+                    <p:column headerText="ID Empleado">
+                        <h:outputText value="#{fila.idEmpleado}"/>
+                    </p:column>
+                    <p:column headerText="Nombre">
+                        <h:outputText value="#{fila.nombre}"/>
+                    </p:column>
+                    <p:column headerText="Apellido">
+                        <h:outputText value="#{fila.apellido}"/>
+                    </p:column>
+                    <p:column headerText="Activo">
+                        <h:outputText value="#{fila.activo ? 'Sí' : 'No'}"/>
+                    </p:column>
+                    <p:column headerText="Comentarios">
+                        <h:outputText value="#{fila.comentarios}"/>
+                    </p:column>
+                </p:dataTable>
+
+                <botones:botones-arriba modelo="#{empleadoModel}"
+                                        actualizarListado=":frmListado:pnlListado"
+                                        actualizarDetalle=":frmMantenimiento:pnlDetalle"/>
+            </h:panelGroup>
+        </h:form>
+
+        <h:form id="frmMantenimiento">
+            <h:panelGroup id="pnlDetalle" layout="block">
+                <h:panelGroup rendered="#{empleadoModel.estado != 'NINGUNO'}" layout="block">
+                    <h2>#{tradcrud['jsf.crud.mantenimiento']} #{empleadoModel.nombreBean()}</h2>
+
+                    <p:tabView id="tabView" dynamic="true" cache="false"
+                               activeIndex="#{empleadoModel.tabActiva}">
+
+                        <!-- PESTAÑA 1: DATOS DEL EMPLEADO (maestro) -->
+                        <p:tab title="Datos del empleado">
+                            <h:panelGroup id="pnlDatosEmpleado" layout="block" styleClass="formulario-cafe">
+                                <p:panelGrid columns="2" styleClass="ui-noborder grid-formulario">
+                                    <p:outputLabel value="ID" for="id"/>
+                                    <p:inputText id="id" value="#{empleadoModel.registro.idEmpleado}" disabled="true"/>
+                                    
+                                    <p:outputLabel value="Nombre" for="nombre"/>
+                                    <p:inputText id="nombre" value="#{empleadoModel.registro.nombre}"/>
+
+                                    <p:outputLabel value="Apellido" for="apellido"/>
+                                    <p:inputText id="apellido" value="#{empleadoModel.registro.apellido}"/>
+
+                                    <p:outputLabel value="Activo" for="activo"/>
+                                    <p:toggleSwitch id="activo" value="#{empleadoModel.registro.activo}"
+                                        onIcon="pi pi-check" offIcon="pi pi-times" styleClass="check-cafe"/>
+                                    
+                                    <p:outputLabel value="Comentarios" for="comentarios"/>
+                                    <p:inputTextarea id="comentarios" value="#{empleadoModel.registro.comentarios}" rows="3" autoResize="false"/>
+                                </p:panelGrid>
+
+                                <!-- procesar: solo los campos del empleado, no los del detalle -->
+                                <botones:botones-abajo modelo="#{empleadoModel}"
+                                                       procesar=":frmMantenimiento:tabView:pnlDatosEmpleado"
+                                                       actualizarListado=":frmListado:pnlListado"
+                                                       actualizarDetalle=":frmMantenimiento:pnlDetalle"/>
+                            </h:panelGroup>
+                        </p:tab>
+
+                        <!-- PESTAÑA 2: ROLES ASIGNADOS (detalle) -->
+                        <p:tab title="Roles asignados" rendered="#{empleadoModel.estado != 'NINGUNO'}"
+                               disabled="#{empleadoModel.estado=='CREAR'}">
+
+                            <!-- Tabla de roles del empleado -->
+                            <h:panelGroup id="pnlListadoRol" layout="block">
+                                <p:dataTable id="tblEmpleadoRol" value="#{empleadoModel.empleadoRolModel.lazyModel}" var="er"
+                                             lazy="true" paginator="true" rows="5"
+                                             paginatorPosition="bottom"
+                                             selectionMode="single"
+                                             emptyMessage="#{tradcrud['jsf.crud.sinRegistros']}"
+                                             rendered="#{empleadoModel.empleadoRolModel.estado == 'NINGUNO'}">
+                                    <p:ajax event="rowSelect" listener="#{empleadoModel.empleadoRolModel.onRowSelect}"
+                                            update=":frmMantenimiento:tabView:pnlDetalleRol :frmMantenimiento:tabView:pnlListadoRol"/>
+                                    <p:column headerText="ID">
+                                    <h:outputText value="#{er.idRol.idRol}"/>
+                                    </p:column>
+                                    <p:column headerText="Rol">
+                                        <h:outputText value="#{etiquetas.rol(er.idRol)}"/>
+                                    </p:column>
+                                    <p:column headerText="Activo">
+                                        <h:outputText value="#{er.activo ? 'Sí' : 'No'}"/>
+                                    </p:column>
+                                    <p:column headerText="Observaciones">
+                                        <h:outputText value="#{er.observaciones}"/>
+                                    </p:column>
+                                </p:dataTable>
+
+                                <botones:botones-arriba modelo="#{empleadoModel.empleadoRolModel}"
+                                                        actualizarListado=":frmMantenimiento:tabView:pnlListadoRol"
+                                                        actualizarDetalle=":frmMantenimiento:tabView:pnlDetalleRol"/>
+                            </h:panelGroup>
+
+                            <!-- Formulario para asignar / editar un rol -->
+                            <h:panelGroup id="pnlDetalleRol" layout="block" >
+                                <h:panelGroup rendered="#{empleadoModel.empleadoRolModel.estado != 'NINGUNO'}"
+                                              layout="block" styleClass="formulario-cafe">
+                                    <h3>#{tradcrud['jsf.crud.mantenimiento']} #{empleadoModel.empleadoRolModel.nombreBean()}</h3>
+
+                                    <p:panelGrid columns="2" styleClass="ui-noborder grid-formulario">
+                                        <p:outputLabel value="ID" for="idDetalleRol"/>
+                                        <p:inputText id="idDetalleRol" value="#{empleadoModel.empleadoRolModel.registro.idRol.idRol}"
+                                                     disabled="true"/>
+
+                                        <p:outputLabel value="Rol" for="idRol"/>
+                                        <p:selectOneMenu id="idRol"
+                                            value="#{empleadoModel.empleadoRolModel.registro.idRol}"
+                                            converter="#{entidadConverter}">
+                                            <f:selectItems value="#{empleadoModel.empleadoRolModel.opcionesIdRol}" />
+                                            <p:ajax update="idDetalleRol" />
+                                        </p:selectOneMenu>
+
+                                        <p:outputLabel value="Activo" for="rolActivo"/>
+                                        <p:toggleSwitch id="rolActivo" value="#{empleadoModel.empleadoRolModel.registro.activo}"
+                                            onIcon="pi pi-check" offIcon="pi pi-times" styleClass="check-cafe"/>
+
+                                        <p:outputLabel value="Observaciones" for="rolObservaciones"/>
+                                        <p:inputTextarea id="rolObservaciones" value="#{empleadoModel.empleadoRolModel.registro.observaciones}" rows="3" autoResize="false"/>
+                                    </p:panelGrid>
+
+                                    <!-- procesar: solo los campos del rol, no los del empleado -->
+                                    <botones:botones-abajo modelo="#{empleadoModel.empleadoRolModel}"
+                                                           procesar=":frmMantenimiento:tabView:pnlDetalleRol"
+                                                           actualizarListado=":frmMantenimiento:tabView:pnlListadoRol"
+                                                           actualizarDetalle=":frmMantenimiento:tabView:pnlDetalleRol"/>
+                                </h:panelGroup>
+                            </h:panelGroup>
+
+                        </p:tab>
+
+                    </p:tabView>
+                </h:panelGroup>
+            </h:panelGroup>
+        </h:form>
+
+    </ui:define>
+
+</ui:composition>
