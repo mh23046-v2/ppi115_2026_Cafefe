@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.io.Serializable;
@@ -34,9 +35,11 @@ public class Empleado implements Serializable {
     @Convert(converter = UUIDConverter.class)
     @Column(name = "id_empleado")
     private UUID idEmpleado;
+    @NotBlank(message = "El nombre es obligatorio")
     @Size(max = 255)
     @Column(name = "nombre")
     private String nombre;
+    @NotBlank(message = "El nombre es obligatorio")
     @Size(max = 255)
     @Column(name = "apellido")
     private String apellido;
