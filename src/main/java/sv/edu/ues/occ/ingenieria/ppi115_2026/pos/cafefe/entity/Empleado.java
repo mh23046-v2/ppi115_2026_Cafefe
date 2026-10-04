@@ -39,7 +39,7 @@ public class Empleado implements Serializable {
     @Size(max = 255)
     @Column(name = "nombre")
     private String nombre;
-    @NotBlank(message = "El nombre es obligatorio")
+    @NotBlank(message = "El apellido es obligatorio")
     @Size(max = 255)
     @Column(name = "apellido")
     private String apellido;

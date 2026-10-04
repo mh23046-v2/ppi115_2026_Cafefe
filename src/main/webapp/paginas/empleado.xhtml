@@ -134,6 +134,7 @@
                                         <p:selectOneMenu id="idRol"
                                             value="#{empleadoModel.empleadoRolModel.registro.idRol}"
                                             converter="#{entidadConverter}">
+                                            disabled="#{empleadoModel.empleadoRolModel.estado ne 'CREAR'}">
                                             <f:selectItems value="#{empleadoModel.empleadoRolModel.opcionesIdRol}" />
                                             <p:ajax update="idDetalleRol" />
                                         </p:selectOneMenu>
