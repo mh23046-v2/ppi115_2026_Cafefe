@@ -10,6 +10,7 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.io.Serializable;
@@ -36,6 +37,7 @@ public class Rol implements Serializable {
     @Convert(converter = UUIDConverter.class)
     @Column(name = "id_rol")
     private UUID idRol;
+    @NotBlank(message = "El nombre es obligatorio")
     @Size(max = 155)
     @Column(name = "nombre")
     private String nombre;
