@@ -1,0 +1,419 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:p="primefaces"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:botones="jakarta.faces.composite/botones"
+                template="/WEB-INF/plantillas/general.xhtml">
+
+    <ui:define name="leyenda">#{tradcrud['entidad.producto']}</ui:define>
+
+    <ui:define name="contenido">
+
+        <h:form id="frmListado">
+            <h:panelGroup id="pnlListado" layout="block">
+                <p:dataTable id="tblListado" value="#{productoModel.lazyModel}" var="fila"
+                             lazy="true" paginator="true" rows="10"
+                             rowsPerPageTemplate="5,10,25"
+                             paginatorPosition="bottom"
+                             selectionMode="single"
+                             emptyMessage="#{tradcrud['jsf.crud.sinRegistros']}"
+                             rendered="#{productoModel.estado == 'NINGUNO'}">
+                    <f:facet name="header">
+                        #{tradcrud['jsf.crud.ayudaSeleccion']}
+                    </f:facet>
+                    <p:ajax event="rowSelect" listener="#{productoModel.onRowSelect}"
+                            update=":frmMantenimiento:pnlDetalle :frmListado:pnlListado"
+                            resetValues="true"/>
+                    <p:column headerText="ID">
+                        <h:outputText value="#{fila.idProducto}"/>
+                    </p:column>
+                    <p:column headerText="Nombre">
+                        <h:outputText value="#{fila.nombre}"/>
+                    </p:column>
+                    <p:column headerText="Precio sugerido">
+                        <h:outputText value="#{fila.precioSugerido} US$">
+                            <f:convertNumber minFractionDigits="2" maxFractionDigits="2"/>
+                        </h:outputText>
+                    </p:column>
+                    <p:column headerText="Activo">
+                        <h:outputText value="#{fila.activo ? 'Sí' : 'No'}"/>
+                    </p:column>
+                    <p:column headerText="Observaciones">
+                        <h:outputText value="#{fila.comentarios}"/>
+                    </p:column>
+                </p:dataTable>
+
+                <botones:botones-arriba modelo="#{productoModel}"
+                                        actualizarListado=":frmListado:pnlListado"
+                                        actualizarDetalle=":frmMantenimiento:pnlDetalle"/>
+            </h:panelGroup>
+        </h:form>
+
+        <h:form id="frmMantenimiento">
+            <h:panelGroup id="pnlDetalle" layout="block">
+                <h:panelGroup rendered="#{productoModel.estado != 'NINGUNO'}" layout="block">
+                    <h2>#{tradcrud['jsf.crud.mantenimiento']} #{productoModel.nombreBean()}</h2>
+
+                    <p:tabView id="tabView" dynamic="true" cache="false"
+                               activeIndex="#{productoModel.tabActiva}">
+
+                        <p:tab title="Generalidades">
+                            <h:panelGroup id="pnlDatosProducto" layout="block" styleClass="formulario-cafe">
+                                <p:panelGrid columns="2" styleClass="ui-noborder grid-formulario">
+                                    <p:outputLabel value="ID" for="id"/>
+                                    <p:inputText id="id" value="#{productoModel.registro.idProducto}" disabled="true"/>
+
+                                    <p:outputLabel value="Nombre" for="nombre"/>
+                                    <p:inputText id="nombre" value="#{productoModel.registro.nombre}"
+                                                 required="true" requiredMessage="El campo de nombre es obligatorio"
+                                                 maxlength="155"/>
+
+                                    <p:outputLabel value="Precio sugerido" for="precio"/>
+                                    <p:inputNumber id="precio" value="#{productoModel.registro.precioSugerido}"
+                                                   decimalPlaces="2" minValue="0"
+                                                   required="true" requiredMessage="El precio sugerido es obligatorio"/>
+
+                                    <p:outputLabel value="Activo" for="activo"/>
+                                    <p:toggleSwitch id="activo" value="#{productoModel.registro.activo}"
+                                                    onIcon="pi pi-check" offIcon="pi pi-times" styleClass="check-cafe"/>
+
+                                    <p:outputLabel value="Observaciones" for="comentarios"/>
+                                    <p:inputTextarea id="comentarios" value="#{productoModel.registro.comentarios}" rows="3" autoResize="false"/>
+                                </p:panelGrid>
+
+                                <botones:botones-abajo modelo="#{productoModel}"
+                                                       procesar=":frmMantenimiento:tabView:pnlDatosProducto"
+                                                       actualizarListado=":frmListado:pnlListado"
+                                                       actualizarDetalle=":frmMantenimiento:pnlDetalle"/>
+                            </h:panelGroup>
+                        </p:tab>
+
+                        <p:tab title="Tipos de producto" disabled="#{productoModel.estado == 'CREAR'}">
+                            <h:panelGroup id="pnlListadoTipo" layout="block">
+                                <p:dataTable id="tblTipo" value="#{productoModel.productoTipoProductoModel.lazyModel}" var="ptp"
+                                             lazy="true" paginator="true" rows="5"
+                                             paginatorPosition="bottom"
+                                             selectionMode="single"
+                                             emptyMessage="#{tradcrud['jsf.crud.sinRegistros']}"
+                                             rendered="#{productoModel.productoTipoProductoModel.estado == 'NINGUNO'}">
+                                    <p:ajax event="rowSelect" listener="#{productoModel.productoTipoProductoModel.onRowSelect}"
+                                            update=":frmMantenimiento:tabView:pnlDetalleTipo :frmMantenimiento:tabView:pnlListadoTipo"/>
+
+                                    <p:column headerText="ID">
+                                        <h:outputText value="#{ptp.idProductoTipoProducto}"/>
+                                    </p:column>
+
+                                    <p:column headerText="Tipo">
+                                        <h:outputText value="#{etiquetas.tipoProducto(ptp.idTipoProducto)}"/>
+                                    </p:column>
+
+                                    <p:column headerText="Fecha de creación">
+                                        <h:outputText value="#{ptp.fechaCreacion}">
+                                            <f:convertDateTime pattern="dd/MM/yyyy HH:mm"/>
+                                        </h:outputText>
+                                    </p:column>
+
+                                    <p:column headerText="Observaciones">
+                                        <h:outputText value="#{ptp.observaciones}"/>
+                                    </p:column>
+
+                                </p:dataTable>
+
+                                <botones:botones-arriba modelo="#{productoModel.productoTipoProductoModel}"
+                                                        actualizarListado=":frmMantenimiento:tabView:pnlListadoTipo"
+                                                        actualizarDetalle=":frmMantenimiento:tabView:pnlDetalleTipo"/>
+                            </h:panelGroup>
+
+                            <h:panelGroup id="pnlDetalleTipo" layout="block">
+                                <h:panelGroup rendered="#{productoModel.productoTipoProductoModel.estado != 'NINGUNO'}"
+                                              layout="block" styleClass="formulario-cafe">
+                                    <h3>#{tradcrud['jsf.crud.mantenimiento']} #{productoModel.productoTipoProductoModel.nombreBean()}</h3>
+
+                                    <p:panelGrid columns="2" styleClass="ui-noborder grid-formulario">
+
+                                        <p:outputLabel value="ID" for="txtIdTipoProd"/>
+                                        <p:inputText id="txtIdTipoProd" value="#{productoModel.productoTipoProductoModel.registro.idProductoTipoProducto}" 
+                                                     disabled="true"/>
+
+                                        <p:outputLabel value="Tipo de producto" for="cmbTipo"/>
+                                        <p:selectOneMenu id="cmbTipo" value="#{productoModel.productoTipoProductoModel.registro.idTipoProducto}"
+                                                         converter="#{entidadConverter}"
+                                                         required="true" requiredMessage="El tipo de producto es obligatorio"
+                                                         disabled="#{productoModel.productoTipoProductoModel.estado != 'CREAR'}">
+                                            <f:selectItem itemLabel="#{tradcrud['jsf.crud.seleccione']}"
+                                                          itemValue="#{null}" noSelectionOption="true"/>
+                                            <f:selectItems value="#{productoModel.productoTipoProductoModel.opcionesTipoProducto}"/>
+                                        </p:selectOneMenu>
+
+                                        <p:outputLabel value="Fecha de creación" for="fechaTipo"/>
+                                        <p:inputText id="fechaTipo" value="#{productoModel.productoTipoProductoModel.registro.fechaCreacion}" disabled="true">
+                                            <f:convertDateTime pattern="dd/MM/yyyy HH:mm"/>
+                                        </p:inputText>
+
+                                        <p:outputLabel value="Observaciones" for="obsTipo"/>
+                                        <p:inputTextarea id="obsTipo" value="#{productoModel.productoTipoProductoModel.registro.observaciones}" rows="3" autoResize="false"/>
+                                    </p:panelGrid>
+
+                                    <botones:botones-abajo modelo="#{productoModel.productoTipoProductoModel}"
+                                                           procesar=":frmMantenimiento:tabView:pnlDetalleTipo"
+                                                           actualizarListado=":frmMantenimiento:tabView:pnlListadoTipo"
+                                                           actualizarDetalle=":frmMantenimiento:tabView:pnlDetalleTipo"/>
+                                </h:panelGroup>
+                            </h:panelGroup>
+                        </p:tab>
+
+                        <p:tab title="Características" disabled="#{productoModel.estado == 'CREAR'}">
+                            <h:panelGroup id="pnlListadoCarac" layout="block">
+                                <p:dataTable id="tblCarac" value="#{productoModel.productoCaracteristicaModel.lazyModel}" var="pc"
+                                             lazy="true" paginator="true" rows="5"
+                                             paginatorPosition="bottom"
+                                             selectionMode="single"
+                                             emptyMessage="#{tradcrud['jsf.crud.sinRegistros']}"
+                                             rendered="#{productoModel.productoCaracteristicaModel.estado == 'NINGUNO'}">
+                                    <p:ajax event="rowSelect" listener="#{productoModel.productoCaracteristicaModel.onRowSelect}"
+                                            update=":frmMantenimiento:tabView:pnlDetalleCarac :frmMantenimiento:tabView:pnlListadoCarac"/>
+
+                                    <p:column headerText="ID">
+                                        <h:outputText value="#{pc.idProductoCaracteristica}"/>
+                                    </p:column>
+
+                                    <p:column headerText="Característica">
+                                        <h:outputText value="#{etiquetas.caracteristica(pc.idCaracteristica)}"/>
+                                    </p:column>
+
+                                    <p:column headerText="Tipo">
+                                        <h:outputText value="#{etiquetas.tipoCaracteristica(pc.idCaracteristica.idTipoCaracteristica)}"/>
+                                    </p:column>
+
+                                    <p:column headerText="Valor">
+                                        <h:outputText value="#{pc.valor}"/>
+                                    </p:column>
+                                </p:dataTable>
+
+                                <botones:botones-arriba modelo="#{productoModel.productoCaracteristicaModel}"
+                                                        actualizarListado=":frmMantenimiento:tabView:pnlListadoCarac"
+                                                        actualizarDetalle=":frmMantenimiento:tabView:pnlDetalleCarac :frmDlgCaracteristica"/>
+                            </h:panelGroup>
+
+                            <h:panelGroup id="pnlDetalleCarac" layout="block">
+                                <h:panelGroup rendered="#{productoModel.productoCaracteristicaModel.estado != 'NINGUNO'}"
+                                              layout="block" styleClass="formulario-cafe">
+                                    <h3>#{tradcrud['jsf.crud.mantenimiento']} #{productoModel.productoCaracteristicaModel.nombreBean()}</h3>
+
+                                    <p:panelGrid columns="2" styleClass="ui-noborder grid-formulario">
+
+                                        <p:outputLabel value="ID" for="txtIdCarac"/>
+                                        <p:inputText id="txtIdCarac" value="#{productoModel.productoCaracteristicaModel.registro.idProductoCaracteristica}" 
+                                                     disabled="true"/>
+
+                                        <p:outputLabel value="Característica" for="txtCarac"/>
+                                        <h:panelGroup>
+                                            <p:inputText id="txtCarac"
+                                                         value="#{etiquetas.caracteristica(productoModel.productoCaracteristicaModel.registro.idCaracteristica)}"
+                                                         disabled="true"/>
+                                            <h:inputHidden id="hidCarac" value="#{productoModel.productoCaracteristicaModel.registro.idCaracteristica}"
+                                                           converter="#{entidadConverter}"
+                                                           required="true" requiredMessage="Seleccione una característica"/>
+                                            <p:commandButton value="Seleccionar" type="button" icon="pi pi-search"
+                                                             styleClass="boton-cafe"
+                                                             onclick="PF('dlgCaracteristica').show()"
+                                                             disabled="#{productoModel.productoCaracteristicaModel.estado != 'CREAR'}"/>
+                                        </h:panelGroup>
+
+                                        <p:outputLabel value="Valor" for="valorCarac"/>
+                                        <p:inputTextarea id="valorCarac" value="#{productoModel.productoCaracteristicaModel.registro.valor}"
+                                                         rows="3" autoResize="false"
+                                                         required="true" requiredMessage="El valor es obligatorio"
+                                                         validatorMessage="El valor no cumple la validación de #{productoModel.productoCaracteristicaModel.registro.idCaracteristica.nombre}: #{productoModel.productoCaracteristicaModel.regexCaracteristica}">
+                                            <f:validateRegex pattern="#{productoModel.productoCaracteristicaModel.regexCaracteristica}"/>
+                                        </p:inputTextarea>
+                                    </p:panelGrid>
+
+                                    <botones:botones-abajo modelo="#{productoModel.productoCaracteristicaModel}"
+                                                           procesar=":frmMantenimiento:tabView:pnlDetalleCarac"
+                                                           actualizarListado=":frmMantenimiento:tabView:pnlListadoCarac"
+                                                           actualizarDetalle=":frmMantenimiento:tabView:pnlDetalleCarac :frmDlgCaracteristica"/>
+                                </h:panelGroup>
+                            </h:panelGroup>
+                        </p:tab>
+
+                        <p:tab title="Descuentos" disabled="#{productoModel.estado == 'CREAR'}">
+                            <h:panelGroup id="pnlListadoDesc" layout="block">
+                                <p:dataTable id="tblDesc" value="#{productoModel.descuentoProductoModel.lazyModel}" var="dp"
+                                             lazy="true" paginator="true" rows="5"
+                                             paginatorPosition="bottom"
+                                             selectionMode="single"
+                                             emptyMessage="#{tradcrud['jsf.crud.sinRegistros']}"
+                                             rendered="#{productoModel.descuentoProductoModel.estado == 'NINGUNO'}">
+                                    <p:ajax event="rowSelect" listener="#{productoModel.descuentoProductoModel.onRowSelect}"
+                                            update=":frmMantenimiento:tabView:pnlDetalleDesc :frmMantenimiento:tabView:pnlListadoDesc"/>
+
+                                    <p:column headerText="ID">
+                                        <h:outputText value="#{dp.idDescuentoProducto}"/>
+                                    </p:column>
+
+                                    <p:column headerText="Descuento">
+                                        <h:outputText value="#{etiquetas.descuento(dp.idDescuento)}"/>
+                                    </p:column>
+
+                                    <p:column headerText="Valor (%)">
+                                        <h:outputText value="#{dp.valor}"/>
+                                    </p:column>
+
+                                    <p:column headerText="Desde">
+                                        <h:outputText value="#{dp.fechaDesde}">
+                                            <f:convertDateTime pattern="dd/MM/yyyy HH:mm"/>
+                                        </h:outputText>
+                                    </p:column>
+
+                                    <p:column headerText="Hasta">
+                                        <h:outputText value="#{dp.fechaHasta}">
+                                            <f:convertDateTime pattern="dd/MM/yyyy HH:mm"/>
+                                        </h:outputText>
+                                    </p:column>
+
+                                    <p:column headerText="Observaciones">
+                                        <h:outputText value="#{dp.observaciones}"/>
+                                    </p:column>
+                                </p:dataTable>
+
+                                <botones:botones-arriba modelo="#{productoModel.descuentoProductoModel}"
+                                                        actualizarListado=":frmMantenimiento:tabView:pnlListadoDesc"
+                                                        actualizarDetalle=":frmMantenimiento:tabView:pnlDetalleDesc"/>
+                            </h:panelGroup>
+
+                            <h:panelGroup id="pnlDetalleDesc" layout="block">
+                                <h:panelGroup rendered="#{productoModel.descuentoProductoModel.estado != 'NINGUNO'}"
+                                              layout="block" styleClass="formulario-cafe">
+                                    <h3>#{tradcrud['jsf.crud.mantenimiento']} #{productoModel.descuentoProductoModel.nombreBean()}</h3>
+
+                                    <p:panelGrid columns="2" styleClass="ui-noborder grid-formulario">
+
+                                        <p:outputLabel value="ID" for="txtIdDesc"/>
+
+                                        <p:inputText id="txtIdDesc" value="#{productoModel.descuentoProductoModel.registro.idDescuentoProducto}" 
+                                                     disabled="true"/>
+
+                                        <p:outputLabel value="Descuento *" for="txtDesc"/>
+                                        <h:panelGroup layout="block">
+                                            <p:inputText id="txtDesc"
+                                                         value="#{etiquetas.descuento(productoModel.descuentoProductoModel.registro.idDescuento)}"
+                                                         disabled="true"/>
+                                            <h:inputHidden id="hidDesc" value="#{productoModel.descuentoProductoModel.registro.idDescuento}"
+                                                           converter="#{entidadConverter}"
+                                                           required="true" requiredMessage="Seleccione un descuento"/>
+                                            <p:commandButton value="Seleccionar" type="button" icon="pi pi-search"
+                                                             styleClass="boton-cafe"
+                                                             onclick="PF('dlgDescuento').show()"
+                                                             disabled="#{productoModel.descuentoProductoModel.estado != 'CREAR'}"/>
+                                        </h:panelGroup>
+
+                                        <p:outputLabel value="Porcentaje *" for="valorDesc"/>
+                                        <p:inputText id="valorDesc" value="#{productoModel.descuentoProductoModel.registro.valor}"
+                                                     required="true" requiredMessage="El porcentaje es obligatorio"
+                                                     validator="#{productoModel.descuentoProductoModel.validarPorcentaje}">
+                                            <f:validateLongRange minimum="0" maximum="100"/>
+                                        </p:inputText>
+
+                                        <p:outputLabel value="Fecha de Inicio *" for="dtDesde"/>
+                                        <p:datePicker id="dtDesde" value="#{productoModel.descuentoProductoModel.registro.fechaDesde}"
+                                                      showTime="true" pattern="dd/MM/yyyy HH:mm:ss"
+                                                      required="true" requiredMessage="La fecha de inicio es obligatoria"
+                                                      validator="#{productoModel.descuentoProductoModel.validarFechaDesde}"/>
+
+                                        <p:outputLabel value="Fecha de Finalización" for="dtHasta"/>
+                                        <p:datePicker id="dtHasta" value="#{productoModel.descuentoProductoModel.registro.fechaHasta}"
+                                                      showTime="true" pattern="dd/MM/yyyy HH:mm:ss"
+                                                      validator="#{productoModel.descuentoProductoModel.validarFechaHasta}">
+                                                      <f:attribute name="validateEmptyFields" value="true" />
+                                        </p:datePicker>
+
+                                        <p:outputLabel value="Observaciones" for="obsDesc"/>
+                                        <p:inputTextarea id="obsDesc" value="#{productoModel.descuentoProductoModel.registro.observaciones}" rows="3" autoResize="false"/>
+                                    </p:panelGrid>
+
+                                    <botones:botones-abajo modelo="#{productoModel.descuentoProductoModel}"
+                                                           procesar=":frmMantenimiento:tabView:pnlDetalleDesc"
+                                                           actualizarListado=":frmMantenimiento:tabView:pnlListadoDesc"
+                                                           actualizarDetalle=":frmMantenimiento:tabView:pnlDetalleDesc"/>
+                                </h:panelGroup>
+                            </h:panelGroup>
+                        </p:tab>
+
+                    </p:tabView>
+                </h:panelGroup>
+            </h:panelGroup>
+        </h:form>
+
+        <p:dialog header="Seleccionar característica" widgetVar="dlgCaracteristica"
+                  modal="true" width="550" resizable="false"
+                  height="auto" responsive="true" draggable="false">
+            <h:form id="frmDlgCaracteristica">
+                <p:panelGrid columns="2" styleClass="ui-noborder grid-formulario">
+                    <p:outputLabel value="Tipo de característica" for="dlgTipo"/>
+                    <p:selectOneMenu id="dlgTipo" value="#{productoModel.productoCaracteristicaModel.tipoCaracteristicaSeleccionado}"
+                                     converter="#{entidadConverter}">
+                        <f:selectItem itemLabel="#{tradcrud['jsf.crud.seleccione']}"
+                                      itemValue="#{null}" noSelectionOption="true"/>
+                        <f:selectItems value="#{productoModel.productoCaracteristicaModel.opcionesTipoCaracteristica}"/>
+                        <p:ajax listener="#{productoModel.productoCaracteristicaModel.cambioTipoCaracteristica}" update="dlgCarac"/>
+                    </p:selectOneMenu>
+
+                    <p:outputLabel value="Característica" for="dlgCarac"/>
+                    <p:selectOneMenu id="dlgCarac" value="#{productoModel.productoCaracteristicaModel.registro.idCaracteristica}"
+                                     converter="#{entidadConverter}"
+                                     required="true" requiredMessage="Seleccione una característica">
+                        <f:selectItem itemLabel="#{tradcrud['jsf.crud.seleccione']}"
+                                      itemValue="#{null}" noSelectionOption="true"/>
+                        <f:selectItems value="#{productoModel.productoCaracteristicaModel.opcionesCaracteristica}"/>
+                    </p:selectOneMenu>
+                </p:panelGrid>
+
+                <p:commandButton value="Aceptar" styleClass="boton-cafe" icon="pi pi-check"
+                                 process="@form"
+                                 update=":frmMantenimiento:tabView:pnlDetalleCarac"
+                                 oncomplete="if (!args.validationFailed) PF('dlgCaracteristica').hide()"/>
+            </h:form>
+        </p:dialog>
+
+        <p:dialog header="Seleccionar Descuento" widgetVar="dlgDescuento"
+                  modal="true" width="550" resizable="false"
+                  height="auto" responsive="true" draggable="false">
+            <h:form id="frmDlgDescuento">
+                <p:panelGrid columns="2" styleClass="ui-noborder grid-formulario">
+
+                    <p:outputLabel value="Tipo de Descuento" for="dlgTipoDesc"/>
+                    <p:selectOneMenu id="dlgTipoDesc" 
+                                     value="#{productoModel.descuentoProductoModel.tipoDescuentoSeleccionado}"
+                                     converter="#{entidadConverter}">
+                        <f:selectItem itemLabel="#{tradcrud['jsf.crud.seleccione']}"
+                                      itemValue="#{null}" noSelectionOption="true"/>
+                        <f:selectItems value="#{productoModel.descuentoProductoModel.opcionesTipoDescuento}"/>
+                        <p:ajax listener="#{productoModel.descuentoProductoModel.cambioTipoDescuento}" update="dlgDesc"/>
+                    </p:selectOneMenu>
+
+                    <p:outputLabel value="Descuento" for="dlgDesc"/>
+                    <p:selectOneMenu id="dlgDesc" 
+                                     value="#{productoModel.descuentoProductoModel.descuentoSeleccionado}"
+                                     converter="#{entidadConverter}"
+                                     required="true" requiredMessage="Seleccione un descuento">
+                        <f:selectItem itemLabel="#{tradcrud['jsf.crud.seleccione']}"
+                                      itemValue="#{null}" noSelectionOption="true"/>
+                        <f:selectItems value="#{productoModel.descuentoProductoModel.opcionesIdDescuento}"/>
+                    </p:selectOneMenu>
+
+                </p:panelGrid>
+
+                <p:commandButton value="Aceptar" styleClass="boton-cafe" icon="pi pi-check"
+                                 action="#{productoModel.descuentoProductoModel.asignarDescuento}"
+                                 process="@form"
+                                 update=":frmMantenimiento:tabView:pnlDetalleDesc"
+                                 oncomplete="if (!args.validationFailed) PF('dlgDescuento').hide()"/>
+            </h:form>
+        </p:dialog>
+
+    </ui:define>
+
+</ui:composition>

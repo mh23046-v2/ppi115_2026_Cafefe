@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.DisplayName;
@@ -11,9 +12,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Caracteristica;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.TipoCaracteristica;
 
 /**
  *
@@ -72,5 +75,48 @@ public class CaracteristicaDAOTest {
         assertEquals(1, resultado.size());
         verify(em).createNamedQuery("Caracteristica.findByNombre", Caracteristica.class);
         verify(typedQuery).setParameter("nombre", nombre);
+    }
+
+    @Test
+    @DisplayName("findByIdTipoCaracteristica retorna lista vacía si el parametro es nulo")
+    void testFindByIdTipoCaracteristicaNull() {
+        List<Caracteristica> resultado = caracteristicaDAO.findByIdTipoCaracteristica(null);
+
+        assertNotNull(resultado);
+        assertTrue(resultado.isEmpty());
+        verifyNoInteractions(em);
+    }
+
+    @Test
+    @DisplayName("findByIdTipoCaracteristica retorna lista vacía si el ID del TipoCaracteristica es nulo")
+    void testFindByIdTipoCaracteristicaIdNull() {
+        TipoCaracteristica tipo = new TipoCaracteristica();
+        tipo.setIdTipoCaracteristica(null);
+
+        List<Caracteristica> resultado = caracteristicaDAO.findByIdTipoCaracteristica(tipo);
+
+        assertNotNull(resultado);
+        assertTrue(resultado.isEmpty());
+        verifyNoInteractions(em);
+    }
+
+    @Test
+    @DisplayName("findByIdTipoCaracteristica ejecuta query y retorna la lista correspondiente")
+    void testFindByIdTipoCaracteristicaExitoso() {
+        TipoCaracteristica tipo = new TipoCaracteristica();
+        tipo.setIdTipoCaracteristica(UUID.randomUUID());
+        List<Caracteristica> esperados = List.of(new Caracteristica());
+        String queryExpected = "SELECT c FROM Caracteristica c WHERE c.idTipoCaracteristica = :idTipoCaracteristica";
+
+        when(em.createQuery(queryExpected, Caracteristica.class)).thenReturn(typedQuery);
+        when(typedQuery.setParameter("idTipoCaracteristica", tipo)).thenReturn(typedQuery);
+        when(typedQuery.getResultList()).thenReturn(esperados);
+
+        List<Caracteristica> resultado = caracteristicaDAO.findByIdTipoCaracteristica(tipo);
+
+        assertNotNull(resultado);
+        assertEquals(1, resultado.size());
+        verify(em).createQuery(queryExpected, Caracteristica.class);
+        verify(typedQuery).setParameter("idTipoCaracteristica", tipo);
     }
 }
