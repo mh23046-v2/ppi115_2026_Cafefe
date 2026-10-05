@@ -75,7 +75,7 @@
                         </h:panelGrid>
 
                         <p:outputLabel value="Activo" for="activo"/>
-                        <p:selectBooleanCheckbox id="activo" value="#{tipoDescuentoModel.registro.activo}" styleClass="check-cafe"/>
+                        <p:toggleSwitch id="activo" value="#{tipoDescuentoModel.registro.activo}" onIcon = "pi pi-check" offIcon="pi pi-times" styleClass="check-cafe"/>
 
                         <p:outputLabel value="Observaciones" for="observaciones"/>
                         <p:inputTextarea id="observaciones" value="#{tipoDescuentoModel.registro.observaciones}" rows="3" autoResize="false"/>

@@ -319,13 +319,13 @@
 
                                         <p:outputLabel value="Fecha de Inicio *" for="dtDesde"/>
                                         <p:datePicker id="dtDesde" value="#{productoModel.descuentoProductoModel.registro.fechaDesde}"
-                                                      showTime="true" pattern="dd/MM/yyyy HH:mm:ss"
+                                                      showTime="true" hideOnDateTimeSelect="true" pattern="dd/MM/yyyy HH:mm:ss"
                                                       required="true" requiredMessage="La fecha de inicio es obligatoria"
                                                       validator="#{productoModel.descuentoProductoModel.validarFechaDesde}"/>
 
                                         <p:outputLabel value="Fecha de Finalización" for="dtHasta"/>
                                         <p:datePicker id="dtHasta" value="#{productoModel.descuentoProductoModel.registro.fechaHasta}"
-                                                      showTime="true" pattern="dd/MM/yyyy HH:mm:ss"
+                                                      showTime="true" hideOnDateTimeSelect="true" pattern="dd/MM/yyyy HH:mm:ss"
                                                       validator="#{productoModel.descuentoProductoModel.validarFechaHasta}">
                                                       <f:attribute name="validateEmptyFields" value="true" />
                                         </p:datePicker>

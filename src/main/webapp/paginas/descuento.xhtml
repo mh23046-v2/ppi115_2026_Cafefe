@@ -72,9 +72,10 @@
 
                         <p:outputLabel value="Tipo de Descuento *" for="idTipoDescuento"/>
                         <p:selectOneMenu id="idTipoDescuento"
-                                         value="#{descuentoModel.registro.idTipoDescuento}"
-                                         converter="#{entidadConverter}"
-                                         required="true">
+                                            value="#{descuentoModel.registro.idTipoDescuento}"
+                                            converter="#{entidadConverter}"
+                                            disabled="#{descuentoModel.estado ne 'CREAR'}"
+                                            required="true">
                             <f:selectItem itemLabel="#{tradcrud['jsf.crud.seleccione']}" 
                                           itemValue="#{null}" 
                                           noSelectionOption="true"/>
@@ -83,11 +84,11 @@
 
                         <p:outputLabel value="Fecha de Inicio" for="fechaDesde"/>
                         <p:datePicker id="fechaDesde" value="#{descuentoModel.registro.fechaDesde}" 
-                                      showTime="true" pattern="dd/MM/yyyy HH:mm:ss"/>
+                                      showTime="true" hideOnDateTimeSelect="true" pattern="dd/MM/yyyy HH:mm:ss"/>
 
                         <p:outputLabel value="Fecha de Finalización" for="fechaHasta"/>
                         <p:datePicker id="fechaHasta" value="#{descuentoModel.registro.fechaHasta}" 
-                                      showTime="true" pattern="dd/MM/yyyy HH:mm:ss"/>
+                                      showTime="true" hideOnDateTimeSelect="true" pattern="dd/MM/yyyy HH:mm:ss"/>
 
                         <p:outputLabel value="Observaciones" for="observaciones"/>
                         <p:inputTextarea id="observaciones" value="#{descuentoModel.registro.observaciones}" 
