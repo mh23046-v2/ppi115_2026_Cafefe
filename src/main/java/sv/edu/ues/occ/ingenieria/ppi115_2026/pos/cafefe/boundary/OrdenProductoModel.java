@@ -241,6 +241,22 @@ public class OrdenProductoModel extends DefaultModel<OrdenProducto> {
             mensaje(FacesMessage.SEVERITY_ERROR, "Descuento no aplicado", ex.getMessage());
         }
     }
+    
+    /** Texto del descuento aplicado al producto de la orden, ej. "-20% (-$0.50)". Vacío si no tiene. */
+    public String descuentoAplicado(OrdenProducto op) {
+        if (op == null || op.getPrecio() == null || op.getIdProducto() == null
+                || op.getIdProducto().getPrecioSugerido() == null) {
+            return "";
+        }
+        java.math.BigDecimal base = op.getIdProducto().getPrecioSugerido();
+        if (base.signum() <= 0 || op.getPrecio().compareTo(base) >= 0) {
+            return "";
+        }
+        java.math.BigDecimal ahorro = base.subtract(op.getPrecio());
+        java.math.BigDecimal pct = ahorro.multiply(java.math.BigDecimal.valueOf(100))
+                .divide(base, 0, java.math.RoundingMode.HALF_UP);
+        return "-" + pct + "% (-$" + ahorro.setScale(2, java.math.RoundingMode.HALF_UP) + ")";
+    }
 
     // ---------------- utilidades ----------------
 

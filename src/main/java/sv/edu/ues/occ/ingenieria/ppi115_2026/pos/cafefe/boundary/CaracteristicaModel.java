@@ -59,7 +59,8 @@ public class CaracteristicaModel extends DefaultModel<Caracteristica> {
     protected void cargarOpciones() {
         opcionesIdTipoCaracteristica = new ArrayList<>();
         for (TipoCaracteristica  tC: tipoCaracteristicaDAO.findAll()) {
-            opcionesIdTipoCaracteristica.add(new SelectItem(tC, etiquetas.tipoCaracteristica(tC)));
+            opcionesIdTipoCaracteristica.add(new SelectItem(tC, etiquetas.tipoCaracteristica(tC), null,
+            !Boolean.TRUE.equals(tC.getActivo())));
         }
     }
 

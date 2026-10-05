@@ -68,15 +68,16 @@
 
                         <p:outputLabel value="Tipo de característica" for="idTipoCaracteristica"/>
                         <p:selectOneMenu id="idTipoCaracteristica" value="#{caracteristicaModel.registro.idTipoCaracteristica}" converter="#{entidadConverter}"
-                                         required="true" requiredMessage="El tipo de característica es obligatorio"
-                                         filter="true" filterMatchMode="contains">
+                                        required="true" requiredMessage="El tipo de característica es obligatorio"
+                                        disabled="#{caracteristicaModel.estado ne 'CREAR'}"
+                                        filter="true" filterMatchMode="contains">
                             <f:selectItem itemLabel="#{tradcrud['jsf.crud.seleccione']}"
                                           itemValue="#{null}" noSelectionOption="true"/>
                             <f:selectItems value="#{caracteristicaModel.opcionesIdTipoCaracteristica}"/>
                         </p:selectOneMenu>
 
                         <p:outputLabel value="Activo" for="activo"/>
-                        <p:selectBooleanCheckbox id="activo" value="#{caracteristicaModel.registro.activo}" styleClass="check-cafe"/>
+                        <p:toggleSwitch id="activo" value="#{caracteristicaModel.registro.activo}" onIcon = "pi pi-check" offIcon="pi pi-times" styleClass="check-cafe"/>
 
                         <p:outputLabel value="Observaciones" for="observaciones"/>
                         <p:inputTextarea id="observaciones" value="#{caracteristicaModel.registro.observaciones}" rows="3" autoResize="false"/>

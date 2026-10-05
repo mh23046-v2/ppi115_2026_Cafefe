@@ -66,10 +66,10 @@
                                      maxlength="155"/>
 
                         <p:outputLabel value="Expresión regular" for="expresionRegular"/>
-                        <p:inputText id="expresionRegular" value="#{tipoCaracteristicaModel.registro.expresionRegular}"/>
-
+                        <p:inputText id="expresionRegular" value="#{tipoCaracteristicaModel.registro.expresionRegular}"
+                                        validator="#{tipoCaracteristicaModel.validarExpresionRegular}"/>
                         <p:outputLabel value="Activo" for="activo"/>
-                        <p:selectBooleanCheckbox id="activo" value="#{tipoCaracteristicaModel.registro.activo}" styleClass="check-cafe"/>
+                        <p:toggleSwitch id="activo" value="#{tipoCaracteristicaModel.registro.activo}" onIcon = "pi pi-check" offIcon="pi pi-times" styleClass="check-cafe"/>
 
                         <p:outputLabel value="Observaciones" for="observaciones"/>
                         <p:inputTextarea id="observaciones" value="#{tipoCaracteristicaModel.registro.observaciones}" rows="3" autoResize="false"/>
