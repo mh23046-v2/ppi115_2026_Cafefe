@@ -55,8 +55,6 @@ public class EmpleadoModel extends DefaultModel<Empleado>{
         tabActiva = 0;
     }
 
-    // ---- getters y setters para la vista ----
-
     public EmpleadoRolModel getEmpleadoRolModel() {
         return empleadoRolModel;
     }

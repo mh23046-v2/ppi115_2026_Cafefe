@@ -19,12 +19,6 @@ import java.util.regex.PatternSyntaxException;
  *
  * @author johnyv
  */
-
-/**
- * Model de la pantalla de mantenimiento de TipoCaracteristica.
- * Toda la lógica CRUD (listado paginado, crear, modificar, eliminar)
- * se hereda de {@link DefaultModel}; aquí solo va lo propio de la entidad.
- */
 @Named
 @ViewScoped
 public class TipoCaracteristicaModel extends DefaultModel<TipoCaracteristica> {
@@ -57,7 +51,7 @@ public class TipoCaracteristicaModel extends DefaultModel<TipoCaracteristica> {
         return "Tipo de Característica";
     }
     
-    /** Rechaza expresiones regulares mal formadas (ej. "[" o "(abc"). */
+    // Rechaza expresiones regulares mal formadas
     public void validarExpresionRegular(FacesContext context, UIComponent component, Object value)
             throws ValidatorException {
         if (value == null || value.toString().isBlank()) {

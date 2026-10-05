@@ -40,7 +40,7 @@ public class OrdenProductoDAO extends AbstractDataAccess<OrdenProducto> {
                 .getResultList();
     }
 
-    /** Todos los productos de la orden (sin paginar), para aplicar descuentos. */
+    //Todos los productos de la orden (sin paginar), para aplicar descuentos
     public List<OrdenProducto> findByIdOrden(UUID idOrden) {
         return findByIdOrden(idOrden, 0, Integer.MAX_VALUE);
     }
@@ -54,7 +54,7 @@ public class OrdenProductoDAO extends AbstractDataAccess<OrdenProducto> {
                 .getSingleResult();
     }
 
-    /** Total a pagar de la orden (0 si no tiene productos). */
+    //Total a pagar de la orden (da 0 si no tiene productos)
     public BigDecimal totalByIdOrden(UUID idOrden) {
         if (idOrden == null) {
             throw new IllegalArgumentException("El id de la orden no puede ser nulo");
@@ -65,22 +65,13 @@ public class OrdenProductoDAO extends AbstractDataAccess<OrdenProducto> {
         return total == null ? BigDecimal.ZERO : total;
     }
 
-    // ------------------------------------------------------------------
-    // Lecturas de Producto y Descuento (entidades del compañero B).
-    // Solo LEEN; no crean ni modifican nada de B. Ver LEEME-orden.md.
-    // ------------------------------------------------------------------
-
-    /** Productos que se pueden vender (activos), por nombre. */
     public List<Producto> findProductosActivos() {
         return em.createQuery(
                 "SELECT p FROM Producto p WHERE p.activo = true ORDER BY p.nombre", Producto.class)
                 .getResultList();
     }
 
-    /**
-     * Descuentos asignados a los productos que ya están en la orden. Son
-     * "candidatos": la vigencia se revisa con ReglasOrden.descuentoAplicable.
-     */
+    // Descuentos asignados a los productos que ya están en la orden. La vigensia se revisa en ReglasOrden. 
     public List<DescuentoProducto> findDescuentosDeProductosEnOrden(UUID idOrden) {
         if (idOrden == null) {
             throw new IllegalArgumentException("El id de la orden no puede ser nulo");

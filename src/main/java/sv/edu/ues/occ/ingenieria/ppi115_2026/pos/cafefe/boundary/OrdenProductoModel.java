@@ -87,9 +87,7 @@ public class OrdenProductoModel extends DefaultModel<OrdenProducto> {
         productosDisponibles = ordenProductoDAO.findProductosActivos();
     }
 
-    // ---------------- Seleccionar producto ----------------
-
-    /** Botón "Seleccionar" del diálogo: pone el producto y su precio sugerido. */
+    // Botón "Seleccionar" del diálogo, pone el producto y su precio sugerido.
     public void seleccionarProducto(Producto producto) {
         if (registro != null && producto != null) {
             registro.setIdProducto(producto);
@@ -135,11 +133,10 @@ public class OrdenProductoModel extends DefaultModel<OrdenProducto> {
         return true;
     }
 
-    // ---------------- Aplicar descuento ----------------
 
     /**
      * Descuentos que se pueden aplicar HOY a esta orden, agrupados por
-     * descuento: solo los asignados a productos de la orden y vigentes en
+     * descuento, solo los asignados a productos de la orden y vigentes en
      * la fecha de la orden.
      */
     Map<Descuento, List<DescuentoProducto>> descuentosAplicables() {
@@ -156,7 +153,8 @@ public class OrdenProductoModel extends DefaultModel<OrdenProducto> {
     }
 
     /**
-     * Botón "Aplicar Descuento": llena el combo antes de abrir el diálogo.
+     * Botón "Aplicar Descuento"
+     * llena el combo antes de abrir el diálogo.
      * Lista TODOS los descuentos asignados a los productos de la orden; los
      * que no están vigentes en la fecha de la orden salen deshabilitados
      * (se ven, pero no se pueden seleccionar).
@@ -194,7 +192,7 @@ public class OrdenProductoModel extends DefaultModel<OrdenProducto> {
         }
     }
 
-    /** "Cliente Platinum (20)%"; si cambia según el producto: "(hasta 20)%". */
+    // Muestra el porcentaje aplicable
     String etiquetaDescuento(Descuento d, List<DescuentoProducto> lista) {
         int min = lista.stream().mapToInt(ReglasOrden::porcentajeEfectivo).min().orElse(0);
         int max = lista.stream().mapToInt(ReglasOrden::porcentajeEfectivo).max().orElse(0);
@@ -242,7 +240,7 @@ public class OrdenProductoModel extends DefaultModel<OrdenProducto> {
         }
     }
     
-    /** Texto del descuento aplicado al producto de la orden, ej. "-20% (-$0.50)". Vacío si no tiene. */
+    // Texto que muestra el total de descuento aplicado
     public String descuentoAplicado(OrdenProducto op) {
         if (op == null || op.getPrecio() == null || op.getIdProducto() == null
                 || op.getIdProducto().getPrecioSugerido() == null) {
@@ -258,8 +256,6 @@ public class OrdenProductoModel extends DefaultModel<OrdenProducto> {
         return "-" + pct + "% (-$" + ahorro.setScale(2, java.math.RoundingMode.HALF_UP) + ")";
     }
 
-    // ---------------- utilidades ----------------
-
     private boolean hayOrden() {
         return orden != null && orden.getIdOrden() != null;
     }
@@ -268,12 +264,10 @@ public class OrdenProductoModel extends DefaultModel<OrdenProducto> {
         FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(severidad, resumen, detalle));
     }
 
-    /** Total de la orden (suma de precios ya con descuento). */
+    //Total de la orden (suma de precios ya con descuento)
     public BigDecimal getTotal() {
         return hayOrden() ? ordenProductoDAO.totalByIdOrden(orden.getIdOrden()) : BigDecimal.ZERO;
     }
-
-    // ---- getters y setters para la vista ----
 
     public Orden getOrden() {
         return orden;

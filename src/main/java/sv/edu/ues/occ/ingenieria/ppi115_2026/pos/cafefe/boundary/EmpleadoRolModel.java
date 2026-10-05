@@ -74,8 +74,7 @@ public class EmpleadoRolModel extends DefaultModel<EmpleadoRol>{
         return (int) empleadoRolDAO.countByIdEmpleado(empleado.getIdEmpleado());
     }
 
-    /** Combo de roles (el empleado no se elige: es el del maestro). */
-   @Override
+    // Combo de roles (el empleado no se elige: es el del maestro)
     protected void cargarOpciones() {
         opcionesIdRol = new ArrayList<>();
         for (Rol x : rolDAO.findAll()) {

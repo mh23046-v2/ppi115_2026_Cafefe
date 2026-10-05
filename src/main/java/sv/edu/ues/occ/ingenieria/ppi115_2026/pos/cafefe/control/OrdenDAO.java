@@ -26,7 +26,7 @@ public class OrdenDAO extends AbstractDataAccess<Orden> {
         return em;
     }
 
-    /** Página del listado, de la orden más reciente a la más antigua. */
+    // Página del listado, de la orden más reciente a la más antigua. 
     public List<Orden> findRangeOrdenado(int first, int max) {
         return em.createNamedQuery("Orden.findAllOrdenado", Orden.class)
                 .setFirstResult(first)

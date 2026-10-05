@@ -17,12 +17,6 @@ import java.util.Map;
  *
  * @author hernandez
  */
-
-/**
- * Datos de la sesión del usuario. Por ahora solo guarda el idioma elegido;
- * la plantilla general lo usa en &lt;f:view locale="..."&gt;.
- * (Tomado del proyecto de clase / versión de Johnny.)
- */
 @Named
 @SessionScoped
 public class SesionUsuario implements Serializable {

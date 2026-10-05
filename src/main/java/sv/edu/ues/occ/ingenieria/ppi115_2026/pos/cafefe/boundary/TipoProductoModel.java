@@ -41,6 +41,5 @@ public class TipoProductoModel extends DefaultModel<TipoProducto> {
     @Override
     public String nombreBean() {
         return "Tipo de Producto";
-    }
-    
+    }   
 }

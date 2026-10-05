@@ -18,13 +18,13 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.TipoDescuento;
  */
 public final class ReglasOrden {
 
-    /** Roles que pueden tomar órdenes (en minúscula y sin tildes). */
+    // Roles que pueden tomar órdenes (en minúscula y sin tildes)
     public static final Set<String> ROLES_ADMITIDOS = Set.of("camarero", "atencion al cliente", "barista");
 
     private ReglasOrden() {
     }
 
-    /** "Atención al Cliente " → "atencion al cliente" (para comparar nombres sin importar tildes ni mayúsculas). */
+    // Acá es donde convierto el texto con mayús y tildes al formato anterior.
     static String normalizar(String texto) {
         if (texto == null) {
             return "";
@@ -50,10 +50,6 @@ public final class ReglasOrden {
                 && rolAdmitido(er.getIdRol());
     }
 
-    /**
-     * ¿La fecha cae dentro de [desde, hasta]? Ambos extremos cuentan.
-     * Un extremo nulo se toma como "sin límite" por ese lado.
-     */
     public static boolean dentroDeVigencia(Date desde, Date hasta, Date fecha) {
         if (fecha == null) {
             return false;
@@ -81,10 +77,6 @@ public final class ReglasOrden {
                 && dentroDeVigencia(dp.getFechaDesde(), dp.getFechaHasta(), fechaOrden);
     }
 
-    /**
-     * Porcentaje que realmente se aplica: el valor del descuento, sin pasar
-     * del máximo de su tipo y siempre entre 0 y 100.
-     */
     public static int porcentajeEfectivo(DescuentoProducto dp) {
         int valor = dp.getValor() == null ? 0 : dp.getValor();
         TipoDescuento tipo = dp.getIdDescuento() == null ? null : dp.getIdDescuento().getIdTipoDescuento();
@@ -94,7 +86,6 @@ public final class ReglasOrden {
         return Math.max(0, Math.min(100, valor));
     }
 
-    /** precioBase × (1 − porcentaje/100), redondeado a 2 decimales. */
     public static BigDecimal precioConDescuento(BigDecimal precioBase, int porcentaje) {
         if (precioBase == null) {
             return null;

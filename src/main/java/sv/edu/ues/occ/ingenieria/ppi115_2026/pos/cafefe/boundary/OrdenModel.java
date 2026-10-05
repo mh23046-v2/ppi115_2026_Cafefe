@@ -153,8 +153,6 @@ public class OrdenModel extends DefaultModel<Orden> {
         return fecha == null ? "" : new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(fecha);
     }
 
-    // ---- getters y setters para la vista ----
-
     public OrdenProductoModel getOrdenProductoModel() {
         return ordenProductoModel;
     }

@@ -59,7 +59,6 @@ public abstract class AbstractDataAccess<T> {
     }
 
     //Paginación: devuelve hasta 'max' registros a partir de la posición 'first'.
-    
     public List<T> findRange(int first, int max) {
         EntityManager em = getEntityManager();
         CriteriaQuery<T> cq = em.getCriteriaBuilder().createQuery(entityClass);

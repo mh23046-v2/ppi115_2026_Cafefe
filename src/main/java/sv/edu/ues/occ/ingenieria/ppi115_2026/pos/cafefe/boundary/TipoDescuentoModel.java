@@ -12,12 +12,6 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.TipoDescuento;
  *
  * @author johnyv
  */
-
-/**
- * Model de la pantalla de mantenimiento de TipoDescuento.
- * Toda la lógica CRUD (listado paginado, crear, modificar, eliminar)
- * se hereda de {@link DefaultModel}; aquí solo va lo propio de la entidad.
- */
 @Named
 @ViewScoped
 public class TipoDescuentoModel extends DefaultModel<TipoDescuento> {
