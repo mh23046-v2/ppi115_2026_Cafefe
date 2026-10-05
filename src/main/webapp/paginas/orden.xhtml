@@ -71,6 +71,7 @@
                                     <p:datePicker id="fecha" value="#{ordenModel.registro.fechaCreacion}"
                                                   showTime="true" hideOnDateTimeSelect="true" showSeconds="true"
                                                   pattern="dd/MM/yyyy HH:mm:ss" required="true"
+                                                  disabled="#{ordenModel.estado ne 'CREAR'}"
                                                   requiredMessage="La fecha de la orden es obligatoria"/>
                                 </p:panelGrid>
 
