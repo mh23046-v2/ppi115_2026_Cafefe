@@ -310,14 +310,15 @@
                                                              disabled="#{productoModel.descuentoProductoModel.estado != 'CREAR'}"/>
                                         </h:panelGroup>
 
-                                        <p:outputLabel value="Porcentaje *" for="valorDesc"/>
-                                        <p:inputText id="valorDesc" value="#{productoModel.descuentoProductoModel.registro.valor}"
+                                        <p:outputLabel value="Porcentaje " for="valorDesc"/>
+                                        <p:inputNumber id="valorDesc" value="#{productoModel.descuentoProductoModel.registro.valor}"
                                                      required="true" requiredMessage="El porcentaje es obligatorio"
+                                                     decimalPlaces="0"
                                                      validator="#{productoModel.descuentoProductoModel.validarPorcentaje}">
                                             <f:validateLongRange minimum="0" maximum="100"/>
-                                        </p:inputText>
+                                        </p:inputNumber>
 
-                                        <p:outputLabel value="Fecha de Inicio *" for="dtDesde"/>
+                                        <p:outputLabel value="Fecha de Inicio " for="dtDesde"/>
                                         <p:datePicker id="dtDesde" value="#{productoModel.descuentoProductoModel.registro.fechaDesde}"
                                                       showTime="true" hideOnDateTimeSelect="true" pattern="dd/MM/yyyy HH:mm:ss"
                                                       required="true" requiredMessage="La fecha de inicio es obligatoria"
@@ -327,7 +328,7 @@
                                         <p:datePicker id="dtHasta" value="#{productoModel.descuentoProductoModel.registro.fechaHasta}"
                                                       showTime="true" hideOnDateTimeSelect="true" pattern="dd/MM/yyyy HH:mm:ss"
                                                       validator="#{productoModel.descuentoProductoModel.validarFechaHasta}">
-                                                      <f:attribute name="validateEmptyFields" value="true" />
+                                            <f:attribute name="validateEmptyFields" value="true" />
                                         </p:datePicker>
 
                                         <p:outputLabel value="Observaciones" for="obsDesc"/>
@@ -350,7 +351,14 @@
         <p:dialog header="Seleccionar característica" widgetVar="dlgCaracteristica"
                   modal="true" width="550" resizable="false"
                   height="auto" responsive="true" draggable="false">
+
+            <!-- Limpia automáticamente el estado e inputs del diálogo al cerrarse -->
+            <p:ajax event="close" update="frmDlgCaracteristica" resetValues="true"/>
+
             <h:form id="frmDlgCaracteristica">
+                <!-- Componente de mensajes dentro del modal -->
+                <p:messages id="msgDlgCarac" closable="true" />
+
                 <p:panelGrid columns="2" styleClass="ui-noborder grid-formulario">
                     <p:outputLabel value="Tipo de característica" for="dlgTipo"/>
                     <p:selectOneMenu id="dlgTipo" value="#{productoModel.productoCaracteristicaModel.tipoCaracteristicaSeleccionado}"
@@ -373,7 +381,8 @@
 
                 <p:commandButton value="Aceptar" styleClass="boton-cafe" icon="pi pi-check"
                                  process="@form"
-                                 update=":frmMantenimiento:tabView:pnlDetalleCarac"
+                                 resetValues="true"
+                                 update="msgDlgCarac :frmMantenimiento:tabView:pnlDetalleCarac"
                                  oncomplete="if (!args.validationFailed) PF('dlgCaracteristica').hide()"/>
             </h:form>
         </p:dialog>

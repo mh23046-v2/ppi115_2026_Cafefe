@@ -63,7 +63,7 @@
                                 <p:panelGrid columns="2" styleClass="ui-noborder grid-formulario">
                                     <p:outputLabel value="ID" for="id"/>
                                     <p:inputText id="id" value="#{empleadoModel.registro.idEmpleado}" disabled="true"/>
-                                    
+
                                     <p:outputLabel value="Nombre" for="nombre"/>
                                     <p:inputText id="nombre" value="#{empleadoModel.registro.nombre}"/>
 
@@ -72,8 +72,8 @@
 
                                     <p:outputLabel value="Activo" for="activo"/>
                                     <p:toggleSwitch id="activo" value="#{empleadoModel.registro.activo}"
-                                        onIcon="pi pi-check" offIcon="pi pi-times" styleClass="check-cafe"/>
-                                    
+                                                    onIcon="pi pi-check" offIcon="pi pi-times" styleClass="check-cafe"/>
+
                                     <p:outputLabel value="Comentarios" for="comentarios"/>
                                     <p:inputTextarea id="comentarios" value="#{empleadoModel.registro.comentarios}" rows="3" autoResize="false"/>
                                 </p:panelGrid>
@@ -101,7 +101,7 @@
                                     <p:ajax event="rowSelect" listener="#{empleadoModel.empleadoRolModel.onRowSelect}"
                                             update=":frmMantenimiento:tabView:pnlDetalleRol :frmMantenimiento:tabView:pnlListadoRol"/>
                                     <p:column headerText="ID">
-                                    <h:outputText value="#{er.idRol.idRol}"/>
+                                        <h:outputText value="#{er.idRol.idRol}"/>
                                     </p:column>
                                     <p:column headerText="Rol">
                                         <h:outputText value="#{etiquetas.rol(er.idRol)}"/>
@@ -132,16 +132,20 @@
 
                                         <p:outputLabel value="Rol" for="idRol"/>
                                         <p:selectOneMenu id="idRol"
-                                            value="#{empleadoModel.empleadoRolModel.registro.idRol}"
-                                            converter="#{entidadConverter}">
-                                            disabled="#{empleadoModel.empleadoRolModel.estado ne 'CREAR'}">
+                                                         value="#{empleadoModel.empleadoRolModel.registro.idRol}"
+                                                         converter="#{entidadConverter}"
+                                                         disabled="#{empleadoModel.empleadoRolModel.estado ne 'CREAR'}"
+                                                         required="true">
+                                            <f:selectItem itemLabel="#{tradcrud['jsf.crud.seleccione']}" 
+                                                          itemValue="#{null}" 
+                                                          noSelectionOption="true"/>
                                             <f:selectItems value="#{empleadoModel.empleadoRolModel.opcionesIdRol}" />
                                             <p:ajax update="idDetalleRol" />
                                         </p:selectOneMenu>
 
                                         <p:outputLabel value="Activo" for="rolActivo"/>
                                         <p:toggleSwitch id="rolActivo" value="#{empleadoModel.empleadoRolModel.registro.activo}"
-                                            onIcon="pi pi-check" offIcon="pi pi-times" styleClass="check-cafe"/>
+                                                        onIcon="pi pi-check" offIcon="pi pi-times" styleClass="check-cafe"/>
 
                                         <p:outputLabel value="Observaciones" for="rolObservaciones"/>
                                         <p:inputTextarea id="rolObservaciones" value="#{empleadoModel.empleadoRolModel.registro.observaciones}" rows="3" autoResize="false"/>

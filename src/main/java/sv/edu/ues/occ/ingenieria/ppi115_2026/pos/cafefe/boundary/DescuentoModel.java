@@ -5,6 +5,7 @@ import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.AbstractDataAccess;
@@ -45,6 +46,7 @@ public class DescuentoModel extends DefaultModel<Descuento> {
     @Override
     protected Descuento nuevoRegistro() {
         Descuento nuevo = new Descuento(UUID.randomUUID());
+        nuevo.setFechaDesde(new Date());
         return nuevo;
     }
 
