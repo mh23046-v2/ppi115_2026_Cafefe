@@ -60,19 +60,17 @@
                         <p:outputLabel value="ID" for="idtipoDescuento"/>
                         <p:inputText id="idtipoDescuento" value="#{tipoDescuentoModel.registro.idTipoDescuento}" disabled="true"/>
 
-                        <p:outputLabel value="Nombre" for="nombre"/>
+                        <p:outputLabel value="Nombre " for="nombre"/>
                         <p:inputText id="nombre" value="#{tipoDescuentoModel.registro.nombre}"
                                      required="true" requiredMessage="El campo de nombre es obligatorio"
                                      maxlength="155"/>
 
-                        <p:outputLabel value="Descuento máximo" for="descuentoMaximo"/>
-                        <h:panelGrid columns="1" style="width: 100%">
-                            <p:inputText id="descuentoMaximo" value="#{tipoDescuentoModel.registro.descuentoMaximo}"/>
-                            <p:slider for="descuentoMaximo" 
-                                      minValue="0" 
-                                      maxValue="100" 
-                                      step="1" />
-                        </h:panelGrid>
+                        <p:outputLabel value="Descuento máximo " for="descuentoMaximo"/>
+                        <p:inputText id="descuentoMaximo" 
+                                      value="#{tipoDescuentoModel.registro.descuentoMaximo}"
+                                      required="true" 
+                                      maxlength="3"
+                                      requiredMessage="El campo del descuento máximo es obligatorio."/>
 
                         <p:outputLabel value="Activo" for="activo"/>
                         <p:toggleSwitch id="activo" value="#{tipoDescuentoModel.registro.activo}" onIcon = "pi pi-check" offIcon="pi pi-times" styleClass="check-cafe"/>
