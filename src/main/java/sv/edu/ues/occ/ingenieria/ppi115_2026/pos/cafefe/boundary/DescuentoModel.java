@@ -1,6 +1,5 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.boundary;
 
-import jakarta.faces.model.SelectItem;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -14,24 +13,16 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.TipoDescuentoDAO
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Descuento;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.TipoDescuento;
 
-/**
- *
- * @author johnyv
- */
 @Named
 @ViewScoped
-public class DescuentoModel extends DefaultModel<Descuento> { 
-    
+public class DescuentoModel extends DefaultModel<Descuento> {
+
     private static final long serialVersionUID = 1L;
 
     @Inject
     private DescuentoDAO descuentoDAO;
     @Inject
     private TipoDescuentoDAO tipoDescuentoDAO;
-    @Inject
-    private Etiquetas etiquetas;
-
-    private List<SelectItem> opcionesIdTipoDescuento;
 
     @Override
     protected AbstractDataAccess<Descuento> getDAO() {
@@ -55,15 +46,37 @@ public class DescuentoModel extends DefaultModel<Descuento> {
         return "Descuento";
     }
 
-    @Override
-    protected void cargarOpciones() {
-        opcionesIdTipoDescuento = new ArrayList<>();
-        for (TipoDescuento tD : tipoDescuentoDAO.findAll()) {
-            opcionesIdTipoDescuento.add(new SelectItem(tD, etiquetas.tipoDescuento(tD), null, !tD.getActivo()));
+    public List<TipoDescuento> completarTipoDescuento(String query) {
+        try {
+            return tipoDescuentoDAO.buscarPorNombre(query, 10);
+        } catch (Exception ex) {
+            notificarError("No se pudieron cargar los tipos de descuento", ex);
+            return new ArrayList<>();
         }
     }
 
-    public List<SelectItem> getOpcionesIdTipoDescuento() {
-        return opcionesIdTipoDescuento;
+    @Override
+    protected String validarRegistro(Descuento registro) {
+        if (registro.getNombre() == null || registro.getNombre().isBlank()) {
+            return "El nombre del descuento es obligatorio";
+        }
+
+        TipoDescuento tipo = registro.getIdTipoDescuento();
+        if (tipo == null || tipo.getIdTipoDescuento() == null) {
+            return "Debe seleccionar un Tipo de Descuento válido";
+        }
+        if (!Boolean.TRUE.equals(tipo.getActivo())) {
+            return "El Tipo de Descuento seleccionado se encuentra inactivo";
+        }
+
+        if (registro.getFechaDesde() == null) {
+            return "La fecha inicial (fecha desde) es obligatoria";
+        }
+
+        if (registro.getFechaHasta() != null && registro.getFechaHasta().before(registro.getFechaDesde())) {
+            return "La fecha final (hasta) no puede ser anterior a la fecha inicial (desde)";
+        }
+
+        return null;
     }
 }

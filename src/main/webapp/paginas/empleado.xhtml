@@ -130,18 +130,22 @@
                                         <p:inputText id="idDetalleRol" value="#{empleadoModel.empleadoRolModel.registro.idRol.idRol}"
                                                      disabled="true"/>
 
-                                        <p:outputLabel value="Rol" for="idRol"/>
-                                        <p:selectOneMenu id="idRol"
-                                                         value="#{empleadoModel.empleadoRolModel.registro.idRol}"
-                                                         converter="#{entidadConverter}"
-                                                         disabled="#{empleadoModel.empleadoRolModel.estado ne 'CREAR'}"
-                                                         required="true">
-                                            <f:selectItem itemLabel="#{tradcrud['jsf.crud.seleccione']}" 
-                                                          itemValue="#{null}" 
-                                                          noSelectionOption="true"/>
-                                            <f:selectItems value="#{empleadoModel.empleadoRolModel.opcionesIdRol}" />
-                                            <p:ajax update="idDetalleRol" />
-                                        </p:selectOneMenu>
+                                        <p:outputLabel value="Rol" for="acRol"/>
+                                        <p:autoComplete id="acRol"
+                                                        value="#{empleadoModel.empleadoRolModel.registro.idRol}"
+                                                        completeMethod="#{empleadoModel.empleadoRolModel.completarRol}"
+                                                        var="r"
+                                                        itemLabel="#{r.nombre}"
+                                                        itemValue="#{r}"
+                                                        converter="#{entidadConverter}"
+                                                        dropdown="true"
+                                                        dropdownMode="blank"
+                                                        placeholder="Escriba para buscar..."
+                                                        forceSelection="true"
+                                                        disabled="#{empleadoModel.empleadoRolModel.estado ne 'CREAR'}"
+                                                        required="true">
+                                            <p:ajax event="itemSelect" update="idDetalleRol" />
+                                        </p:autoComplete>
 
                                         <p:outputLabel value="Activo" for="rolActivo"/>
                                         <p:toggleSwitch id="rolActivo" value="#{empleadoModel.empleadoRolModel.registro.activo}"

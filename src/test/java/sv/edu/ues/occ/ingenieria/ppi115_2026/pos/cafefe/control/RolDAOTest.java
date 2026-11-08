@@ -2,86 +2,106 @@ package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
-import java.util.Collections;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Root;
 import java.util.List;
-import java.util.UUID;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Rol;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-/**
- *
- * @author hernandez
- */
 @ExtendWith(MockitoExtension.class)
-public class RolDAOTest {
+class RolDAOTest {
 
     @Mock
     private EntityManager em;
 
     @Mock
-    private TypedQuery<Rol> typedQuery;
+    private TypedQuery<Rol> queryList;
+
+    @Mock
+    private TypedQuery<Long> queryCount;
 
     @InjectMocks
-    private RolDAO rolDAO;
+    private RolDAO dao;
 
     @Test
-    @DisplayName("Verifica que el EntityManager está correctamente inyectado")
-    void testGetEntityManager() {
-        assertEquals(em, rolDAO.getEntityManager());
+    @DisplayName("findByNombre: Lanza IllegalArgumentException ante paginación inválida")
+    void testFindByNombrePaginacionInvalida() {
+        assertThrows(IllegalArgumentException.class, () -> dao.findByNombre("admin", -1, 10));
+        assertThrows(IllegalArgumentException.class, () -> dao.findByNombre("admin", 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> dao.findByNombre("admin", 0, -5));
     }
 
     @Test
-    @DisplayName("findByActivo usa la NamedQuery con el parámetro activo")
-    void testFindByActivo() {
-        List<Rol> esperados = Collections.singletonList(new Rol(UUID.randomUUID()));
-        when(em.createNamedQuery("Rol.findByActivo", Rol.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter("activo", true)).thenReturn(typedQuery);
-        when(typedQuery.getResultList()).thenReturn(esperados);
+    @DisplayName("findByNombre: Ejecuta la NamedQuery paginada correctamente")
+    void testFindByNombreExitoso() {
+        when(em.createNamedQuery("Rol.findByNombre", Rol.class)).thenReturn(queryList);
+        when(queryList.setParameter("nombre", "%admin%")).thenReturn(queryList);
+        when(queryList.setFirstResult(0)).thenReturn(queryList);
+        when(queryList.setMaxResults(10)).thenReturn(queryList);
+        when(queryList.getResultList()).thenReturn(List.of(new Rol()));
 
-        List<Rol> resultado = rolDAO.findByActivo(true);
+        List<Rol> resultado = dao.findByNombre("admin", 0, 10);
 
-        assertEquals(esperados, resultado);
-        verify(typedQuery).setParameter("activo", true);
+        assertFalse(resultado.isEmpty());
+        verify(queryList).setFirstResult(0);
+        verify(queryList).setMaxResults(10);
     }
 
     @Test
-    @DisplayName("findByNombre usa la NamedQuery con el parámetro nombre")
-    void testFindByNombre() {
-        List<Rol> esperados = Collections.singletonList(new Rol(UUID.randomUUID()));
-        when(em.createNamedQuery("Rol.findByNombre", Rol.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter("nombre", "Camarero")).thenReturn(typedQuery);
-        when(typedQuery.getResultList()).thenReturn(esperados);
+    @DisplayName("findByNombre (sobrenacargado): Delega a findByNombre con firstResult = 0")
+    void testFindByNombreSobrecargado() {
+        when(em.createNamedQuery("Rol.findByNombre", Rol.class)).thenReturn(queryList);
+        when(queryList.setParameter("nombre", "%cajero%")).thenReturn(queryList);
+        when(queryList.setFirstResult(0)).thenReturn(queryList);
+        when(queryList.setMaxResults(5)).thenReturn(queryList);
+        when(queryList.getResultList()).thenReturn(List.of(new Rol()));
 
-        List<Rol> resultado = rolDAO.findByNombre("Camarero");
+        List<Rol> resultado = dao.findByNombre("cajero", 5);
 
-        assertEquals(esperados, resultado);
-        verify(typedQuery).setParameter("nombre", "Camarero");
+        assertFalse(resultado.isEmpty());
+        verify(queryList).setFirstResult(0);
+        verify(queryList).setMaxResults(5);
     }
 
     @Test
-    @DisplayName("create guarda el rol con persist")
-    void testCreate() {
-        Rol rol = new Rol(UUID.randomUUID());
+    @DisplayName("countByNombre: Retorna el conteo filtrado correctamente")
+    void testCountByNombre() {
+        when(em.createNamedQuery("Rol.countByNombre", Long.class)).thenReturn(queryCount);
+        when(queryCount.setParameter("nombre", "%cajero%")).thenReturn(queryCount);
+        when(queryCount.getSingleResult()).thenReturn(3L);
 
-        rolDAO.create(rol);
-
-        verify(em).persist(rol);
+        assertEquals(3L, dao.countByNombre("cajero"));
     }
 
     @Test
-    @DisplayName("create con null lanza error y no toca la base de datos")
-    void testCreateNulo() {
-        assertThrows(IllegalArgumentException.class, () -> rolDAO.create(null));
+    @DisplayName("ordenar: Configura orden por activo descendente y nombre ascendente")
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    void testOrdenar() {
+        CriteriaBuilder cb = mock(CriteriaBuilder.class);
+        Root<Rol> root = mock(Root.class);
+        Path pathActivo = mock(Path.class);
+        Path pathNombre = mock(Path.class);
+        Order orderActivo = mock(Order.class);
+        Order orderNombre = mock(Order.class);
 
-        verifyNoInteractions(em);
+        when(root.get("activo")).thenReturn(pathActivo);
+        when(root.get("nombre")).thenReturn(pathNombre);
+        when(cb.desc(pathActivo)).thenReturn(orderActivo);
+        when(cb.asc(pathNombre)).thenReturn(orderNombre);
+
+        List<Order> resultado = dao.ordenar(cb, root);
+
+        assertEquals(2, resultado.size());
+        assertEquals(orderActivo, resultado.get(0));
+        assertEquals(orderNombre, resultado.get(1));
     }
 }

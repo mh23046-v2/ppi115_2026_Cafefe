@@ -3,18 +3,17 @@ package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.boundary;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.AbstractDataAccess;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.EmpleadoDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Empleado;
 
-/**
- *
- * @author hernandez
- */
 @Named
 @ViewScoped
-public class EmpleadoModel extends DefaultModel<Empleado>{
+public class EmpleadoModel extends DefaultModel<Empleado> {
+
     private static final long serialVersionUID = 1L;
 
     @Inject
@@ -22,7 +21,7 @@ public class EmpleadoModel extends DefaultModel<Empleado>{
 
     @Inject
     private EmpleadoRolModel empleadoRolModel;
-    
+
     // Pestaña activa del p:tabView (0 = datos, 1 = roles).
     private int tabActiva;
 
@@ -47,15 +46,47 @@ public class EmpleadoModel extends DefaultModel<Empleado>{
     public String nombreBean() {
         return "Empleado";
     }
-    
-     @Override
+
+    @Override
     protected void registroCambio() {
         empleadoRolModel.setEmpleado(registro);
         empleadoRolModel.btnCancelarHandler();
         tabActiva = 0;
     }
 
-    // ---- getters y setters para la vista ----
+    @Override
+    protected String validarRegistro(Empleado registro) {
+        if (registro == null) {
+            return "El registro no puede ser nulo";
+        }
+        if (registro.getNombre() == null || registro.getNombre().isBlank()) {
+            return "El nombre del empleado es obligatorio";
+        }
+        if (registro.getApellido() == null || registro.getApellido().isBlank()) {
+            return "El apellido del empleado es obligatorio";
+        }
+        return null;
+    }
+
+    @Override
+    protected List<Empleado> cargarDatos(int first, int max) {
+        return empleadoDAO.findByNombre("", first, max);
+    }
+
+    @Override
+    protected int contarDatos() {
+        Long total = empleadoDAO.countByNombre("");
+        return total != null ? total.intValue() : 0;
+    }
+
+    public List<Empleado> completarEmpleado(String query) {
+        try {
+            return empleadoDAO.findByNombre(query, 10);
+        } catch (Exception ex) {
+            notificarError("No se pudieron cargar los empleados", ex);
+            return new ArrayList<>();
+        }
+    }
 
     public EmpleadoRolModel getEmpleadoRolModel() {
         return empleadoRolModel;
@@ -68,5 +99,4 @@ public class EmpleadoModel extends DefaultModel<Empleado>{
     public void setTabActiva(int tabActiva) {
         this.tabActiva = tabActiva;
     }
-    
 }

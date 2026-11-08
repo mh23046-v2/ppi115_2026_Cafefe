@@ -1,12 +1,14 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.boundary;
 
 import jakarta.enterprise.context.Dependent;
-import jakarta.faces.model.SelectItem;
 import jakarta.inject.Inject;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.AbstractDataAccess;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.CaracteristicaDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.ProductoCaracteristicaDAO;
@@ -17,7 +19,7 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.ProductoCaracteri
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.TipoCaracteristica;
 
 @Dependent
-public class ProductoCaracteristicaModel extends DefaultModel<ProductoCaracteristica> {
+public class ProductoCaracteristicaModel extends DefaultModel<ProductoCaracteristica> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -30,14 +32,8 @@ public class ProductoCaracteristicaModel extends DefaultModel<ProductoCaracteris
     @Inject
     private TipoCaracteristicaDAO tipoCaracteristicaDAO;
 
-    @Inject
-    private Etiquetas etiquetas;
-
     private Producto producto;
     private TipoCaracteristica tipoCaracteristicaSeleccionado;
-
-    private List<SelectItem> opcionesTipoCaracteristica;
-    private List<SelectItem> opcionesCaracteristica;
 
     @Override
     protected AbstractDataAccess<ProductoCaracteristica> getDAO() {
@@ -54,7 +50,6 @@ public class ProductoCaracteristicaModel extends DefaultModel<ProductoCaracteris
         ProductoCaracteristica nuevo = new ProductoCaracteristica(UUID.randomUUID());
         nuevo.setIdProducto(producto);
         this.tipoCaracteristicaSeleccionado = null;
-        this.opcionesCaracteristica = Collections.emptyList();
         return nuevo;
     }
 
@@ -68,7 +63,7 @@ public class ProductoCaracteristicaModel extends DefaultModel<ProductoCaracteris
         if (producto == null || producto.getIdProducto() == null) {
             return Collections.emptyList();
         }
-        return productoCaracteristicaDAO.findByProducto(producto);
+        return productoCaracteristicaDAO.findByProducto(producto, first, max);
     }
 
     @Override
@@ -76,33 +71,29 @@ public class ProductoCaracteristicaModel extends DefaultModel<ProductoCaracteris
         if (producto == null || producto.getIdProducto() == null) {
             return 0;
         }
-        return productoCaracteristicaDAO.findByProducto(producto).size();
+        return productoCaracteristicaDAO.countByProducto(producto);
     }
 
-    @Override
-    protected void cargarOpciones() {
-        // Cargar primer combo del modal (Tipos de Característica)
-        opcionesTipoCaracteristica = new ArrayList<>();
-
-        List<TipoCaracteristica> tipos = tipoCaracteristicaDAO.findAll();
-        for (TipoCaracteristica tc : tipos) {
-            // Se muestran todos, pero si no está activo, se deshabilita
-            boolean deshabilitado = !Boolean.TRUE.equals(tc.getActivo());
-            opcionesTipoCaracteristica.add(new SelectItem(tc, tc.getNombre(), null, deshabilitado));
+    // Autocompletado para el selector de TipoCaracteristica (limitado a 10 registros).
+    public List<TipoCaracteristica> completarTipoCaracteristica(String query) {
+        try {
+            return tipoCaracteristicaDAO.buscarPorNombre(query, 10);
+        } catch (Exception ex) {
+            notificarError("No se pudieron cargar los tipos de característica", ex);
+            return new ArrayList<>();
         }
     }
 
-// Filtro para obtener las características según el tipo de característica seleccionado
-    public void cambioTipoCaracteristica() {
-        opcionesCaracteristica = new ArrayList<>();
-        if (this.tipoCaracteristicaSeleccionado != null) {
-            List<Caracteristica> lista = caracteristicaDAO.findByIdTipoCaracteristica(this.tipoCaracteristicaSeleccionado);
-
-            for (Caracteristica c : lista) {
-                // Se muestran todas, pero si no está activa, se deshabilita
-                boolean deshabilitada = !Boolean.TRUE.equals(c.getActivo());
-                opcionesCaracteristica.add(new SelectItem(c, c.getNombre(), null, deshabilitada));
-            }
+    // Autocompletado para seleccionar Caracteristica según el TipoCaracteristica activo.
+    public List<Caracteristica> completarCaracteristicaPorTipo(String query) {
+        if (this.tipoCaracteristicaSeleccionado == null || this.tipoCaracteristicaSeleccionado.getIdTipoCaracteristica() == null) {
+            return Collections.emptyList();
+        }
+        try {
+            return caracteristicaDAO.buscarActivasPorTipoYNombre(this.tipoCaracteristicaSeleccionado, query, 10);
+        } catch (Exception ex) {
+            notificarError("No se pudieron cargar las características del tipo seleccionado", ex);
+            return new ArrayList<>();
         }
     }
 
@@ -116,10 +107,42 @@ public class ProductoCaracteristicaModel extends DefaultModel<ProductoCaracteris
                 return regex;
             }
         }
-        return ".*"; // Acepta cualquier texto si no hay regla definida
+        return ".*";
     }
 
-    // Getters y setters para la vista
+    @Override
+    protected String validarRegistro(ProductoCaracteristica registro) {
+        if (registro.getIdProducto() == null || registro.getIdProducto().getIdProducto() == null) {
+            return "Debe seleccionar un producto válido";
+        }
+
+        Caracteristica c = registro.getIdCaracteristica();
+        if (c == null || c.getIdCaracteristica() == null) {
+            return "Debe seleccionar una característica válida";
+        }
+
+        if (!Boolean.TRUE.equals(c.getActivo())) {
+            return "La característica seleccionada se encuentra inactiva";
+        }
+
+        if (registro.getValor() == null || registro.getValor().isBlank()) {
+            return "El valor de la característica es obligatorio";
+        }
+
+        String regex = getRegexCaracteristica();
+        if (!".*".equals(regex)) {
+            try {
+                if (!Pattern.matches(regex, registro.getValor())) {
+                    return "El valor no cumple con la regla o patrón requerido: " + regex;
+                }
+            } catch (PatternSyntaxException ex) {
+                return "La expresión regular asociada al tipo de característica es inválida";
+            }
+        }
+
+        return null;
+    }
+
     public Producto getProducto() {
         return producto;
     }
@@ -134,13 +157,5 @@ public class ProductoCaracteristicaModel extends DefaultModel<ProductoCaracteris
 
     public void setTipoCaracteristicaSeleccionado(TipoCaracteristica tipoCaracteristicaSeleccionado) {
         this.tipoCaracteristicaSeleccionado = tipoCaracteristicaSeleccionado;
-    }
-
-    public List<SelectItem> getOpcionesTipoCaracteristica() {
-        return opcionesTipoCaracteristica;
-    }
-
-    public List<SelectItem> getOpcionesCaracteristica() {
-        return opcionesCaracteristica;
     }
 }

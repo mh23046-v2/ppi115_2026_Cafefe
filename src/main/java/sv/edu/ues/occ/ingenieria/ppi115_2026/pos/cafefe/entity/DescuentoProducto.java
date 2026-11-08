@@ -26,11 +26,10 @@ import java.util.UUID;
 @Entity
 @Table(name = "descuento_producto")
 @NamedQueries({
-    @NamedQuery(name = "DescuentoProducto.findAll", query = "SELECT d FROM DescuentoProducto d"),
-    @NamedQuery(name = "DescuentoProducto.findByFechaDesde", query = "SELECT d FROM DescuentoProducto d WHERE d.fechaDesde = :fechaDesde"),
-    @NamedQuery(name = "DescuentoProducto.findByFechaHasta", query = "SELECT d FROM DescuentoProducto d WHERE d.fechaHasta = :fechaHasta"),
-    @NamedQuery(name = "DescuentoProducto.findByValor", query = "SELECT d FROM DescuentoProducto d WHERE d.valor = :valor"),
-    @NamedQuery(name = "DescuentoProducto.findByObservaciones", query = "SELECT d FROM DescuentoProducto d WHERE d.observaciones = :observaciones")})
+    @NamedQuery(name = "DescuentoProducto.findAll", query = "SELECT dp FROM DescuentoProducto dp"),
+    @NamedQuery(name = "DescuentoProducto.findByProducto", query = "SELECT dp FROM DescuentoProducto dp JOIN FETCH dp.idDescuento d JOIN FETCH d.idTipoDescuento WHERE dp.idProducto = :producto ORDER BY dp.fechaDesde DESC, dp.idDescuentoProducto ASC"),
+    @NamedQuery(name = "DescuentoProducto.findByProductosEnOrden", query = "SELECT dp FROM DescuentoProducto dp JOIN dp.idDescuento d WHERE dp.idProducto IN (SELECT op.idProducto FROM OrdenProducto op WHERE op.idOrden = :orden) ORDER BY d.nombre ASC"),
+    @NamedQuery(name = "DescuentoProducto.countByProducto", query = "SELECT COUNT(dp) FROM DescuentoProducto dp WHERE dp.idProducto = :producto")})
 public class DescuentoProducto implements Serializable {
 
     private static final long serialVersionUID = 1L;

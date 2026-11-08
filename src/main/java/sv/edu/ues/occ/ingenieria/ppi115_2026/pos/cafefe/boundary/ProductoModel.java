@@ -8,10 +8,6 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.AbstractDataAcce
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.ProductoDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Producto;
 
-/**
- *
- * @author johnyv
- */
 @Named
 @ViewScoped
 public class ProductoModel extends DefaultModel<Producto> {
@@ -57,6 +53,14 @@ public class ProductoModel extends DefaultModel<Producto> {
     }
 
     @Override
+    protected String validarRegistro(Producto registro) {
+        if (registro.getNombre() == null || registro.getNombre().isBlank()) {
+            return "El nombre del producto es obligatorio";
+        }
+        return null;
+    }
+
+    @Override
     protected void registroCambio() {
         // Sincronizamos el producto seleccionado con los tres modelos hijos
         productoTipoProductoModel.setProducto(registro);
@@ -71,7 +75,6 @@ public class ProductoModel extends DefaultModel<Producto> {
         tabActiva = 0;
     }
 
-    // Getters y setters para la vista
     public ProductoTipoProductoModel getProductoTipoProductoModel() {
         return productoTipoProductoModel;
     }

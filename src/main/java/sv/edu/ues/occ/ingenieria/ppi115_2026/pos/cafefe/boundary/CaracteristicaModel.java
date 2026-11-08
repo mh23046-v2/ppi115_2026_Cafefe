@@ -1,6 +1,5 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.boundary;
 
-import jakarta.faces.model.SelectItem;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -13,24 +12,16 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.TipoCaracteristi
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Caracteristica;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.TipoCaracteristica;
 
-/**
- *
- * @author johnyv
- */
 @Named
 @ViewScoped
 public class CaracteristicaModel extends DefaultModel<Caracteristica> {
-    
+
     private static final long serialVersionUID = 1L;
 
     @Inject
     private CaracteristicaDAO caracteristicaDAO;
     @Inject
     private TipoCaracteristicaDAO tipoCaracteristicaDAO;
-    @Inject
-    private Etiquetas etiquetas;
-
-    private List<SelectItem> opcionesIdTipoCaracteristica;
 
     @Override
     protected AbstractDataAccess<Caracteristica> getDAO() {
@@ -54,17 +45,28 @@ public class CaracteristicaModel extends DefaultModel<Caracteristica> {
         return "Característica";
     }
 
-    /** Opciones de los desplegables de las relaciones. */
-    @Override
-    protected void cargarOpciones() {
-        opcionesIdTipoCaracteristica = new ArrayList<>();
-        for (TipoCaracteristica  tC: tipoCaracteristicaDAO.findAll()) {
-            opcionesIdTipoCaracteristica.add(new SelectItem(tC, etiquetas.tipoCaracteristica(tC), null,
-            !Boolean.TRUE.equals(tC.getActivo())));
+    public List<TipoCaracteristica> completarTipoCaracteristica(String query) {
+        try {
+            return tipoCaracteristicaDAO.buscarPorNombre(query, 10);
+        } catch (Exception ex) {
+            notificarError("No se pudieron cargar los tipos de característica", ex);
+            return new ArrayList<>();
         }
     }
 
-    public List<SelectItem> getOpcionesIdTipoCaracteristica() {
-        return opcionesIdTipoCaracteristica;
+    @Override
+    protected String validarRegistro(Caracteristica registro) {
+        if (registro.getNombre() == null || registro.getNombre().isBlank()) {
+            return "El nombre de la característica es obligatorio";
+        }
+        
+        TipoCaracteristica tipo = registro.getIdTipoCaracteristica();
+        if (tipo == null || tipo.getIdTipoCaracteristica() == null) {
+            return "Debe seleccionar un Tipo de Característica válido";
+        }
+        if (!Boolean.TRUE.equals(tipo.getActivo())) {
+            return "El Tipo de Característica seleccionado se encuentra inactivo";
+        }
+        return null;
     }
 }

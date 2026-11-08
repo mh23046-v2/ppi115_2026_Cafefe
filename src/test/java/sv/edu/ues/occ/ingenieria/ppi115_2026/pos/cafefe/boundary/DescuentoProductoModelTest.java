@@ -1,5 +1,8 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.boundary;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 import jakarta.faces.validator.ValidatorException;
 import java.util.Calendar;
 import java.util.Date;
@@ -10,9 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.DescuentoDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.DescuentoProductoDAO;
@@ -22,10 +22,8 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.DescuentoProducto
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Producto;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.TipoDescuento;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 @ExtendWith(MockitoExtension.class)
-public class DescuentoProductoModelTest {
+class DescuentoProductoModelTest {
 
     @Mock
     private DescuentoProductoDAO descuentoProductoDAO;
@@ -35,9 +33,6 @@ public class DescuentoProductoModelTest {
 
     @Mock
     private TipoDescuentoDAO tipoDescuentoDAO;
-
-    @Mock
-    private Etiquetas etiquetas;
 
     @InjectMocks
     private DescuentoProductoModel descuentoProductoModel;
@@ -72,7 +67,6 @@ public class DescuentoProductoModelTest {
         assertEquals(producto, resultado.getIdProducto());
         assertNull(descuentoProductoModel.getTipoDescuentoSeleccionado());
         assertNull(descuentoProductoModel.getDescuentoSeleccionado());
-        assertTrue(descuentoProductoModel.getOpcionesIdDescuento().isEmpty());
     }
 
     @Test
@@ -82,7 +76,7 @@ public class DescuentoProductoModelTest {
     }
 
     @Test
-    @DisplayName("cargarDatos y contarDatos deben retornar vacío / 0 si producto o idProducto son nulos")
+    @DisplayName("cargarDatos y contarDatos retornan vacío / 0 si producto o idProducto son nulos")
     void testCargarYContarDatosNull() {
         assertTrue(descuentoProductoModel.cargarDatos(0, 10).isEmpty());
         assertEquals(0, descuentoProductoModel.contarDatos());
@@ -93,14 +87,15 @@ public class DescuentoProductoModelTest {
     }
 
     @Test
-    @DisplayName("cargarDatos y contarDatos delegar a DAO cuando producto es válido")
+    @DisplayName("cargarDatos y contarDatos delegan a DAO paginado cuando producto es válido")
     void testCargarYContarDatosExitoso() {
         Producto producto = new Producto();
         producto.setIdProducto(UUID.randomUUID());
         descuentoProductoModel.setProducto(producto);
 
         List<DescuentoProducto> lista = List.of(new DescuentoProducto());
-        when(descuentoProductoDAO.findByProducto(producto)).thenReturn(lista);
+        when(descuentoProductoDAO.findByProducto(producto, 0, 10)).thenReturn(lista);
+        when(descuentoProductoDAO.countByProducto(producto)).thenReturn(1);
 
         List<DescuentoProducto> resultado = descuentoProductoModel.cargarDatos(0, 10);
         int total = descuentoProductoModel.contarDatos();
@@ -108,45 +103,46 @@ public class DescuentoProductoModelTest {
         assertNotNull(resultado);
         assertEquals(1, resultado.size());
         assertEquals(1, total);
-        verify(descuentoProductoDAO, atLeastOnce()).findByProducto(producto);
+        verify(descuentoProductoDAO).findByProducto(producto, 0, 10);
+        verify(descuentoProductoDAO).countByProducto(producto);
     }
 
     @Test
-    @DisplayName("cargarOpciones puebla los tipos de descuento y deshabilita los inactivos")
-    void testCargarOpciones() {
-        TipoDescuento td1 = new TipoDescuento();
-        td1.setNombre("Promoción");
-        td1.setActivo(true);
-
-        TipoDescuento td2 = new TipoDescuento();
-        td2.setNombre("Liquidación");
-        td2.setActivo(false);
-
-        when(tipoDescuentoDAO.findAll()).thenReturn(List.of(td1, td2));
-
-        descuentoProductoModel.cargarOpciones();
-
-        assertNotNull(descuentoProductoModel.getOpcionesTipoDescuento());
-        assertEquals(2, descuentoProductoModel.getOpcionesTipoDescuento().size());
-        assertFalse(descuentoProductoModel.getOpcionesTipoDescuento().get(0).isDisabled());
-        assertTrue(descuentoProductoModel.getOpcionesTipoDescuento().get(1).isDisabled());
-    }
-
-    @Test
-    @DisplayName("cambioTipoDescuento puebla opcionesDescuento según el tipo seleccionado")
-    void testCambioTipoDescuento() {
+    @DisplayName("completarTipoDescuento delega la búsqueda acotada a 10 al DAO")
+    void testCompletarTipoDescuento() {
         TipoDescuento td = new TipoDescuento();
+        when(tipoDescuentoDAO.buscarPorNombre("Temp", 10)).thenReturn(List.of(td));
+
+        List<TipoDescuento> res = descuentoProductoModel.completarTipoDescuento("Temp");
+
+        assertFalse(res.isEmpty());
+        verify(tipoDescuentoDAO).buscarPorNombre("Temp", 10);
+    }
+
+    @Test
+    @DisplayName("completarDescuentoPorTipo retorna vacío si no hay TipoDescuento seleccionado")
+    void testCompletarDescuentoPorTipoSinSeleccion() {
+        descuentoProductoModel.setTipoDescuentoSeleccionado(null);
+        assertTrue(descuentoProductoModel.completarDescuentoPorTipo("Nav").isEmpty());
+
+        TipoDescuento tdSinId = new TipoDescuento();
+        descuentoProductoModel.setTipoDescuentoSeleccionado(tdSinId);
+        assertTrue(descuentoProductoModel.completarDescuentoPorTipo("Nav").isEmpty());
+    }
+
+    @Test
+    @DisplayName("completarDescuentoPorTipo delega la búsqueda al DAO si TipoDescuento es válido")
+    void testCompletarDescuentoPorTipoExitoso() {
+        TipoDescuento td = new TipoDescuento(UUID.randomUUID());
         descuentoProductoModel.setTipoDescuentoSeleccionado(td);
 
-        Descuento d1 = new Descuento();
-        when(descuentoDAO.findByIdTipoDescuento(td)).thenReturn(List.of(d1));
-        when(etiquetas.descuento(d1)).thenReturn("10% Navideño");
+        Descuento d = new Descuento();
+        when(descuentoDAO.buscarActivosPorTipoYNombre(td, "Nav", 10)).thenReturn(List.of(d));
 
-        descuentoProductoModel.cambioTipoDescuento();
+        List<Descuento> res = descuentoProductoModel.completarDescuentoPorTipo("Nav");
 
-        assertNotNull(descuentoProductoModel.getOpcionesIdDescuento());
-        assertEquals(1, descuentoProductoModel.getOpcionesIdDescuento().size());
-        assertEquals("10% Navideño", descuentoProductoModel.getOpcionesIdDescuento().get(0).getLabel());
+        assertFalse(res.isEmpty());
+        verify(descuentoDAO).buscarActivosPorTipoYNombre(td, "Nav", 10);
     }
 
     @Test
@@ -164,11 +160,45 @@ public class DescuentoProductoModelTest {
     }
 
     @Test
+    @DisplayName("validarRegistro verifica validación de producto, descuento, fechas y porcentajes permitidos")
+    void testValidarRegistro() {
+        DescuentoProducto dp = new DescuentoProducto(UUID.randomUUID());
+
+        // 1. Producto nulo
+        assertNotNull(descuentoProductoModel.validarRegistro(dp));
+
+        // 2. Descuento nulo
+        Producto producto = new Producto(UUID.randomUUID());
+        dp.setIdProducto(producto);
+        assertNotNull(descuentoProductoModel.validarRegistro(dp));
+
+        // 3. Configurar descuento y fechaInicio obligatoria
+        Descuento d = new Descuento(UUID.randomUUID());
+        dp.setIdDescuento(d);
+
+        dp.setFechaDesde(null);
+        assertNotNull(descuentoProductoModel.validarRegistro(dp));
+
+        // 4. Porcentaje superado respecto al TipoDescuento
+        TipoDescuento td = new TipoDescuento();
+        td.setDescuentoMaximo(20);
+        d.setIdTipoDescuento(td);
+
+        dp.setFechaDesde(new Date());
+        dp.setValor(30); // 30% sobrepasa el 20% máximo
+        String errPorcentaje = descuentoProductoModel.validarRegistro(dp);
+        assertNotNull(errPorcentaje);
+        assertTrue(errPorcentaje.contains("supera el máximo"));
+
+        // 5. Válido
+        dp.setValor(15);
+        assertNull(descuentoProductoModel.validarRegistro(dp));
+    }
+
+    @Test
     @DisplayName("validarFechaDesde lanza ValidatorException si fecha está fuera del rango del Descuento padre")
     void testValidarFechaDesdeError() {
         Calendar cal = Calendar.getInstance();
-
-        cal.add(Calendar.DAY_OF_MONTH, -5);
         Date fechaDesdePadre = cal.getTime();
 
         cal.add(Calendar.DAY_OF_MONTH, 10);
@@ -233,7 +263,7 @@ public class DescuentoProductoModelTest {
     void testValidarPorcentajeExcedido() {
         TipoDescuento td = new TipoDescuento();
         td.setNombre("Descuento Empleado");
-        td.setDescuentoMaximo(15); // Tipo de dato primitivo / Integer int
+        td.setDescuentoMaximo(15);
 
         Descuento d = new Descuento();
         d.setIdTipoDescuento(td);

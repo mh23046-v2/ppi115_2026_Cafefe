@@ -3,22 +3,19 @@ package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Root;
 import java.util.List;
-import java.util.UUID;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Empleado;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.EmpleadoRol;
-import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Rol;
 
-/**
- *
- * @author hernandez
- */
 @Stateless
-public class EmpleadoRolDAO extends AbstractDataAccess<EmpleadoRol>{
+public class EmpleadoRolDAO extends AbstractDataAccess<EmpleadoRol> {
 
     @PersistenceContext(unitName = "CafefePU")
     private EntityManager em;
-    
+
     public EmpleadoRolDAO() {
         super(EmpleadoRol.class);
     }
@@ -27,47 +24,58 @@ public class EmpleadoRolDAO extends AbstractDataAccess<EmpleadoRol>{
     protected EntityManager getEntityManager() {
         return em;
     }
-    
-     public List<EmpleadoRol> findByActivo(Boolean activo) {
-        return em.createNamedQuery("EmpleadoRol.findByActivo", EmpleadoRol.class)
-                .setParameter("activo", activo)
-                .getResultList();
+
+    @Override
+    protected List<Order> ordenar(CriteriaBuilder cb, Root<EmpleadoRol> root) {
+        return List.of(
+                cb.desc(root.get("activo"))
+        );
     }
 
-    public List<EmpleadoRol> findByRol(Rol rol) {
-        return em.createQuery(
-                "SELECT e FROM EmpleadoRol e WHERE e.idRol = :rol",
-                EmpleadoRol.class)
-                .setParameter("rol", rol)
-                .getResultList();
-    }
-
-    public List<EmpleadoRol> findByEmpleado(Empleado empleado) {
-        return em.createQuery(
-                "SELECT e FROM EmpleadoRol e WHERE e.idEmpleado = :empleado",
-                EmpleadoRol.class)
-                .setParameter("empleado", empleado)
-                .getResultList();
-    }
-
-    public List<EmpleadoRol> findByIdEmpleado(UUID idEmpleado, int first, int max) {
-        if (idEmpleado == null) {
-            throw new IllegalArgumentException("El id del empleado no puede ser nulo");
+    public List<EmpleadoRol> findByEmpleado(Empleado empleado, int first, int max) {
+        if (empleado == null || empleado.getIdEmpleado() == null) {
+            throw new IllegalArgumentException("El empleado no puede ser nulo ni estar sin ID");
         }
-        return em.createNamedQuery("EmpleadoRol.findByIdEmpleado", EmpleadoRol.class)
-                .setParameter("idEmpleado", idEmpleado)
-                .setFirstResult(first)
-                .setMaxResults(max)
-                .getResultList();
+        if (first < 0 || max <= 0) {
+            throw new IllegalArgumentException("Parámetros de paginación inválidos");
+        }
+        return ejecutar("No se pudieron buscar los roles del empleado", ()
+                -> em.createNamedQuery("EmpleadoRol.findByEmpleado", EmpleadoRol.class)
+                        .setParameter("empleado", empleado)
+                        .setFirstResult(first)
+                        .setMaxResults(max)
+                        .getResultList()
+        );
     }
 
-    public long countByIdEmpleado(UUID idEmpleado) {
-        if (idEmpleado == null) {
-            throw new IllegalArgumentException("El id del empleado no puede ser nulo");
+    public int countByEmpleado(Empleado empleado) {
+        if (empleado == null || empleado.getIdEmpleado() == null) {
+            return 0;
         }
-        return em.createNamedQuery("EmpleadoRol.countByIdEmpleado", Long.class)
-                .setParameter("idEmpleado", idEmpleado)
-                .getSingleResult();
+        return ejecutar("No se pudo contar los roles del empleado", () -> {
+            Long count = em.createNamedQuery("EmpleadoRol.countByEmpleado", Long.class)
+                    .setParameter("empleado", empleado)
+                    .getSingleResult();
+            return count != null ? count.intValue() : 0;
+        });
     }
-    
+
+    public List<EmpleadoRol> findByEmpleadoNombre(String texto, int first, int max) {
+        if (first < 0 || max <= 0) {
+            throw new IllegalArgumentException("Parámetros de paginación inválidos");
+        }
+        String filtro = (texto == null || texto.trim().isEmpty()) ? "%" : "%" + texto.trim().toLowerCase() + "%";
+
+        return ejecutar("No se pudieron buscar las asignaciones por nombre", ()
+                -> em.createNamedQuery("EmpleadoRol.findByEmpleadoNombre", EmpleadoRol.class)
+                        .setParameter("nombre", filtro)
+                        .setFirstResult(first)
+                        .setMaxResults(max)
+                        .getResultList()
+        );
+    }
+
+    public List<EmpleadoRol> findByEmpleadoNombre(String texto, int max) {
+        return findByEmpleadoNombre(texto, 0, max);
+    }
 }

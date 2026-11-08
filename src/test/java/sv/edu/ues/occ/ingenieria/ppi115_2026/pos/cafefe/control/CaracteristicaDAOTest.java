@@ -1,122 +1,130 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Root;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Caracteristica;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.TipoCaracteristica;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
-/**
- *
- * @author johnyv
- */
 @ExtendWith(MockitoExtension.class)
-public class CaracteristicaDAOTest {
+class CaracteristicaDAOTest {
 
     @Mock
     private EntityManager em;
 
     @Mock
-    private TypedQuery<Caracteristica> typedQuery;
+    private TypedQuery<Caracteristica> query;
 
     @InjectMocks
-    private CaracteristicaDAO caracteristicaDAO;
+    private CaracteristicaDAO dao;
 
     @Test
-    @DisplayName("Verifica que el EntityManager está correctamente inyectado")
-    void testGetEntityManager() {
-        assertNotNull(caracteristicaDAO.getEntityManager());
-        assertEquals(em, caracteristicaDAO.getEntityManager());
+    @DisplayName("buscarActivasPorTipoYNombre: Lanza IllegalArgumentException con argumentos inválidos")
+    void testBuscarActivasPorTipoYNombreArgumentosInvalidos() {
+        TipoCaracteristica tipoValido = new TipoCaracteristica();
+        tipoValido.setIdTipoCaracteristica(UUID.randomUUID()); // Corrección del UUID
+        TipoCaracteristica tipoSinId = new TipoCaracteristica();
+
+        assertThrows(IllegalArgumentException.class, () -> dao.buscarActivasPorTipoYNombre(null, "txt", 10));
+        assertThrows(IllegalArgumentException.class, () -> dao.buscarActivasPorTipoYNombre(tipoSinId, "txt", 10));
+        assertThrows(IllegalArgumentException.class, () -> dao.buscarActivasPorTipoYNombre(tipoValido, "txt", 0));
     }
 
     @Test
-    @DisplayName("findByActivo debe retornar la lista correspondiente al filtro")
-    void testFindByActivo() {
-        Boolean activo = true;
-        List<Caracteristica> esperados = Collections.singletonList(new Caracteristica());
-
-        when(em.createNamedQuery("Caracteristica.findByActivo", Caracteristica.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter("activo", activo)).thenReturn(typedQuery);
-        when(typedQuery.getResultList()).thenReturn(esperados);
-
-        List<Caracteristica> resultado = caracteristicaDAO.findByActivo(activo);
-
-        assertNotNull(resultado);
-        assertEquals(1, resultado.size());
-        verify(em).createNamedQuery("Caracteristica.findByActivo", Caracteristica.class);
-        verify(typedQuery).setParameter("activo", activo);
-    }
-
-    @Test
-    @DisplayName("findByNombre consulta con el parámetro nombre y devuelve el resultado")
-    void testFindByNombre() {
-        String nombre = "Tamaño";
-        List<Caracteristica> esperados = Collections.singletonList(new Caracteristica());
-
-        when(em.createNamedQuery("Caracteristica.findByNombre", Caracteristica.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter("nombre", nombre)).thenReturn(typedQuery);
-        when(typedQuery.getResultList()).thenReturn(esperados);
-
-        List<Caracteristica> resultado = caracteristicaDAO.findByNombre(nombre);
-
-        assertNotNull(resultado);
-        assertEquals(1, resultado.size());
-        verify(em).createNamedQuery("Caracteristica.findByNombre", Caracteristica.class);
-        verify(typedQuery).setParameter("nombre", nombre);
-    }
-
-    @Test
-    @DisplayName("findByIdTipoCaracteristica retorna lista vacía si el parametro es nulo")
-    void testFindByIdTipoCaracteristicaNull() {
-        List<Caracteristica> resultado = caracteristicaDAO.findByIdTipoCaracteristica(null);
-
-        assertNotNull(resultado);
-        assertTrue(resultado.isEmpty());
-        verifyNoInteractions(em);
-    }
-
-    @Test
-    @DisplayName("findByIdTipoCaracteristica retorna lista vacía si el ID del TipoCaracteristica es nulo")
-    void testFindByIdTipoCaracteristicaIdNull() {
-        TipoCaracteristica tipo = new TipoCaracteristica();
-        tipo.setIdTipoCaracteristica(null);
-
-        List<Caracteristica> resultado = caracteristicaDAO.findByIdTipoCaracteristica(tipo);
-
-        assertNotNull(resultado);
-        assertTrue(resultado.isEmpty());
-        verifyNoInteractions(em);
-    }
-
-    @Test
-    @DisplayName("findByIdTipoCaracteristica ejecuta query y retorna la lista correspondiente")
-    void testFindByIdTipoCaracteristicaExitoso() {
+    @DisplayName("buscarActivasPorTipoYNombre: Ejecuta la consulta con los parámetros limpios y válidos")
+    void testBuscarActivasPorTipoYNombreParametrosValidos() {
         TipoCaracteristica tipo = new TipoCaracteristica();
         tipo.setIdTipoCaracteristica(UUID.randomUUID());
-        List<Caracteristica> esperados = List.of(new Caracteristica());
-        String queryExpected = "SELECT c FROM Caracteristica c WHERE c.idTipoCaracteristica = :idTipoCaracteristica";
 
-        when(em.createQuery(queryExpected, Caracteristica.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter("idTipoCaracteristica", tipo)).thenReturn(typedQuery);
-        when(typedQuery.getResultList()).thenReturn(esperados);
+        when(em.createNamedQuery("Caracteristica.buscarActivasPorTipoYNombre", Caracteristica.class)).thenReturn(query);
+        when(query.setParameter("tipo", tipo)).thenReturn(query);
+        when(query.setParameter("texto", "%fresa%")).thenReturn(query);
+        when(query.setMaxResults(5)).thenReturn(query);
+        when(query.getResultList()).thenReturn(List.of(new Caracteristica()));
 
-        List<Caracteristica> resultado = caracteristicaDAO.findByIdTipoCaracteristica(tipo);
+        List<Caracteristica> resultado = dao.buscarActivasPorTipoYNombre(tipo, " Fresa  ", 5);
 
-        assertNotNull(resultado);
-        assertEquals(1, resultado.size());
-        verify(em).createQuery(queryExpected, Caracteristica.class);
-        verify(typedQuery).setParameter("idTipoCaracteristica", tipo);
+        assertFalse(resultado.isEmpty());
+        verify(query).setParameter("tipo", tipo);
+        verify(query).setParameter("texto", "%fresa%");
+        verify(query).setMaxResults(5);
+    }
+
+    @Test
+    @DisplayName("buscarActivasPorTipoYNombre: Construye el patrón vacío '%%' cuando el texto es null")
+    void testBuscarActivasPorTipoYNombreTextoNull() {
+        TipoCaracteristica tipo = new TipoCaracteristica();
+        tipo.setIdTipoCaracteristica(UUID.randomUUID());
+
+        when(em.createNamedQuery("Caracteristica.buscarActivasPorTipoYNombre", Caracteristica.class)).thenReturn(query);
+        when(query.setParameter("tipo", tipo)).thenReturn(query);
+        when(query.setParameter("texto", "%%")).thenReturn(query);
+        when(query.setMaxResults(5)).thenReturn(query);
+        when(query.getResultList()).thenReturn(Collections.emptyList());
+
+        List<Caracteristica> resultado = dao.buscarActivasPorTipoYNombre(tipo, null, 5);
+
+        assertTrue(resultado.isEmpty());
+        verify(query).setParameter("texto", "%%");
+    }
+
+    @Test
+    @DisplayName("buscarActivasPorTipoYNombre: Propaga AccesoDatosException conservando la causa original")
+    void testBuscarActivasPorTipoYNombreLanzaExcepcionBD() {
+        TipoCaracteristica tipo = new TipoCaracteristica();
+        tipo.setIdTipoCaracteristica(UUID.randomUUID());
+
+        when(em.createNamedQuery("Caracteristica.buscarActivasPorTipoYNombre", Caracteristica.class)).thenReturn(query);
+        when(query.setParameter("tipo", tipo)).thenReturn(query);
+        when(query.setParameter("texto", "%%")).thenReturn(query);
+        when(query.setMaxResults(5)).thenReturn(query);
+        
+        PersistenceException causa = new PersistenceException("Error conexión BD");
+        when(query.getResultList()).thenThrow(causa);
+
+        AccesoDatosException ex = assertThrows(AccesoDatosException.class, () -> 
+            dao.buscarActivasPorTipoYNombre(tipo, null, 5)
+        );
+        assertSame(causa, ex.getCause());
+    }
+
+    @Test
+    @DisplayName("ordenar: Retorna la lista de criterios de ordenamiento por nombre e ID")
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    void testOrdenarRetornaListaCriterios() {
+        CriteriaBuilder cb = mock(CriteriaBuilder.class);
+        Root<Caracteristica> root = mock(Root.class);
+        
+        Path pathNombre = mock(Path.class);
+        Path pathId = mock(Path.class);
+        Order orderNombre = mock(Order.class);
+        Order orderId = mock(Order.class);
+
+        when(root.get("nombre")).thenReturn(pathNombre);
+        when(root.get("idCaracteristica")).thenReturn(pathId);
+        when(cb.asc(pathNombre)).thenReturn(orderNombre);
+        when(cb.asc(pathId)).thenReturn(orderId);
+
+        List<Order> resultado = dao.ordenar(cb, root);
+
+        assertEquals(2, resultado.size());
+        assertEquals(orderNombre, resultado.get(0));
+        assertEquals(orderId, resultado.get(1));
     }
 }

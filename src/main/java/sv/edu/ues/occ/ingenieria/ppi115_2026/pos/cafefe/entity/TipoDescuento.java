@@ -23,10 +23,7 @@ import java.util.UUID;
 @Table(name = "tipo_descuento")
 @NamedQueries({
     @NamedQuery(name = "TipoDescuento.findAll", query = "SELECT t FROM TipoDescuento t"),
-    @NamedQuery(name = "TipoDescuento.findByNombre", query = "SELECT t FROM TipoDescuento t WHERE t.nombre = :nombre"),
-    @NamedQuery(name = "TipoDescuento.findByActivo", query = "SELECT t FROM TipoDescuento t WHERE t.activo = :activo"),
-    @NamedQuery(name = "TipoDescuento.findByDescuentoMaximo", query = "SELECT t FROM TipoDescuento t WHERE t.descuentoMaximo = :descuentoMaximo"),
-    @NamedQuery(name = "TipoDescuento.findByObservaciones", query = "SELECT t FROM TipoDescuento t WHERE t.observaciones = :observaciones")})
+    @NamedQuery(name = "TipoDescuento.buscarPorNombre", query = "SELECT t FROM TipoDescuento t WHERE LOWER(t.nombre) LIKE :texto ORDER BY t.activo DESC, t.nombre, t.idTipoDescuento")})
 public class TipoDescuento implements Serializable {
 
     private static final long serialVersionUID = 1L;

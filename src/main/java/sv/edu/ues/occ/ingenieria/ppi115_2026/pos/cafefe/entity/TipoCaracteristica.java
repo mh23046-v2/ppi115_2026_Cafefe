@@ -26,10 +26,9 @@ import java.util.UUID;
 @Table(name = "tipo_caracteristica")
 @NamedQueries({
     @NamedQuery(name = "TipoCaracteristica.findAll", query = "SELECT t FROM TipoCaracteristica t"),
-    @NamedQuery(name = "TipoCaracteristica.findByNombre", query = "SELECT t FROM TipoCaracteristica t WHERE t.nombre = :nombre"),
-    @NamedQuery(name = "TipoCaracteristica.findByExpresionRegular", query = "SELECT t FROM TipoCaracteristica t WHERE t.expresionRegular = :expresionRegular"),
-    @NamedQuery(name = "TipoCaracteristica.findByActivo", query = "SELECT t FROM TipoCaracteristica t WHERE t.activo = :activo"),
-    @NamedQuery(name = "TipoCaracteristica.findByObservaciones", query = "SELECT t FROM TipoCaracteristica t WHERE t.observaciones = :observaciones")})
+    @NamedQuery(name = "TipoCaracteristica.findByActivo", query = "SELECT t FROM TipoCaracteristica t WHERE t.activo = :activo ORDER BY t.nombre, t.idTipoCaracteristica"),
+    @NamedQuery(name = "TipoCaracteristica.countByActivo", query = "SELECT COUNT(t) FROM TipoCaracteristica t WHERE t.activo = :activo"),
+    @NamedQuery(name = "TipoCaracteristica.buscarPorNombre", query = "SELECT t FROM TipoCaracteristica t WHERE LOWER(t.nombre) LIKE :texto ORDER BY t.activo DESC, t.nombre, t.idTipoCaracteristica")})
 public class TipoCaracteristica implements Serializable {
 
     private static final long serialVersionUID = 1L;

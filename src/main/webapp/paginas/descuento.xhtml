@@ -70,17 +70,15 @@
                         <p:outputLabel value="Nombre" for="nombre"/>
                         <p:inputText id="nombre" value="#{descuentoModel.registro.nombre}"/>
 
-                        <p:outputLabel value="Tipo de Descuento *" for="idTipoDescuento"/>
-                        <p:selectOneMenu id="idTipoDescuento"
-                                            value="#{descuentoModel.registro.idTipoDescuento}"
-                                            converter="#{entidadConverter}"
-                                            disabled="#{descuentoModel.estado ne 'CREAR'}"
-                                            required="true">
-                            <f:selectItem itemLabel="#{tradcrud['jsf.crud.seleccione']}" 
-                                          itemValue="#{null}" 
-                                          noSelectionOption="true"/>
-                            <f:selectItems value="#{descuentoModel.opcionesIdTipoDescuento}"/>
-                        </p:selectOneMenu>
+                        <p:outputLabel value="Tipo de descuento" for="idTipoDescuento"/>
+                        <p:autoComplete id="idTipoDescuento" value="#{descuentoModel.registro.idTipoDescuento}" 
+                                        completeMethod="#{descuentoModel.completarTipoDescuento}" var="td" itemLabel="#{td.nombre}" itemValue="#{td}"
+                                        converter="#{entidadConverter}" required="true" requiredMessage="El tipo de descuento es obligatorio" disabled="#{descuentoModel.estado ne 'CREAR'}"
+                                        forceSelection="true" dropdown="true" placeholder="Escriba para buscar...">
+                            <p:column>
+                                <h:outputText value="#{td.nombre}" styleClass="#{td.activo ? '' : 'text-muted'}" />
+                            </p:column>
+                        </p:autoComplete>
 
                         <p:outputLabel value="Fecha de Inicio" for="fechaDesde"/>
                         <p:datePicker id="fechaDesde" value="#{descuentoModel.registro.fechaDesde}" 

@@ -3,6 +3,9 @@ package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Root;
 import java.util.List;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Caracteristica;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.TipoCaracteristica;
@@ -26,24 +29,27 @@ public class CaracteristicaDAO extends AbstractDataAccess<Caracteristica> {
         return em;
     }
 
-    public List<Caracteristica> findByActivo(Boolean activo) {
-        return em.createNamedQuery("Caracteristica.findByActivo", Caracteristica.class)
-                .setParameter("activo", activo)
-                .getResultList();
+    @Override
+    protected List<Order> ordenar(CriteriaBuilder cb, Root<Caracteristica> root) {
+        return List.of(
+            cb.asc(root.get("nombre")), 
+            cb.asc(root.get("idCaracteristica"))
+        );
     }
-
-    public List<Caracteristica> findByNombre(String nombre) {
-        return em.createNamedQuery("Caracteristica.findByNombre", Caracteristica.class)
-                .setParameter("nombre", nombre)
-                .getResultList();
-    }
-
-    public List<Caracteristica> findByIdTipoCaracteristica(TipoCaracteristica idTipoCaracteristica) {
-        if (idTipoCaracteristica == null || idTipoCaracteristica.getIdTipoCaracteristica() == null) {
-            return List.of();
+    
+    public List<Caracteristica> buscarActivasPorTipoYNombre(TipoCaracteristica tipo, String texto, int max) {
+        if (tipo == null || tipo.getIdTipoCaracteristica() == null) {
+            throw new IllegalArgumentException("El tipo de característica es obligatorio");
         }
-        return em.createQuery("SELECT c FROM Caracteristica c WHERE c.idTipoCaracteristica = :idTipoCaracteristica", Caracteristica.class)
-                .setParameter("idTipoCaracteristica", idTipoCaracteristica)
-                .getResultList();
+        if (max <= 0) {
+            throw new IllegalArgumentException("El máximo debe ser mayor a cero");
+        }
+        return ejecutar("No se pudieron buscar las características del tipo", () ->
+            em.createNamedQuery("Caracteristica.buscarActivasPorTipoYNombre", Caracteristica.class)
+                .setParameter("tipo", tipo)
+                .setParameter("texto", patronLike(texto))
+                .setMaxResults(max)
+                .getResultList()
+        );
     }
 }

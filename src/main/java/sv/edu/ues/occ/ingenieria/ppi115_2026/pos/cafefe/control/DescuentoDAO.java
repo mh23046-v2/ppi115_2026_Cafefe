@@ -3,14 +3,13 @@ package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Root;
 import java.util.List;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Descuento;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.TipoDescuento;
 
-/**
- *
- * @author johnyv
- */
 @Stateless
 public class DescuentoDAO extends AbstractDataAccess<Descuento> {
 
@@ -26,24 +25,27 @@ public class DescuentoDAO extends AbstractDataAccess<Descuento> {
         return em;
     }
 
-    public List<Descuento> findByActivo(Boolean activo) {
-        return em.createNamedQuery("Descuento.findByActivo", Descuento.class)
-                .setParameter("activo", activo)
-                .getResultList();
-    }
-    
-    public List<Descuento> findByNombre(String nombre) {
-        return em.createNamedQuery("Descuento.findByNombre", Descuento.class)
-                .setParameter("nombre", nombre)
-                .getResultList();
+    @Override
+    protected List<Order> ordenar(CriteriaBuilder cb, Root<Descuento> root) {
+        return List.of(
+            cb.asc(root.get("nombre")),
+            cb.asc(root.get("idDescuento"))
+        );
     }
 
-    public List<Descuento> findByIdTipoDescuento(TipoDescuento idTipoDescuento) {
-        if (idTipoDescuento == null) {
-            return List.of();
+    public List<Descuento> buscarActivosPorTipoYNombre(TipoDescuento tipo, String texto, int max) {
+        if (tipo == null || tipo.getIdTipoDescuento() == null) {
+            throw new IllegalArgumentException("El tipo de descuento es obligatorio");
         }
-        return em.createQuery("SELECT d FROM Descuento d WHERE d.idTipoDescuento = :idTipoDescuento", Descuento.class)
-                .setParameter("idTipoDescuento", idTipoDescuento)
-                .getResultList();
+        if (max <= 0) {
+            throw new IllegalArgumentException("El máximo debe ser mayor a cero");
+        }
+        return ejecutar("No se pudieron buscar los descuentos activos por tipo", () ->
+            em.createNamedQuery("Descuento.buscarActivosPorTipoYNombre", Descuento.class)
+                .setParameter("tipo", tipo)
+                .setParameter("texto", patronLike(texto))
+                .setMaxResults(max)
+                .getResultList()
+        );
     }
 }

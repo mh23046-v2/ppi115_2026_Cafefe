@@ -179,10 +179,9 @@ public class DefaultModelTest {
         }
 
         @Test
-        @DisplayName("btnEliminarHandler() exitoso invoca DAO.delete() y recarga las opciones")
+        @DisplayName("btnEliminarHandler() exitoso invoca DAO.delete()")
         public void testEliminarExitoso() {
             model.setRegistro(registroPrueba);
-            model.cargarOpcionesLlamado = false;
 
             try (MockedStatic<FacesContext> mockedFacesContext = mockStatic(FacesContext.class)) {
                 mockedFacesContext.when(FacesContext::getCurrentInstance).thenReturn(mockFacesContext);
@@ -190,7 +189,6 @@ public class DefaultModelTest {
                 model.btnEliminarHandler();
 
                 verify(mockDAO, times(1)).delete(registroPrueba);
-                assertTrue(model.cargarOpcionesLlamado);
                 assertEquals(ESTADO_CRUD.NINGUNO, model.getEstado());
                 assertNull(model.getRegistro());
                 verify(mockFacesContext, times(1)).addMessage(eq(null), any(FacesMessage.class));

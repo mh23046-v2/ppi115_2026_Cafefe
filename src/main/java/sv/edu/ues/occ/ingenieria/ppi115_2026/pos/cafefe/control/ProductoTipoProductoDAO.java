@@ -3,6 +3,9 @@ package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Root;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -10,10 +13,6 @@ import java.util.UUID;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Producto;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.ProductoTipoProducto;
 
-/**
- *
- * @author johnyv
- */
 @Stateless
 public class ProductoTipoProductoDAO extends AbstractDataAccess<ProductoTipoProducto> {
 
@@ -29,29 +28,38 @@ public class ProductoTipoProductoDAO extends AbstractDataAccess<ProductoTipoProd
         return em;
     }
 
-    public List<ProductoTipoProducto> findByProducto(Producto producto) {
+    @Override
+    protected List<Order> ordenar(CriteriaBuilder cb, Root<ProductoTipoProducto> root) {
+        return List.of(
+                cb.desc(root.get("fechaCreacion")),
+                cb.asc(root.get("idProductoTipoProducto"))
+        );
+    }
+
+    public List<ProductoTipoProducto> findByProducto(Producto producto, int first, int max) {
         if (producto == null || producto.getIdProducto() == null) {
-            return List.of();
-        }
-        return em.createQuery("SELECT ptp FROM ProductoTipoProducto ptp WHERE ptp.producto = :producto", ProductoTipoProducto.class)
-                .setParameter("producto", producto)
-                .getResultList();
-    }
-
-    public List<ProductoTipoProducto> findByFechaCreacion(Date fechaCreacion) {
-        return em.createNamedQuery("ProductoTipoProducto.findByFechaCreacion", ProductoTipoProducto.class)
-                .setParameter("fechaCreacion", fechaCreacion)
-                .getResultList();
-    }
-
-    public List<ProductoTipoProducto> findByIdProducto(UUID idProducto) {
-        if (idProducto == null) {
             return Collections.emptyList();
         }
-        return em.createQuery(
-                "SELECT ptp FROM ProductoTipoProducto ptp WHERE ptp.producto.idProducto = :idProducto",
-                ProductoTipoProducto.class)
-                .setParameter("idProducto", idProducto)
-                .getResultList();
+        if (first < 0 || max <= 0) {
+            throw new IllegalArgumentException("Parámetros de paginación inválidos");
+        }
+        return ejecutar("No se pudieron buscar los tipos del producto", ()
+                -> em.createNamedQuery("ProductoTipoProducto.findByProducto", ProductoTipoProducto.class)
+                        .setParameter("producto", producto)
+                        .setFirstResult(first)
+                        .setMaxResults(max)
+                        .getResultList()
+        );
+    }
+
+    public Long countByProducto(Producto producto) {
+        if (producto == null || producto.getIdProducto() == null) {
+            return 0L;
+        }
+        return ejecutar("No se pudo contar los tipos del producto", ()
+                -> em.createNamedQuery("ProductoTipoProducto.countByProducto", Long.class)
+                        .setParameter("producto", producto)
+                        .getSingleResult()
+        );
     }
 }

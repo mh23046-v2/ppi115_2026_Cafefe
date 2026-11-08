@@ -1,28 +1,25 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.boundary;
 
-import java.util.Collections;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
 import java.util.List;
 import java.util.UUID;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.CaracteristicaDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.TipoCaracteristicaDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Caracteristica;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.TipoCaracteristica;
 
-/**
- *
- * @author johnyv
- */
 @ExtendWith(MockitoExtension.class)
-public class CaracteristicaModelTest {
+class CaracteristicaModelTest {
 
     @Mock
     private CaracteristicaDAO caracteristicaDAO;
@@ -30,9 +27,7 @@ public class CaracteristicaModelTest {
     @Mock
     private TipoCaracteristicaDAO tipoCaracteristicaDAO;
 
-    @Mock
-    private Etiquetas etiquetas;
-
+    @Spy
     @InjectMocks
     private CaracteristicaModel caracteristicaModel;
 
@@ -69,30 +64,76 @@ public class CaracteristicaModelTest {
     }
 
     @Test
-    @DisplayName("cargarOpciones debe poblar la lista de opciones de TipoCaracteristica")
-    void testCargarOpciones() {
+    @DisplayName("completarTipoCaracteristica debe invocar buscarPorNombre en el DAO con límite de 10")
+    void testCompletarTipoCaracteristicaExitoso() {
         TipoCaracteristica tipo = new TipoCaracteristica(UUID.randomUUID());
-        tipo.setNombre("Volumen");
+        tipo.setNombre("Origen");
+        when(tipoCaracteristicaDAO.buscarPorNombre("Origen", 10)).thenReturn(List.of(tipo));
 
-        when(tipoCaracteristicaDAO.findAll()).thenReturn(Collections.singletonList(tipo));
-        when(etiquetas.tipoCaracteristica(tipo)).thenReturn("Volumen");
+        List<TipoCaracteristica> resultado = caracteristicaModel.completarTipoCaracteristica("Origen");
 
-        caracteristicaModel.cargarOpciones();
-
-        assertNotNull(caracteristicaModel.getOpcionesIdTipoCaracteristica());
-        assertEquals(1, caracteristicaModel.getOpcionesIdTipoCaracteristica().size());
-        assertEquals("Volumen", caracteristicaModel.getOpcionesIdTipoCaracteristica().get(0).getLabel());
-        verify(tipoCaracteristicaDAO).findAll();
+        assertFalse(resultado.isEmpty());
+        assertEquals(1, resultado.size());
+        verify(tipoCaracteristicaDAO).buscarPorNombre("Origen", 10);
     }
 
     @Test
-    @DisplayName("cargarOpciones maneja una lista vacía de TipoCaracteristica")
-    void testCargarOpcionesVacio() {
-        when(tipoCaracteristicaDAO.findAll()).thenReturn(Collections.emptyList());
+    @DisplayName("completarTipoCaracteristica retorna lista vacía ante excepciones del DAO")
+    void testCompletarTipoCaracteristicaConExcepcion() {
+        when(tipoCaracteristicaDAO.buscarPorNombre(anyString(), eq(10)))
+                .thenThrow(new RuntimeException("Error simulado de base de datos"));
 
-        caracteristicaModel.cargarOpciones();
+        // Evita que la notificación intente acceder a FacesContext (Mojarra)
+        doNothing().when(caracteristicaModel).notificarError(anyString(), any(Exception.class));
 
-        assertNotNull(caracteristicaModel.getOpcionesIdTipoCaracteristica());
-        assertTrue(caracteristicaModel.getOpcionesIdTipoCaracteristica().isEmpty());
+        List<TipoCaracteristica> resultado = caracteristicaModel.completarTipoCaracteristica("Origen");
+
+        assertNotNull(resultado);
+        assertTrue(resultado.isEmpty());
+        verify(caracteristicaModel).notificarError(eq("No se pudieron cargar los tipos de característica"), any(Exception.class));
+    }
+
+    @Test
+    @DisplayName("validarRegistro evalúa todas las restricciones de negocio para la característica")
+    void testValidarRegistro() {
+        Caracteristica c = new Caracteristica(UUID.randomUUID());
+
+        // 1. Nombre nulo
+        c.setNombre(null);
+        String err1 = caracteristicaModel.validarRegistro(c);
+        assertNotNull(err1);
+        assertTrue(err1.contains("obligatorio"));
+
+        // 2. Nombre vacío / espacios
+        c.setNombre("   ");
+        String err2 = caracteristicaModel.validarRegistro(c);
+        assertNotNull(err2);
+
+        // 3. Sin TipoCaracteristica
+        c.setNombre("Pacamara");
+        c.setIdTipoCaracteristica(null);
+        String err3 = caracteristicaModel.validarRegistro(c);
+        assertNotNull(err3);
+        assertTrue(err3.contains("válido"));
+
+        // 4. TipoCaracteristica sin ID
+        TipoCaracteristica tipoSinId = new TipoCaracteristica();
+        c.setIdTipoCaracteristica(tipoSinId);
+        String err4 = caracteristicaModel.validarRegistro(c);
+        assertNotNull(err4);
+
+        // 5. TipoCaracteristica inactivo
+        TipoCaracteristica tipoInactivo = new TipoCaracteristica(UUID.randomUUID());
+        tipoInactivo.setActivo(false);
+        c.setIdTipoCaracteristica(tipoInactivo);
+        String err5 = caracteristicaModel.validarRegistro(c);
+        assertNotNull(err5);
+        assertTrue(err5.contains("inactivo"));
+
+        // 6. Registro válido
+        TipoCaracteristica tipoActivo = new TipoCaracteristica(UUID.randomUUID());
+        tipoActivo.setActivo(true);
+        c.setIdTipoCaracteristica(tipoActivo);
+        assertNull(caracteristicaModel.validarRegistro(c));
     }
 }

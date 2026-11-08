@@ -3,95 +3,103 @@ package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
-import java.util.Collections;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Root;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.contains;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.EmpleadoRol;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Orden;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-/**
- *
- * @author hernandez
- */
 @ExtendWith(MockitoExtension.class)
-public class OrdenDAOTest {
+class OrdenDAOTest {
 
     @Mock
     private EntityManager em;
 
     @Mock
-    private TypedQuery<Orden> typedQuery;
+    private TypedQuery<Orden> queryList;
 
     @Mock
-    private TypedQuery<EmpleadoRol> queryEmpleadoRol;
+    private TypedQuery<Long> queryCount;
 
     @Mock
-    private Query queryBorrado;
+    private Query queryDelete;
 
     @InjectMocks
-    private OrdenDAO ordenDAO;
+    private OrdenDAO dao;
 
     @Test
-    @DisplayName("Verifica que el EntityManager está correctamente inyectado")
-    void testGetEntityManager() {
-        assertEquals(em, ordenDAO.getEntityManager());
+    @DisplayName("findRange: Lanza excepción ante paginación inválida")
+    void testFindRangePaginacionInvalida() {
+        assertThrows(IllegalArgumentException.class, () -> dao.findRange(-1, 10));
+        assertThrows(IllegalArgumentException.class, () -> dao.findRange(0, 0));
     }
 
     @Test
-    @DisplayName("findRangeOrdenado usa la NamedQuery ordenada por fecha y pagina")
-    void testFindRangeOrdenado() {
-        List<Orden> esperadas = Collections.singletonList(new Orden(UUID.randomUUID()));
-        when(em.createNamedQuery("Orden.findAllOrdenado", Orden.class)).thenReturn(typedQuery);
-        when(typedQuery.setFirstResult(10)).thenReturn(typedQuery);
-        when(typedQuery.setMaxResults(5)).thenReturn(typedQuery);
-        when(typedQuery.getResultList()).thenReturn(esperadas);
+    @DisplayName("findRange: Retorna la lista de órdenes paginada")
+    void testFindRangeExitoso() {
+        when(em.createNamedQuery("Orden.findAll", Orden.class)).thenReturn(queryList);
+        when(queryList.setFirstResult(0)).thenReturn(queryList);
+        when(queryList.setMaxResults(10)).thenReturn(queryList);
+        when(queryList.getResultList()).thenReturn(List.of(new Orden()));
 
-        assertEquals(esperadas, ordenDAO.findRangeOrdenado(10, 5));
+        List<Orden> resultado = dao.findRange(0, 10);
+
+        assertFalse(resultado.isEmpty());
+        verify(queryList).setFirstResult(0);
+        verify(queryList).setMaxResults(10);
     }
 
     @Test
-    @DisplayName("findEmpleadoRolActivos filtra asignación, empleado y rol activos")
-    void testFindEmpleadoRolActivos() {
-        List<EmpleadoRol> esperados = Collections.singletonList(new EmpleadoRol(UUID.randomUUID()));
-        when(em.createQuery(anyString(), eq(EmpleadoRol.class))).thenReturn(queryEmpleadoRol);
-        when(queryEmpleadoRol.getResultList()).thenReturn(esperados);
+    @DisplayName("countAll: Retorna el total de órdenes")
+    void testCountAll() {
+        when(em.createNamedQuery("Orden.countAll", Long.class)).thenReturn(queryCount);
+        when(queryCount.getSingleResult()).thenReturn(12L);
 
-        assertEquals(esperados, ordenDAO.findEmpleadoRolActivos());
-        verify(em).createQuery(contains("er.activo = true AND e.activo = true AND r.activo = true"), eq(EmpleadoRol.class));
+        assertEquals(12, dao.countAll());
     }
 
     @Test
-    @DisplayName("delete borra primero los productos de la orden y luego la orden")
-    void testDeleteBorraProductosPrimero() {
-        Orden orden = new Orden(UUID.randomUUID());
-        when(em.createQuery(contains("DELETE FROM OrdenProducto"))).thenReturn(queryBorrado);
-        when(queryBorrado.setParameter("idOrden", orden.getIdOrden())).thenReturn(queryBorrado);
-        when(em.contains(orden)).thenReturn(true);
+    @DisplayName("delete: Elimina el detalle OrdenProducto y luego remueve la orden")
+    void testDelete() {
+        Orden orden = new Orden();
+        orden.setIdOrden(UUID.randomUUID());
 
-        ordenDAO.delete(orden);
+        when(em.createQuery("DELETE FROM OrdenProducto op WHERE op.idOrden.idOrden = :idOrden")).thenReturn(queryDelete);
+        when(queryDelete.setParameter("idOrden", orden.getIdOrden())).thenReturn(queryDelete);
+        when(queryDelete.executeUpdate()).thenReturn(1);
+        when(em.merge(orden)).thenReturn(orden);
 
-        InOrder orden1 = inOrder(queryBorrado, em);
-        orden1.verify(queryBorrado).executeUpdate();
-        orden1.verify(em).remove(orden);
+        dao.delete(orden);
+
+        verify(queryDelete).executeUpdate();
+        verify(em).remove(orden);
     }
 
     @Test
-    @DisplayName("delete con null lanza error y no toca la base de datos")
-    void testDeleteNulo() {
-        assertThrows(IllegalArgumentException.class, () -> ordenDAO.delete(null));
+    @DisplayName("ordenar: Configura el criterio por fechaCreacion DESC")
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    void testOrdenar() {
+        CriteriaBuilder cb = mock(CriteriaBuilder.class);
+        Root<Orden> root = mock(Root.class);
+        Path pathFecha = mock(Path.class);
+        Order orderFecha = mock(Order.class);
 
-        verifyNoInteractions(em);
+        when(root.get("fechaCreacion")).thenReturn(pathFecha);
+        when(cb.desc(pathFecha)).thenReturn(orderFecha);
+
+        List<Order> resultado = dao.ordenar(cb, root);
+
+        assertEquals(1, resultado.size());
+        assertEquals(orderFecha, resultado.get(0));
     }
 }

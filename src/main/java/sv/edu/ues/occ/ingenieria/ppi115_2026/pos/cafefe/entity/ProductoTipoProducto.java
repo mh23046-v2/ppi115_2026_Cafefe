@@ -19,16 +19,12 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.UUID;
 
-/**
- *
- * @author hernandez
- */
 @Entity
 @Table(name = "producto_tipo_producto")
 @NamedQueries({
-    @NamedQuery(name = "ProductoTipoProducto.findAll", query = "SELECT p FROM ProductoTipoProducto p"),
-    @NamedQuery(name = "ProductoTipoProducto.findByFechaCreacion", query = "SELECT p FROM ProductoTipoProducto p WHERE p.fechaCreacion = :fechaCreacion"),
-    @NamedQuery(name = "ProductoTipoProducto.findByObservaciones", query = "SELECT p FROM ProductoTipoProducto p WHERE p.observaciones = :observaciones")})
+    @NamedQuery(name = "ProductoTipoProducto.findAll", query = "SELECT ptp FROM ProductoTipoProducto ptp"),
+    @NamedQuery(name = "ProductoTipoProducto.findByProducto", query = "SELECT ptp FROM ProductoTipoProducto ptp WHERE ptp.producto = :producto ORDER BY ptp.fechaCreacion DESC, ptp.idProductoTipoProducto"),
+    @NamedQuery(name = "ProductoTipoProducto.countByProducto", query = "SELECT COUNT(ptp) FROM ProductoTipoProducto ptp WHERE ptp.producto = :producto")})
 public class ProductoTipoProducto implements Serializable {
 
     private static final long serialVersionUID = 1L;

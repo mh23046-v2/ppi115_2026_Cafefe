@@ -1,77 +1,108 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Root;
 import java.util.Collections;
 import java.util.List;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.TipoDescuento;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
-/**
- *
- * @author johnyv
- */
 @ExtendWith(MockitoExtension.class)
-public class TipoDescuentoDAOTest {
-    
+class TipoDescuentoDAOTest {
+
     @Mock
     private EntityManager em;
 
     @Mock
-    private TypedQuery<TipoDescuento> typedQuery;
+    private TypedQuery<TipoDescuento> query;
 
     @InjectMocks
-    private TipoDescuentoDAO tipoDescuentoDAO;
+    private TipoDescuentoDAO dao;
 
     @Test
-    @DisplayName("Verifica que el EntityManager está correctamente inyectado")
-    void testGetEntityManager() {
-        assertNotNull(tipoDescuentoDAO.getEntityManager());
-        assertEquals(em, tipoDescuentoDAO.getEntityManager());
+    @DisplayName("buscarPorNombre: Lanza IllegalArgumentException si el límite máximo es inválido")
+    void testBuscarPorNombreLanzaExcepcionMaxInvalido() {
+        assertThrows(IllegalArgumentException.class, () -> dao.buscarPorNombre("texto", 0));
+        assertThrows(IllegalArgumentException.class, () -> dao.buscarPorNombre("texto", -5));
     }
 
     @Test
-    @DisplayName("findByActivo debe retornar la lista correspondiente al filtro")
-    void testFindByActivo() {
-        Boolean activo = true;
-        List<TipoDescuento> esperados = Collections.singletonList(new TipoDescuento());
+    @DisplayName("buscarPorNombre: Limpia el texto ingresado y ejecuta la consulta correctamente")
+    void testBuscarPorNombreTextoValidoEjecutaQuery() {
+        when(em.createNamedQuery("TipoDescuento.buscarPorNombre", TipoDescuento.class)).thenReturn(query);
+        when(query.setParameter("texto", "%promocion%")).thenReturn(query);
+        when(query.setMaxResults(10)).thenReturn(query);
+        when(query.getResultList()).thenReturn(List.of(new TipoDescuento()));
 
-        when(em.createNamedQuery("TipoDescuento.findByActivo", TipoDescuento.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter("activo", activo)).thenReturn(typedQuery);
-        when(typedQuery.getResultList()).thenReturn(esperados);
+        List<TipoDescuento> resultado = dao.buscarPorNombre("  ProMoCiOn ", 10);
 
-        List<TipoDescuento> resultado = tipoDescuentoDAO.findByActivo(activo);
-
-        assertNotNull(resultado);
-        assertEquals(1, resultado.size());
-        verify(em).createNamedQuery("TipoDescuento.findByActivo", TipoDescuento.class);
-        verify(typedQuery).setParameter("activo", activo);
+        assertFalse(resultado.isEmpty(), "La lista de resultados no debe estar vacía");
+        verify(query).setParameter("texto", "%promocion%");
+        verify(query).setMaxResults(10);
     }
 
     @Test
-    @DisplayName("findByNombre consulta con el parámetro nombre y devuelve el resultado")
-    void testFindByNombre() {
-        String nombre = "Navideño";
-        List<TipoDescuento> esperados = Collections.singletonList(new TipoDescuento());
+    @DisplayName("buscarPorNombre: Construye el patrón vacío '%%' cuando el texto es null")
+    void testBuscarPorNombreTextoNullEjecutaQueryConPatronVacio() {
+        when(em.createNamedQuery("TipoDescuento.buscarPorNombre", TipoDescuento.class)).thenReturn(query);
+        when(query.setParameter("texto", "%%")).thenReturn(query);
+        when(query.setMaxResults(5)).thenReturn(query);
+        when(query.getResultList()).thenReturn(Collections.emptyList());
 
-        when(em.createNamedQuery("TipoDescuento.findByNombre", TipoDescuento.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter(eq("nombre"), eq(nombre))).thenReturn(typedQuery);
-        when(typedQuery.getResultList()).thenReturn(esperados);
+        List<TipoDescuento> resultado = dao.buscarPorNombre(null, 5);
 
-        List<TipoDescuento> resultado = tipoDescuentoDAO.findByNombre(nombre);
+        assertTrue(resultado.isEmpty(), "La lista de resultados debe estar vacía por defecto");
+        verify(query).setParameter("texto", "%%");
+    }
 
-        assertNotNull(resultado);
-        assertEquals(1, resultado.size());
-        verify(em).createNamedQuery("TipoDescuento.findByNombre", TipoDescuento.class);
-        verify(typedQuery).setParameter("nombre", nombre);
+    @Test
+    @DisplayName("buscarPorNombre: Propaga AccesoDatosException conservando la causa de persistencia original")
+    void testBuscarPorNombreLanzaAccesoDatosException() {
+        when(em.createNamedQuery("TipoDescuento.buscarPorNombre", TipoDescuento.class)).thenReturn(query);
+        when(query.setParameter(anyString(), anyString())).thenReturn(query);
+        when(query.setMaxResults(anyInt())).thenReturn(query);
+
+        PersistenceException causaOriginal = new PersistenceException("Fallo en BD");
+        when(query.getResultList()).thenThrow(causaOriginal);
+
+        AccesoDatosException ex = assertThrows(AccesoDatosException.class, () -> dao.buscarPorNombre("test", 5));
+        assertSame(causaOriginal, ex.getCause(), "Debe conservar la causa original de persistencia");
+    }
+
+    @Test
+    @DisplayName("ordenar: Retorna la lista de criterios de ordenamiento por nombre e ID")
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    void testOrdenarRetornaListaCriterios() {
+        CriteriaBuilder cb = mock(CriteriaBuilder.class);
+        Root<TipoDescuento> root = mock(Root.class);
+
+        Path pathNombre = mock(Path.class);
+        Path pathId = mock(Path.class);
+        Order orderNombre = mock(Order.class);
+        Order orderId = mock(Order.class);
+
+        when(root.get("nombre")).thenReturn(pathNombre);
+        when(root.get("idTipoDescuento")).thenReturn(pathId);
+        when(cb.asc(pathNombre)).thenReturn(orderNombre);
+        when(cb.asc(pathId)).thenReturn(orderId);
+
+        List<Order> resultado = dao.ordenar(cb, root);
+
+        assertEquals(2, resultado.size());
+        assertEquals(orderNombre, resultado.get(0));
+        assertEquals(orderId, resultado.get(1));
     }
 }

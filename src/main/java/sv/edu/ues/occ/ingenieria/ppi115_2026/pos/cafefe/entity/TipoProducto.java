@@ -24,10 +24,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "tipo_producto")
 @NamedQueries({
-    @NamedQuery(name = "TipoProducto.findAll", query = "SELECT t FROM TipoProducto t"),
-    @NamedQuery(name = "TipoProducto.findByNombre", query = "SELECT t FROM TipoProducto t WHERE t.nombre = :nombre"),
-    @NamedQuery(name = "TipoProducto.findByActivo", query = "SELECT t FROM TipoProducto t WHERE t.activo = :activo"),
-    @NamedQuery(name = "TipoProducto.findByObservaciones", query = "SELECT t FROM TipoProducto t WHERE t.observaciones = :observaciones")})
+    @NamedQuery(name = "TipoProducto.findAll", query = "SELECT tp FROM TipoProducto tp"),
+    @NamedQuery(name = "TipoProducto.buscarPorNombre", query = "SELECT tp FROM TipoProducto tp WHERE LOWER(tp.nombre) LIKE :texto ORDER BY tp.activo DESC, tp.nombre, tp.idTipoProducto")})
 public class TipoProducto implements Serializable {
 
     private static final long serialVersionUID = 1L;

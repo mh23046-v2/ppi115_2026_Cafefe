@@ -17,14 +17,12 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Producto;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.ProductoTipoProducto;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.TipoProducto;
 
-/**
- *
- * @author johnyv
- */
 @Dependent
 public class ProductoTipoProductoModel extends DefaultModel<ProductoTipoProducto> {
 
     private static final long serialVersionUID = 1L;
+
+    private static final int MAX_OPCIONES_COMBO = 50;
 
     @Inject
     private ProductoTipoProductoDAO productoTipoProductoDAO;
@@ -62,6 +60,17 @@ public class ProductoTipoProductoModel extends DefaultModel<ProductoTipoProducto
     }
 
     @Override
+    protected String validarRegistro(ProductoTipoProducto registro) {
+        if (registro.getIdTipoProducto() == null) {
+            return "El tipo de producto es obligatorio";
+        }
+        if (registro.getIdTipoProducto().getActivo() != null && !registro.getIdTipoProducto().getActivo()) {
+            return "El tipo de producto seleccionado se encuentra inactivo";
+        }
+        return null;
+    }
+
+    @Override
     public void setRegistro(ProductoTipoProducto registro) {
         super.setRegistro(registro);
         cargarOpciones();
@@ -72,7 +81,7 @@ public class ProductoTipoProductoModel extends DefaultModel<ProductoTipoProducto
         if (producto == null || producto.getIdProducto() == null) {
             return Collections.emptyList();
         }
-        return productoTipoProductoDAO.findByProducto(producto);
+        return productoTipoProductoDAO.findByProducto(producto, first, max);
     }
 
     @Override
@@ -80,7 +89,8 @@ public class ProductoTipoProductoModel extends DefaultModel<ProductoTipoProducto
         if (producto == null || producto.getIdProducto() == null) {
             return 0;
         }
-        return productoTipoProductoDAO.findByProducto(producto).size();
+        Long total = productoTipoProductoDAO.countByProducto(producto);
+        return total != null ? total.intValue() : 0;
     }
 
     @Override
@@ -88,8 +98,8 @@ public class ProductoTipoProductoModel extends DefaultModel<ProductoTipoProducto
         opcionesTipoProducto = new ArrayList<>();
 
         if (this.producto != null && this.producto.getIdProducto() != null) {
-
-            List<ProductoTipoProducto> asignados = productoTipoProductoDAO.findByProducto(this.producto);
+            // Obtenemos los asignados paginados para descartar duplicados en el selector
+            List<ProductoTipoProducto> asignados = productoTipoProductoDAO.findByProducto(this.producto, 0, 100);
 
             Set<UUID> idsAsignados = asignados.stream()
                     .filter(ptp -> ptp != null && ptp.getIdTipoProducto() != null)
@@ -101,7 +111,10 @@ public class ProductoTipoProductoModel extends DefaultModel<ProductoTipoProducto
                 idTipoEnEdicion = this.registro.getIdTipoProducto().getIdTipoProducto();
             }
 
-            for (TipoProducto tp : tipoProductoDAO.findAll()) {
+            // Consultamos únicamente una lista acotada vía DAO (máximo MAX_OPCIONES_COMBO)
+            List<TipoProducto> catTipos = tipoProductoDAO.buscarPorNombre("", MAX_OPCIONES_COMBO);
+
+            for (TipoProducto tp : catTipos) {
                 boolean esElSeleccionadoActualmente = (idTipoEnEdicion != null && idTipoEnEdicion.equals(tp.getIdTipoProducto()));
 
                 if (!idsAsignados.contains(tp.getIdTipoProducto()) || esElSeleccionadoActualmente) {
@@ -109,7 +122,8 @@ public class ProductoTipoProductoModel extends DefaultModel<ProductoTipoProducto
                 }
             }
         } else {
-            for (TipoProducto tp : tipoProductoDAO.findAll()) {
+            List<TipoProducto> catTipos = tipoProductoDAO.buscarPorNombre("", MAX_OPCIONES_COMBO);
+            for (TipoProducto tp : catTipos) {
                 opcionesTipoProducto.add(new SelectItem(tp, etiquetas.tipoProducto(tp), null, !tp.getActivo()));
             }
         }
@@ -127,5 +141,9 @@ public class ProductoTipoProductoModel extends DefaultModel<ProductoTipoProducto
 
     public List<SelectItem> getOpcionesTipoProducto() {
         return opcionesTipoProducto;
+    }
+
+    public List<TipoProducto> completarTipoProducto(String query) {
+        return tipoProductoDAO.buscarPorNombre(query, 10);
     }
 }
