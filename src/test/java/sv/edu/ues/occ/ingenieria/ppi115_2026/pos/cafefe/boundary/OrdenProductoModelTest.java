@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.OrdenProductoDAO;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.ProductoDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Descuento;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.DescuentoProducto;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Orden;
@@ -27,10 +28,6 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.OrdenProducto;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Producto;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.TipoDescuento;
 
-/**
- *
- * @author hernandez
- */
 @ExtendWith(MockitoExtension.class)
 public class OrdenProductoModelTest {
 
@@ -38,6 +35,9 @@ public class OrdenProductoModelTest {
 
     @Mock
     private OrdenProductoDAO ordenProductoDAO;
+
+    @Mock
+    private ProductoDAO productoDAO;
 
     @Mock
     private FacesContext facesContext;
@@ -92,6 +92,18 @@ public class OrdenProductoModelTest {
     }
 
     @Test
+    @DisplayName("completarProducto: Invoca a ProductoDAO buscando solo activos acotados a 10")
+    void testCompletarProducto() {
+        when(productoDAO.findByNombreActivos("caf", 10)).thenReturn(List.of(cafe));
+
+        List<Producto> res = ordenProductoModel.completarProducto("caf");
+
+        assertEquals(1, res.size());
+        assertEquals(cafe, res.get(0));
+        verify(productoDAO).findByNombreActivos("caf", 10);
+    }
+
+    @Test
     @DisplayName("Crear sin producto: NO guarda y muestra error")
     void testCrearSinProducto() {
         try (MockedStatic<FacesContext> faces = mockStatic(FacesContext.class)) {
@@ -127,7 +139,7 @@ public class OrdenProductoModelTest {
         try (MockedStatic<FacesContext> faces = mockStatic(FacesContext.class)) {
             faces.when(FacesContext::getCurrentInstance).thenReturn(facesContext);
             Descuento vencido = descuento("Navidad", new Date(hoy.getTime() - 10 * DIA), new Date(hoy.getTime() - DIA));
-            when(ordenProductoDAO.findDescuentosDeProductosEnOrden(orden.getIdOrden()))
+            when(ordenProductoDAO.findDescuentosDeProductosEnOrden(orden))
                     .thenReturn(List.of(asignar(platinum, pie, 20), asignar(vencido, cafe, 50)));
 
             ordenProductoModel.prepararDescuentos();
@@ -146,7 +158,7 @@ public class OrdenProductoModelTest {
         try (MockedStatic<FacesContext> faces = mockStatic(FacesContext.class)) {
             faces.when(FacesContext::getCurrentInstance).thenReturn(facesContext);
             Descuento vencido = descuento("Navidad", new Date(hoy.getTime() - 10 * DIA), new Date(hoy.getTime() - DIA));
-            when(ordenProductoDAO.findDescuentosDeProductosEnOrden(orden.getIdOrden()))
+            when(ordenProductoDAO.findDescuentosDeProductosEnOrden(orden))
                     .thenReturn(List.of(asignar(vencido, cafe, 50)));
 
             ordenProductoModel.prepararDescuentos();
@@ -171,7 +183,7 @@ public class OrdenProductoModelTest {
     void testPrepararDescuentosVacio() {
         try (MockedStatic<FacesContext> faces = mockStatic(FacesContext.class)) {
             faces.when(FacesContext::getCurrentInstance).thenReturn(facesContext);
-            when(ordenProductoDAO.findDescuentosDeProductosEnOrden(orden.getIdOrden())).thenReturn(List.of());
+            when(ordenProductoDAO.findDescuentosDeProductosEnOrden(orden)).thenReturn(List.of());
 
             ordenProductoModel.prepararDescuentos();
 
@@ -187,10 +199,11 @@ public class OrdenProductoModelTest {
             faces.when(FacesContext::getCurrentInstance).thenReturn(facesContext);
             OrdenProducto lineaPie = linea(pie);
             OrdenProducto lineaCafe = linea(cafe);
-            when(ordenProductoDAO.findDescuentosDeProductosEnOrden(orden.getIdOrden()))
+            when(ordenProductoDAO.findDescuentosDeProductosEnOrden(orden))
                     .thenReturn(List.of(asignar(platinum, pie, 20)));
-            when(ordenProductoDAO.findByIdOrden(orden.getIdOrden())).thenReturn(List.of(lineaPie, lineaCafe));
-            // el combo devuelve otra instancia con el mismo ID (como hace el converter)
+            when(ordenProductoDAO.countByOrden(orden)).thenReturn(2);
+            when(ordenProductoDAO.findByOrden(orden, 0, 2)).thenReturn(List.of(lineaPie, lineaCafe));
+            
             ordenProductoModel.setDescuentoSeleccionado(new Descuento(platinum.getIdDescuento()));
 
             ordenProductoModel.aplicarDescuento();
@@ -209,9 +222,10 @@ public class OrdenProductoModelTest {
         try (MockedStatic<FacesContext> faces = mockStatic(FacesContext.class)) {
             faces.when(FacesContext::getCurrentInstance).thenReturn(facesContext);
             OrdenProducto lineaPie = linea(pie);
-            when(ordenProductoDAO.findDescuentosDeProductosEnOrden(orden.getIdOrden()))
+            when(ordenProductoDAO.findDescuentosDeProductosEnOrden(orden))
                     .thenReturn(List.of(asignar(platinum, pie, 20)));
-            when(ordenProductoDAO.findByIdOrden(orden.getIdOrden())).thenReturn(List.of(lineaPie));
+            when(ordenProductoDAO.countByOrden(orden)).thenReturn(1);
+            when(ordenProductoDAO.findByOrden(orden, 0, 1)).thenReturn(List.of(lineaPie));
 
             ordenProductoModel.setDescuentoSeleccionado(platinum);
             ordenProductoModel.aplicarDescuento();
@@ -228,7 +242,7 @@ public class OrdenProductoModelTest {
         try (MockedStatic<FacesContext> faces = mockStatic(FacesContext.class)) {
             faces.when(FacesContext::getCurrentInstance).thenReturn(facesContext);
             orden.setFechaCreacion(new Date(hoy.getTime() + 5 * DIA)); // después de que venció
-            when(ordenProductoDAO.findDescuentosDeProductosEnOrden(orden.getIdOrden()))
+            when(ordenProductoDAO.findDescuentosDeProductosEnOrden(orden))
                     .thenReturn(List.of(asignar(platinum, pie, 20)));
             ordenProductoModel.setDescuentoSeleccionado(platinum);
 
@@ -290,7 +304,6 @@ public class OrdenProductoModelTest {
         return op;
     }
 
-    /** Captura el último mensaje que el Model envió a la pantalla y devuelve su severidad. */
     private FacesMessage.Severity severidadDelMensaje() {
         ArgumentCaptor<FacesMessage> captor = ArgumentCaptor.forClass(FacesMessage.class);
         verify(facesContext, atLeastOnce()).addMessage(isNull(), captor.capture());

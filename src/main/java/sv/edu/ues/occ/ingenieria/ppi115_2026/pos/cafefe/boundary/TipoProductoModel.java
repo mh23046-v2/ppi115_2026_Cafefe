@@ -8,10 +8,6 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.AbstractDataAcce
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.TipoProductoDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.TipoProducto;
 
-/**
- *
- * @author hernandez
- */
 @Named
 @ViewScoped
 public class TipoProductoModel extends DefaultModel<TipoProducto> {
@@ -20,7 +16,7 @@ public class TipoProductoModel extends DefaultModel<TipoProducto> {
 
     @Inject
     private TipoProductoDAO tipoProductoDAO;
-    
+
     @Override
     protected AbstractDataAccess<TipoProducto> getDAO() {
         return tipoProductoDAO;
@@ -42,5 +38,12 @@ public class TipoProductoModel extends DefaultModel<TipoProducto> {
     public String nombreBean() {
         return "Tipo de Producto";
     }
-    
+
+    @Override
+    protected String validarRegistro(TipoProducto registro) {
+        if (registro.getNombre() == null || registro.getNombre().isBlank()) {
+            return "El nombre del tipo de producto es obligatorio";
+        }
+        return null;
+    }
 }

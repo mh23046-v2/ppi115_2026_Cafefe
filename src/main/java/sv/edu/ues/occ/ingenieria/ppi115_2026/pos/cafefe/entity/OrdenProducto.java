@@ -29,12 +29,9 @@ import java.util.UUID;
 @Table(name = "orden_producto")
 @NamedQueries({
     @NamedQuery(name = "OrdenProducto.findAll", query = "SELECT o FROM OrdenProducto o"),
-    @NamedQuery(name = "OrdenProducto.findByPrecio", query = "SELECT o FROM OrdenProducto o WHERE o.precio = :precio"),
-    @NamedQuery(name = "OrdenProducto.findByObservaciones", query = "SELECT o FROM OrdenProducto o WHERE o.observaciones = :observaciones"),
-    // Productos de una orden (pestaña "Productos" de la pantalla de Orden)
-    @NamedQuery(name = "OrdenProducto.findByIdOrden", query = "SELECT o FROM OrdenProducto o LEFT JOIN o.idProducto p WHERE o.idOrden.idOrden = :idOrden ORDER BY p.nombre ASC"),
-    @NamedQuery(name = "OrdenProducto.countByIdOrden", query = "SELECT COUNT(o) FROM OrdenProducto o WHERE o.idOrden.idOrden = :idOrden"),
-    @NamedQuery(name = "OrdenProducto.sumPrecioByIdOrden", query = "SELECT SUM(o.precio) FROM OrdenProducto o WHERE o.idOrden.idOrden = :idOrden")})
+    @NamedQuery(name = "OrdenProducto.findByOrden", query = "SELECT o FROM OrdenProducto o LEFT JOIN FETCH o.idProducto p WHERE o.idOrden = :orden ORDER BY p.nombre ASC"),
+    @NamedQuery(name = "OrdenProducto.countByOrden", query = "SELECT COUNT(o) FROM OrdenProducto o WHERE o.idOrden = :orden"),
+    @NamedQuery(name = "OrdenProducto.sumPrecioByOrden", query = "SELECT SUM(o.precio) FROM OrdenProducto o WHERE o.idOrden = :orden")})
 public class OrdenProducto implements Serializable {
 
     private static final long serialVersionUID = 1L;

@@ -27,10 +27,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "orden")
 @NamedQueries({
-    @NamedQuery(name = "Orden.findAll", query = "SELECT o FROM Orden o"),
-    @NamedQuery(name = "Orden.findByFechaCreacion", query = "SELECT o FROM Orden o WHERE o.fechaCreacion = :fechaCreacion"),
-    @NamedQuery(name = "Orden.findAllOrdenado", query = "SELECT o FROM Orden o ORDER BY o.fechaCreacion DESC")}) 
-
+    @NamedQuery(name = "Orden.findAll", query = "SELECT o FROM Orden o ORDER BY o.fechaCreacion DESC"),
+    @NamedQuery(name = "Orden.countAll", query = "SELECT COUNT(o) FROM Orden o")})
 public class Orden implements Serializable {
 
     private static final long serialVersionUID = 1L;

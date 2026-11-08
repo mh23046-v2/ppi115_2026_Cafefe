@@ -3,13 +3,12 @@ package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Root;
 import java.util.List;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.TipoCaracteristica;
 
-/**
- *
- * @author johnyv
- */
 @Stateless
 public class TipoCaracteristicaDAO extends AbstractDataAccess<TipoCaracteristica> {
     
@@ -25,15 +24,23 @@ public class TipoCaracteristicaDAO extends AbstractDataAccess<TipoCaracteristica
         return em;
     }
     
-    public List<TipoCaracteristica> findByActivo(Boolean activo) {
-        return em.createNamedQuery("TipoCaracteristica.findByActivo", TipoCaracteristica.class)
-                .setParameter("activo", activo)
-                .getResultList();
+    @Override
+    protected List<Order> ordenar(CriteriaBuilder cb, Root<TipoCaracteristica> root) {
+        return List.of(
+            cb.asc(root.get("nombre")), 
+            cb.asc(root.get("idTipoCaracteristica"))
+        );
     }
-    
-    public List<TipoCaracteristica> findByNombre(String nombre) {
-        return em.createNamedQuery("TipoCaracteristica.findByNombre", TipoCaracteristica.class)
-                .setParameter("nombre", nombre)
-                .getResultList();
+
+    public List<TipoCaracteristica> buscarPorNombre(String texto, int max) {
+        if (max <= 0) {
+            throw new IllegalArgumentException("El máximo debe ser mayor a cero");
+        }
+        return ejecutar("No se pudieron buscar los tipos de característica", () ->
+            em.createNamedQuery("TipoCaracteristica.buscarPorNombre", TipoCaracteristica.class)
+                .setParameter("texto", patronLike(texto))
+                .setMaxResults(max)
+                .getResultList()
+        );
     }
 }

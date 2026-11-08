@@ -2,6 +2,7 @@ package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.boundary;
 
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -12,25 +13,25 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.*;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.EmpleadoRolDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.OrdenDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Empleado;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.EmpleadoRol;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Orden;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Rol;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.*;
 
-/**
- *
- * @author hernandez
- */
 @ExtendWith(MockitoExtension.class)
 public class OrdenModelTest {
 
     @Mock
     private OrdenDAO ordenDAO;
+
+    @Mock
+    private EmpleadoRolDAO empleadoRolDAO;
 
     @Mock
     private OrdenProductoModel ordenProductoModel;
@@ -64,15 +65,18 @@ public class OrdenModelTest {
     }
 
     @Test
-    @DisplayName("El combo de empleados solo muestra roles admitidos (camarero, barista...)")
-    void testCargarOpcionesSoloAdmitidos() {
-        when(ordenDAO.findEmpleadoRolActivos()).thenReturn(List.of(empleadoRol("Barista"), empleadoRol("Cajero")));
-        when(etiquetas.empleadoRol(any())).thenReturn("Empleado");
+    @DisplayName("completarEmpleadoRol: Invoca EmpleadoRolDAO por nombre y solo devuelve roles admitidos")
+    void testCompletarEmpleadoRolSoloAdmitidos() {
+        EmpleadoRol erBarista = empleadoRol("Barista");
+        EmpleadoRol erCajero = empleadoRol("Cajero");
 
-        ordenModel.cargarOpciones();
+        when(empleadoRolDAO.findByEmpleadoNombre("juan", 15)).thenReturn(List.of(erBarista, erCajero));
 
-        assertEquals(1, ordenModel.getOpcionesEmpleado().size());
-        assertEquals("Barista", ((EmpleadoRol) ordenModel.getOpcionesEmpleado().get(0).getValue()).getIdRol().getNombre());
+        List<EmpleadoRol> resultado = ordenModel.completarEmpleadoRol("juan");
+
+        assertEquals(1, resultado.size());
+        assertEquals("Barista", resultado.get(0).getIdRol().getNombre());
+        verify(empleadoRolDAO).findByEmpleadoNombre("juan", 15);
     }
 
     @Test
@@ -81,7 +85,9 @@ public class OrdenModelTest {
         try (MockedStatic<FacesContext> faces = mockStatic(FacesContext.class)) {
             faces.when(FacesContext::getCurrentInstance).thenReturn(facesContext);
             ordenModel.btnNuevoHandler();
-            ordenModel.getRegistro().setIdEmpleadoRol(empleadoRol("Cajero"));
+            EmpleadoRol cajero = empleadoRol("Cajero");
+            ordenModel.getRegistro().setIdEmpleadoRol(cajero);
+            when(etiquetas.empleadoRol(cajero)).thenReturn("Cajero Juan");
 
             ordenModel.btnCrearHandler();
 
@@ -132,6 +138,7 @@ public class OrdenModelTest {
             faces.when(FacesContext::getCurrentInstance).thenReturn(facesContext);
             Orden orden = new Orden(UUID.randomUUID());
             orden.setIdEmpleadoRol(empleadoRol("Barista"));
+            orden.setFechaCreacion(null);
             ordenModel.setRegistro(orden);
 
             ordenModel.btnModificarHandler();

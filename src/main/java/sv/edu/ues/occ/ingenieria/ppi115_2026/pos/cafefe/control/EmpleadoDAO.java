@@ -3,19 +3,18 @@ package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Root;
 import java.util.List;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Empleado;
 
-/**
- *
- * @author hernandez
- */
 @Stateless
-public class EmpleadoDAO extends AbstractDataAccess<Empleado>{
-    
+public class EmpleadoDAO extends AbstractDataAccess<Empleado> {
+
     @PersistenceContext(unitName = "CafefePU")
     private EntityManager em;
-    
+
     public EmpleadoDAO() {
         super(Empleado.class);
     }
@@ -24,23 +23,40 @@ public class EmpleadoDAO extends AbstractDataAccess<Empleado>{
     protected EntityManager getEntityManager() {
         return em;
     }
-    
-    public List<Empleado> findByActivo(Boolean activo) {
-        return em.createNamedQuery("Empleado.findByActivo", Empleado.class)
-                .setParameter("activo", activo)
-                .getResultList();
+
+    @Override
+    protected List<Order> ordenar(CriteriaBuilder cb, Root<Empleado> root) {
+        return List.of(
+            cb.desc(root.get("activo")),
+            cb.asc(root.get("apellido")),
+            cb.asc(root.get("nombre"))
+        );
     }
 
-    public List<Empleado> findByNombre(String nombre) {
-        return em.createNamedQuery("Empleado.findByNombre", Empleado.class)
-                .setParameter("nombre", nombre)
-                .getResultList();
+    public List<Empleado> findByNombre(String texto, int first, int max) {
+        if (first < 0 || max <= 0) {
+            throw new IllegalArgumentException("Parámetros de paginación inválidos");
+        }
+        String filtro = patronLike(texto);
+        return ejecutar("No se pudieron buscar los empleados por nombre", () ->
+            em.createNamedQuery("Empleado.findByNombre", Empleado.class)
+                .setParameter("nombre", filtro)
+                .setFirstResult(first)
+                .setMaxResults(max)
+                .getResultList()
+        );
     }
 
-    public List<Empleado> findByApellido(String apellido) {
-        return em.createNamedQuery("Empleado.findByApellido", Empleado.class)
-                .setParameter("apellido", apellido)
-                .getResultList();
+    public List<Empleado> findByNombre(String texto, int max) {
+        return findByNombre(texto, 0, max);
     }
-    
+
+    public Long countByNombre(String texto) {
+        String filtro = patronLike(texto);
+        return ejecutar("No se pudo contar los empleados por nombre", () ->
+            em.createNamedQuery("Empleado.countByNombre", Long.class)
+                .setParameter("nombre", filtro)
+                .getSingleResult()
+        );
+    }
 }

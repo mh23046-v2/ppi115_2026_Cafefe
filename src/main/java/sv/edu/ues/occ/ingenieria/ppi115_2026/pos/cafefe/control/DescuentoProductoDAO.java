@@ -8,10 +8,6 @@ import java.util.List;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.DescuentoProducto;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Producto;
 
-/**
- *
- * @author johnyv
- */
 @Stateless
 public class DescuentoProductoDAO extends AbstractDataAccess<DescuentoProducto> {
 
@@ -27,30 +23,31 @@ public class DescuentoProductoDAO extends AbstractDataAccess<DescuentoProducto> 
         return em;
     }
 
-    public List<DescuentoProducto> findByProducto(Producto producto) {
+    public List<DescuentoProducto> findByProducto(Producto producto, int first, int max) {
         if (producto == null || producto.getIdProducto() == null) {
-            return List.of();
+            throw new IllegalArgumentException("El producto es obligatorio");
         }
-        return em.createQuery("SELECT dp FROM DescuentoProducto dp WHERE dp.idProducto = :producto", DescuentoProducto.class)
+        if (first < 0 || max <= 0) {
+            throw new IllegalArgumentException("Los parámetros de paginación son inválidos");
+        }
+        return ejecutar("No se pudieron cargar los descuentos del producto", () ->
+            em.createNamedQuery("DescuentoProducto.findByProducto", DescuentoProducto.class)
                 .setParameter("producto", producto)
-                .getResultList();
+                .setFirstResult(first)
+                .setMaxResults(max)
+                .getResultList()
+        );
     }
 
-    public List<DescuentoProducto> findByFechaDesde(Date fechaDesde) {
-        return em.createNamedQuery("DescuentoProducto.findByFechaDesde", DescuentoProducto.class)
-                .setParameter("fechaDesde", fechaDesde)
-                .getResultList();
-    }
-
-    public List<DescuentoProducto> findByFechaHasta(Date fechaHasta) {
-        return em.createNamedQuery("DescuentoProducto.findByFechaHasta", DescuentoProducto.class)
-                .setParameter("fechaHasta", fechaHasta)
-                .getResultList();
-    }
-
-    public List<DescuentoProducto> findByValor(Integer valor) {
-        return em.createNamedQuery("DescuentoProducto.findByValor", DescuentoProducto.class)
-                .setParameter("valor", valor)
-                .getResultList();
+    public int countByProducto(Producto producto) {
+        if (producto == null || producto.getIdProducto() == null) {
+            throw new IllegalArgumentException("El producto es obligatorio");
+        }
+        return ejecutar("No se pudo contar los descuentos del producto", () -> {
+            Long total = em.createNamedQuery("DescuentoProducto.countByProducto", Long.class)
+                    .setParameter("producto", producto)
+                    .getSingleResult();
+            return total != null ? total.intValue() : 0;
+        });
     }
 }

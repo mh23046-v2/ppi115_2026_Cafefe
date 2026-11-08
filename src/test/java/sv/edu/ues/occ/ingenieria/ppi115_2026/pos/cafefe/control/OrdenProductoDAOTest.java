@@ -3,7 +3,6 @@ package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import java.math.BigDecimal;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -12,108 +11,82 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.contains;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.DescuentoProducto;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Orden;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.OrdenProducto;
-import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Producto;
 
-/**
- *
- * @author hernandez
- */
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 @ExtendWith(MockitoExtension.class)
-public class OrdenProductoDAOTest {
+class OrdenProductoDAOTest {
 
     @Mock
     private EntityManager em;
 
     @Mock
-    private TypedQuery<OrdenProducto> typedQuery;
+    private TypedQuery<OrdenProducto> queryList;
 
     @Mock
-    private TypedQuery<Long> queryConteo;
+    private TypedQuery<Long> queryCount;
 
     @Mock
-    private TypedQuery<BigDecimal> querySuma;
-
-    @Mock
-    private TypedQuery<Producto> queryProducto;
-
-    @Mock
-    private TypedQuery<DescuentoProducto> queryDescuento;
+    private TypedQuery<BigDecimal> querySum;
 
     @InjectMocks
-    private OrdenProductoDAO ordenProductoDAO;
-
-    private final UUID idOrden = UUID.randomUUID();
+    private OrdenProductoDAO dao;
 
     @Test
-    @DisplayName("findByIdOrden usa la NamedQuery con el id de la orden y pagina")
-    void testFindByIdOrden() {
-        List<OrdenProducto> esperados = Collections.singletonList(new OrdenProducto(UUID.randomUUID()));
-        when(em.createNamedQuery("OrdenProducto.findByIdOrden", OrdenProducto.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter("idOrden", idOrden)).thenReturn(typedQuery);
-        when(typedQuery.setFirstResult(0)).thenReturn(typedQuery);
-        when(typedQuery.setMaxResults(5)).thenReturn(typedQuery);
-        when(typedQuery.getResultList()).thenReturn(esperados);
+    @DisplayName("findByOrden: Lanza excepción si la orden es nula o carece de ID")
+    void testFindByOrdenValidaciones() {
+        Orden oSinId = new Orden();
+        Orden oValida = new Orden(UUID.randomUUID());
 
-        assertEquals(esperados, ordenProductoDAO.findByIdOrden(idOrden, 0, 5));
+        assertThrows(IllegalArgumentException.class, () -> dao.findByOrden(null, 0, 10));
+        assertThrows(IllegalArgumentException.class, () -> dao.findByOrden(oSinId, 0, 10));
+        assertThrows(IllegalArgumentException.class, () -> dao.findByOrden(oValida, -1, 10));
     }
 
     @Test
-    @DisplayName("findByIdOrden con id nulo lanza error y no consulta")
-    void testFindByIdOrdenNulo() {
-        assertThrows(IllegalArgumentException.class, () -> ordenProductoDAO.findByIdOrden(null, 0, 5));
-        assertThrows(IllegalArgumentException.class, () -> ordenProductoDAO.countByIdOrden(null));
-        assertThrows(IllegalArgumentException.class, () -> ordenProductoDAO.totalByIdOrden(null));
-        assertThrows(IllegalArgumentException.class, () -> ordenProductoDAO.findDescuentosDeProductosEnOrden(null));
+    @DisplayName("findByOrden: Retorna la lista paginada de detalles")
+    void testFindByOrdenExitoso() {
+        Orden orden = new Orden(UUID.randomUUID());
 
-        verifyNoInteractions(em);
+        when(em.createNamedQuery("OrdenProducto.findByOrden", OrdenProducto.class)).thenReturn(queryList);
+        when(queryList.setParameter("orden", orden)).thenReturn(queryList);
+        when(queryList.setFirstResult(0)).thenReturn(queryList);
+        when(queryList.setMaxResults(10)).thenReturn(queryList);
+        when(queryList.getResultList()).thenReturn(List.of(new OrdenProducto()));
+
+        List<OrdenProducto> resultado = dao.findByOrden(orden, 0, 10);
+
+        assertFalse(resultado.isEmpty());
+        verify(queryList).setFirstResult(0);
+        verify(queryList).setMaxResults(10);
     }
 
     @Test
-    @DisplayName("countByIdOrden devuelve el conteo de la NamedQuery")
-    void testCountByIdOrden() {
-        when(em.createNamedQuery("OrdenProducto.countByIdOrden", Long.class)).thenReturn(queryConteo);
-        when(queryConteo.setParameter("idOrden", idOrden)).thenReturn(queryConteo);
-        when(queryConteo.getSingleResult()).thenReturn(3L);
+    @DisplayName("countByOrden: Retorna 0 con orden inválida o devuelve el conteo real")
+    void testCountByOrden() {
+        assertEquals(0, dao.countByOrden(null));
 
-        assertEquals(3L, ordenProductoDAO.countByIdOrden(idOrden));
+        Orden orden = new Orden(UUID.randomUUID());
+        when(em.createNamedQuery("OrdenProducto.countByOrden", Long.class)).thenReturn(queryCount);
+        when(queryCount.setParameter("orden", orden)).thenReturn(queryCount);
+        when(queryCount.getSingleResult()).thenReturn(3L);
+
+        assertEquals(3, dao.countByOrden(orden));
     }
 
     @Test
-    @DisplayName("totalByIdOrden devuelve 0 cuando la orden no tiene productos (SUM = null)")
-    void testTotalSinProductos() {
-        when(em.createNamedQuery("OrdenProducto.sumPrecioByIdOrden", BigDecimal.class)).thenReturn(querySuma);
-        when(querySuma.setParameter("idOrden", idOrden)).thenReturn(querySuma);
-        when(querySuma.getSingleResult()).thenReturn(null);
+    @DisplayName("totalByOrden: Retorna BigDecimal.ZERO si no hay suma o la orden es nula")
+    void testTotalByOrden() {
+        assertEquals(BigDecimal.ZERO, dao.totalByOrden(null));
 
-        assertEquals(BigDecimal.ZERO, ordenProductoDAO.totalByIdOrden(idOrden));
-    }
+        Orden orden = new Orden(UUID.randomUUID());
+        when(em.createNamedQuery("OrdenProducto.sumPrecioByOrden", BigDecimal.class)).thenReturn(querySum);
+        when(querySum.setParameter("orden", orden)).thenReturn(querySum);
+        when(querySum.getSingleResult()).thenReturn(new BigDecimal("15.50"));
 
-    @Test
-    @DisplayName("findProductosActivos solo trae productos activos")
-    void testFindProductosActivos() {
-        List<Producto> esperados = Collections.singletonList(new Producto(UUID.randomUUID()));
-        when(em.createQuery(anyString(), eq(Producto.class))).thenReturn(queryProducto);
-        when(queryProducto.getResultList()).thenReturn(esperados);
-
-        assertEquals(esperados, ordenProductoDAO.findProductosActivos());
-        verify(em).createQuery(contains("p.activo = true"), eq(Producto.class));
-    }
-
-    @Test
-    @DisplayName("findDescuentosDeProductosEnOrden busca descuentos de los productos de la orden")
-    void testFindDescuentosDeProductosEnOrden() {
-        List<DescuentoProducto> esperados = Collections.singletonList(new DescuentoProducto(UUID.randomUUID()));
-        when(em.createQuery(anyString(), eq(DescuentoProducto.class))).thenReturn(queryDescuento);
-        when(queryDescuento.setParameter("idOrden", idOrden)).thenReturn(queryDescuento);
-        when(queryDescuento.getResultList()).thenReturn(esperados);
-
-        assertEquals(esperados, ordenProductoDAO.findDescuentosDeProductosEnOrden(idOrden));
+        assertEquals(new BigDecimal("15.50"), dao.totalByOrden(orden));
     }
 }

@@ -67,14 +67,14 @@
                                      maxlength="155"/>
 
                         <p:outputLabel value="Tipo de característica" for="idTipoCaracteristica"/>
-                        <p:selectOneMenu id="idTipoCaracteristica" value="#{caracteristicaModel.registro.idTipoCaracteristica}" converter="#{entidadConverter}"
-                                        required="true" requiredMessage="El tipo de característica es obligatorio"
-                                        disabled="#{caracteristicaModel.estado ne 'CREAR'}"
-                                        filter="true" filterMatchMode="contains">
-                            <f:selectItem itemLabel="#{tradcrud['jsf.crud.seleccione']}"
-                                          itemValue="#{null}" noSelectionOption="true"/>
-                            <f:selectItems value="#{caracteristicaModel.opcionesIdTipoCaracteristica}"/>
-                        </p:selectOneMenu>
+                        <p:autoComplete id="idTipoCaracteristica" value="#{caracteristicaModel.registro.idTipoCaracteristica}" 
+                                        completeMethod="#{caracteristicaModel.completarTipoCaracteristica}" var="tc" itemLabel="#{tc.nombre}" itemValue="#{tc}"
+                                        converter="#{entidadConverter}" required="true" requiredMessage="El tipo de característica es obligatorio" disabled="#{caracteristicaModel.estado ne 'CREAR'}"
+                                        forceSelection="true" dropdown="true" placeholder="Escriba para buscar...">
+                            <p:column>
+                                <h:outputText value="#{tc.nombre}" styleClass="#{tc.activo ? '' : 'text-muted'}" />
+                            </p:column>
+                        </p:autoComplete>
 
                         <p:outputLabel value="Activo" for="activo"/>
                         <p:toggleSwitch id="activo" value="#{caracteristicaModel.registro.activo}" onIcon = "pi pi-check" offIcon="pi pi-times" styleClass="check-cafe"/>

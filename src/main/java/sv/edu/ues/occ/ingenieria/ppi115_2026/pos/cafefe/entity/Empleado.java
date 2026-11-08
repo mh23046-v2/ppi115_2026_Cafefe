@@ -14,18 +14,12 @@ import jakarta.validation.constraints.Size;
 import java.io.Serializable;
 import java.util.UUID;
 
-/**
- *
- * @author hernandez
- */
 @Entity
 @Table(name = "empleado")
 @NamedQueries({
     @NamedQuery(name = "Empleado.findAll", query = "SELECT e FROM Empleado e"),
-    @NamedQuery(name = "Empleado.findByNombre", query = "SELECT e FROM Empleado e WHERE e.nombre = :nombre"),
-    @NamedQuery(name = "Empleado.findByApellido", query = "SELECT e FROM Empleado e WHERE e.apellido = :apellido"),
-    @NamedQuery(name = "Empleado.findByActivo", query = "SELECT e FROM Empleado e WHERE e.activo = :activo"),
-    @NamedQuery(name = "Empleado.findByComentarios", query = "SELECT e FROM Empleado e WHERE e.comentarios = :comentarios")})
+    @NamedQuery(name = "Empleado.findByNombre", query = "SELECT e FROM Empleado e WHERE LOWER(CONCAT(e.nombre, ' ', e.apellido)) LIKE :nombre ORDER BY e.activo DESC, e.apellido ASC, e.nombre ASC"),
+    @NamedQuery(name = "Empleado.countByNombre", query = "SELECT COUNT(e) FROM Empleado e WHERE LOWER(CONCAT(e.nombre, ' ', e.apellido)) LIKE :nombre")})
 public class Empleado implements Serializable {
 
     private static final long serialVersionUID = 1L;

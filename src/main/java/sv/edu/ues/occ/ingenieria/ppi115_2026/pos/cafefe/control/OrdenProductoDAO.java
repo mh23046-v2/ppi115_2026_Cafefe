@@ -3,17 +3,15 @@ package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Root;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.UUID;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.DescuentoProducto;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Orden;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.OrdenProducto;
-import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Producto;
 
-/**
- *
- * @author hernandez
- */
 @Stateless
 public class OrdenProductoDAO extends AbstractDataAccess<OrdenProducto> {
 
@@ -29,67 +27,65 @@ public class OrdenProductoDAO extends AbstractDataAccess<OrdenProducto> {
         return em;
     }
 
-    public List<OrdenProducto> findByIdOrden(UUID idOrden, int first, int max) {
-        if (idOrden == null) {
-            throw new IllegalArgumentException("El id de la orden no puede ser nulo");
+    @Override
+    protected List<Order> ordenar(CriteriaBuilder cb, Root<OrdenProducto> root) {
+        return List.of(
+                cb.asc(root.get("idProducto").get("nombre"))
+        );
+    }
+
+    // Obtiene de forma paginada los productos asociados a una orden.
+    public List<OrdenProducto> findByOrden(Orden orden, int first, int max) {
+        if (orden == null || orden.getIdOrden() == null) {
+            throw new IllegalArgumentException("La orden no puede ser nula ni carecer de ID");
         }
-        return em.createNamedQuery("OrdenProducto.findByIdOrden", OrdenProducto.class)
-                .setParameter("idOrden", idOrden)
-                .setFirstResult(first)
-                .setMaxResults(max)
-                .getResultList();
-    }
-
-    /** Todos los productos de la orden (sin paginar), para aplicar descuentos. */
-    public List<OrdenProducto> findByIdOrden(UUID idOrden) {
-        return findByIdOrden(idOrden, 0, Integer.MAX_VALUE);
-    }
-
-    public long countByIdOrden(UUID idOrden) {
-        if (idOrden == null) {
-            throw new IllegalArgumentException("El id de la orden no puede ser nulo");
+        if (first < 0 || max <= 0) {
+            throw new IllegalArgumentException("Parámetros de paginación inválidos");
         }
-        return em.createNamedQuery("OrdenProducto.countByIdOrden", Long.class)
-                .setParameter("idOrden", idOrden)
-                .getSingleResult();
+        return ejecutar("No se pudieron cargar los productos de la orden", ()
+                -> em.createNamedQuery("OrdenProducto.findByOrden", OrdenProducto.class)
+                        .setParameter("orden", orden)
+                        .setFirstResult(first)
+                        .setMaxResults(max)
+                        .getResultList()
+        );
     }
 
-    /** Total a pagar de la orden (0 si no tiene productos). */
-    public BigDecimal totalByIdOrden(UUID idOrden) {
-        if (idOrden == null) {
-            throw new IllegalArgumentException("El id de la orden no puede ser nulo");
+    // Conteo total de ítems agregados a la orden para el LazyDataModel.
+    public int countByOrden(Orden orden) {
+        if (orden == null || orden.getIdOrden() == null) {
+            return 0;
         }
-        BigDecimal total = em.createNamedQuery("OrdenProducto.sumPrecioByIdOrden", BigDecimal.class)
-                .setParameter("idOrden", idOrden)
-                .getSingleResult();
-        return total == null ? BigDecimal.ZERO : total;
+        return ejecutar("No se pudo contar los productos de la orden", () -> {
+            Long count = em.createNamedQuery("OrdenProducto.countByOrden", Long.class)
+                    .setParameter("orden", orden)
+                    .getSingleResult();
+            return count != null ? count.intValue() : 0;
+        });
     }
 
-    // ------------------------------------------------------------------
-    // Lecturas de Producto y Descuento (entidades del compañero B).
-    // Solo LEEN; no crean ni modifican nada de B. Ver LEEME-orden.md.
-    // ------------------------------------------------------------------
-
-    /** Productos que se pueden vender (activos), por nombre. */
-    public List<Producto> findProductosActivos() {
-        return em.createQuery(
-                "SELECT p FROM Producto p WHERE p.activo = true ORDER BY p.nombre", Producto.class)
-                .getResultList();
-    }
-
-    /**
-     * Descuentos asignados a los productos que ya están en la orden. Son
-     * "candidatos": la vigencia se revisa con ReglasOrden.descuentoAplicable.
-     */
-    public List<DescuentoProducto> findDescuentosDeProductosEnOrden(UUID idOrden) {
-        if (idOrden == null) {
-            throw new IllegalArgumentException("El id de la orden no puede ser nulo");
+    // Calcula la suma acumulada de los precios de los productos en la orden.
+    public BigDecimal totalByOrden(Orden orden) {
+        if (orden == null || orden.getIdOrden() == null) {
+            return BigDecimal.ZERO;
         }
-        return em.createQuery(
-                "SELECT dp FROM DescuentoProducto dp JOIN dp.idDescuento d"
-                + " WHERE dp.idProducto IN (SELECT op.idProducto FROM OrdenProducto op WHERE op.idOrden.idOrden = :idOrden)"
-                + " ORDER BY d.nombre", DescuentoProducto.class)
-                .setParameter("idOrden", idOrden)
-                .getResultList();
+        return ejecutar("No se pudo calcular el total de la orden", () -> {
+            BigDecimal total = em.createNamedQuery("OrdenProducto.sumPrecioByOrden", BigDecimal.class)
+                    .setParameter("orden", orden)
+                    .getSingleResult();
+            return total == null ? BigDecimal.ZERO : total;
+        });
+    }
+
+    // Descuentos candidatos asignados a los productos presentes en la orden.
+    public List<DescuentoProducto> findDescuentosDeProductosEnOrden(Orden orden) {
+        if (orden == null || orden.getIdOrden() == null) {
+            throw new IllegalArgumentException("La orden no puede ser nula ni carecer de ID");
+        }
+        return ejecutar("No se pudieron cargar los descuentos aplicables a la orden", ()
+                -> em.createNamedQuery("DescuentoProducto.findByProductosEnOrden", DescuentoProducto.class)
+                        .setParameter("orden", orden)
+                        .getResultList()
+        );
     }
 }

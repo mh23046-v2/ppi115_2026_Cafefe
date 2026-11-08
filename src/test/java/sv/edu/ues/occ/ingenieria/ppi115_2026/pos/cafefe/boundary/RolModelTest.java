@@ -1,108 +1,81 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.boundary;
 
-import jakarta.faces.application.FacesMessage;
-import jakarta.faces.context.FacesContext;
+import java.util.List;
 import java.util.UUID;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.isNull;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.verify;
 import org.mockito.junit.jupiter.MockitoExtension;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.RolDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Rol;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-/**
- *
- * @author hernandez
- */
 @ExtendWith(MockitoExtension.class)
-public class RolModelTest {
+class RolModelTest {
 
     @Mock
     private RolDAO rolDAO;
 
-    @Mock
-    private FacesContext facesContext;
-
     @InjectMocks
-    private RolModel rolModel;
+    private RolModel model;
 
     @Test
-    @DisplayName("getDAO debe retornar la instancia inyectada del DAO")
-    void testGetDAO() {
-        assertEquals(rolDAO, rolModel.getDAO());
-    }
-
-    @Test
-    @DisplayName("getId debe retornar el UUID de la entidad")
-    void testGetId() {
-        UUID id = UUID.randomUUID();
-
-        assertEquals(id, rolModel.getId(new Rol(id)));
-    }
-
-    @Test
-    @DisplayName("nuevoRegistro crea el rol con ID y activo por defecto")
+    @DisplayName("nuevoRegistro: Inicializa un Rol con UUID y estado activo")
     void testNuevoRegistro() {
-        Rol resultado = rolModel.nuevoRegistro();
-
-        assertNotNull(resultado.getIdRol());
-        assertTrue(resultado.getActivo());
+        Rol nuevo = model.nuevoRegistro();
+        assertNotNull(nuevo);
+        assertNotNull(nuevo.getIdRol());
+        assertTrue(nuevo.getActivo());
     }
 
     @Test
-    @DisplayName("nombreBean debe retornar el nombre descriptivo para la vista")
-    void testNombreBean() {
-        assertEquals("Rol", rolModel.nombreBean());
+    @DisplayName("validarRegistro: Valida presencia del nombre del rol")
+    void testValidarRegistro() {
+        Rol r = new Rol();
+
+        assertNotNull(model.validarRegistro(null));
+
+        r.setNombre(null);
+        assertNotNull(model.validarRegistro(r));
+
+        r.setNombre("   ");
+        assertNotNull(model.validarRegistro(r));
+
+        r.setNombre("Administrador");
+        assertNull(model.validarRegistro(r));
     }
 
     @Test
-    @DisplayName("Crear (caso feliz): guarda con el DAO, muestra éxito y vuelve al listado")
-    void testCrearExitoso() {
-        try (MockedStatic<FacesContext> faces = mockStatic(FacesContext.class)) {
-            faces.when(FacesContext::getCurrentInstance).thenReturn(facesContext);
-            rolModel.btnNuevoHandler();
-            Rol nuevo = rolModel.getRegistro();
-            nuevo.setNombre("Camarero");
+    @DisplayName("cargarDatos: Consulta la tabla principal paginada vía DAO")
+    void testCargarDatos() {
+        when(rolDAO.findByNombre("", 0, 10)).thenReturn(List.of(new Rol()));
 
-            rolModel.btnCrearHandler();
+        List<Rol> resultado = model.cargarDatos(0, 10);
 
-            verify(rolDAO).create(nuevo);
-            assertEquals(ESTADO_CRUD.NINGUNO, rolModel.getEstado());
-            assertNull(rolModel.getRegistro());
-            assertEquals(FacesMessage.SEVERITY_INFO, severidadDelMensaje());
-        }
+        assertFalse(resultado.isEmpty());
+        verify(rolDAO).findByNombre("", 0, 10);
     }
 
     @Test
-    @DisplayName("Eliminar con error de BD (rol en uso): muestra error y no sale del formulario")
-    void testEliminarConError() {
-        try (MockedStatic<FacesContext> faces = mockStatic(FacesContext.class)) {
-            faces.when(FacesContext::getCurrentInstance).thenReturn(facesContext);
-            Rol existente = new Rol(UUID.randomUUID());
-            rolModel.setRegistro(existente);
-            doThrow(new RuntimeException("violates foreign key constraint")).when(rolDAO).delete(any());
+    @DisplayName("contarDatos: Obtiene el total de registros para la paginación principal")
+    void testContarDatos() {
+        when(rolDAO.countByNombre("")).thenReturn(5L);
 
-            rolModel.btnEliminarHandler();
-
-            assertSame(existente, rolModel.getRegistro());
-            assertEquals(FacesMessage.SEVERITY_ERROR, severidadDelMensaje());
-        }
+        assertEquals(5, model.contarDatos());
+        verify(rolDAO).countByNombre("");
     }
 
-    /** Captura el mensaje que el Model envió a la pantalla y devuelve su severidad. */
-    private FacesMessage.Severity severidadDelMensaje() {
-        ArgumentCaptor<FacesMessage> captor = ArgumentCaptor.forClass(FacesMessage.class);
-        verify(facesContext).addMessage(isNull(), captor.capture());
-        return captor.getValue().getSeverity();
+    @Test
+    @DisplayName("completarRol: Retorna acotado a 10 resultados para autocompletado")
+    void testCompletarRol() {
+        when(rolDAO.findByNombre("adm", 10)).thenReturn(List.of(new Rol()));
+
+        List<Rol> resultado = model.completarRol("adm");
+
+        assertFalse(resultado.isEmpty());
+        verify(rolDAO).findByNombre("adm", 10);
     }
 }

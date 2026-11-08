@@ -58,14 +58,21 @@
                                     <p:outputLabel value="ID"/>
                                     <p:inputText id="id" value="#{ordenModel.registro.idOrden}" disabled="true"/>
 
-                                    <p:outputLabel value="Empleado" for="empleado"/>
-                                    <p:selectOneMenu id="empleado" value="#{ordenModel.registro.idEmpleadoRol}"
-                                                     converter="#{entidadConverter}" required="true"
-                                                     disabled="#{ordenModel.estado ne 'CREAR'}"
-                                                     requiredMessage="Seleccione el empleado que toma la orden">
-                                        <f:selectItem itemLabel="Seleccione un empleado" noSelectionOption="true"/>
-                                        <f:selectItems value="#{ordenModel.opcionesEmpleado}"/>
-                                    </p:selectOneMenu>
+                                    <p:outputLabel value="Empleado" for="acEmpleado"/>
+                                    <p:autoComplete id="acEmpleado"
+                                                    value="#{ordenModel.registro.idEmpleadoRol}"
+                                                    completeMethod="#{ordenModel.completarEmpleadoRol}"
+                                                    var="er"
+                                                    itemLabel="#{etiquetas.empleadoRol(er)}"
+                                                    itemValue="#{er}"
+                                                    converter="#{entidadConverter}"
+                                                    dropdown="true"
+                                                    dropdownMode="blank"
+                                                    placeholder="Escriba o seleccione un empleado..."
+                                                    forceSelection="true"
+                                                    disabled="#{ordenModel.estado ne 'CREAR'}"
+                                                    required="true"
+                                                    requiredMessage="Seleccione el empleado que toma la orden"/>
 
                                     <p:outputLabel value="Fecha de orden" for="fecha"/>
                                     <p:datePicker id="fecha" value="#{ordenModel.registro.fechaCreacion}"
@@ -151,15 +158,25 @@
                                                      value="#{ordenModel.ordenProductoModel.registro.idOrdenProducto}"
                                                      disabled="true"/>
 
-                                        <p:outputLabel value="Producto"/>
-                                        <h:panelGroup id="grpProducto" layout="block" styleClass="campo-con-boton">
-                                            <p:inputText id="nombreProducto" readonly="true"
-                                                         value="#{etiquetas.producto(ordenModel.ordenProductoModel.registro.idProducto)}"/>
-                                            <p:commandButton value="Seleccionar" icon="pi pi-search"
-                                                             styleClass="boton-cafe" type="button"
-                                                             disabled="#{ordenModel.ordenProductoModel.estado ne 'CREAR'}"
-                                                             onclick="PF('dlgProducto').show()"/>
-                                        </h:panelGroup>
+                                        <p:outputLabel value="Producto" for="acProducto"/>
+                                        <p:autoComplete id="acProducto"
+                                                        value="#{ordenModel.ordenProductoModel.registro.idProducto}"
+                                                        completeMethod="#{ordenModel.ordenProductoModel.completarProducto}"
+                                                        var="p"
+                                                        itemLabel="#{p.nombre}"
+                                                        itemValue="#{p}"
+                                                        converter="#{entidadConverter}"
+                                                        dropdown="true"
+                                                        dropdownMode="blank"
+                                                        placeholder="Escriba para buscar un producto..."
+                                                        forceSelection="true"
+                                                        disabled="#{ordenModel.ordenProductoModel.estado ne 'CREAR'}"
+                                                        required="true"
+                                                        requiredMessage="Seleccione un producto">
+                                            <p:ajax event="itemSelect"
+                                                    listener="#{ordenModel.ordenProductoModel.seleccionarProducto(ordenModel.ordenProductoModel.registro.idProducto)}"
+                                                    update="precio" />
+                                        </p:autoComplete>
 
                                         <p:outputLabel value="Precio"/>
                                         <p:inputText id="precio" readonly="true"
@@ -186,35 +203,8 @@
             </h:panelGroup>
         </h:form>
 
-        <!-- ===== DIÁLOGO: SELECCIONAR PRODUCTO =====
-             Va en su propio formulario (no se pueden anidar h:form). -->
-        <p:dialog header="Seleccionar Producto" widgetVar="dlgProducto" modal="true"
-                  width="650" resizable="false" closeOnEscape="true">
-            <h:form id="frmProducto">
-                <p:dataTable id="tblProductos" value="#{ordenModel.ordenProductoModel.productosDisponibles}"
-                             var="p" paginator="true" rows="8" paginatorPosition="bottom"
-                             emptyMessage="No hay productos activos registrados">
-                    <p:column headerText="Producto" filterBy="#{p.nombre}" filterMatchMode="contains">
-                        <h:outputText value="#{p.nombre}"/>
-                    </p:column>
-                    <p:column headerText="Precio sugerido" style="width:9rem">
-                        <h:outputText value="#{p.precioSugerido}">
-                            <f:convertNumber type="currency" currencySymbol="$" locale="es_SV"/>
-                        </h:outputText>
-                    </p:column>
-                    <p:column style="width:8rem">
-                        <p:commandButton value="Seleccionar" icon="pi pi-check" styleClass="boton-cafe"
-                                         actionListener="#{ordenModel.ordenProductoModel.seleccionarProducto(p)}"
-                                         process="@this"
-                                         update=":frmMantenimiento:tabView:grpProducto :frmMantenimiento:tabView:precio"
-                                         oncomplete="PF('dlgProducto').hide()"/>
-                    </p:column>
-                </p:dataTable>
-            </h:form>
-        </p:dialog>
-
         <!-- ===== DIÁLOGO: APLICAR DESCUENTO ===== -->
-        <p:dialog header="Aplicar Descuento" widgetVar="dlgDescuento" modal="true"
+        <p:dialog header="Aplicar Descuento" widgetVar="dlgDescuento" modal="true" width="650"
                   resizable="false" closeOnEscape="true">
             <h:form id="frmDescuento">
                 <h:panelGroup id="pnlDescuento" layout="block" styleClass="formulario-cafe">

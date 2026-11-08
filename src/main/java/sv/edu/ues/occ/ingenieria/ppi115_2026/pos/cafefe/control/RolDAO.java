@@ -3,19 +3,18 @@ package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Root;
 import java.util.List;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Rol;
 
-/**
- *
- * @author hernandez
- */
 @Stateless
-public class RolDAO extends AbstractDataAccess<Rol>{
-    
+public class RolDAO extends AbstractDataAccess<Rol> {
+
     @PersistenceContext(unitName = "CafefePU")
     private EntityManager em;
-    
+
     public RolDAO() {
         super(Rol.class);
     }
@@ -24,17 +23,39 @@ public class RolDAO extends AbstractDataAccess<Rol>{
     protected EntityManager getEntityManager() {
         return em;
     }
-    
-     public List<Rol> findByActivo(Boolean activo) {
-        return em.createNamedQuery("Rol.findByActivo", Rol.class)
-                .setParameter("activo", activo)
-                .getResultList();
+
+    @Override
+    protected List<Order> ordenar(CriteriaBuilder cb, Root<Rol> root) {
+        return List.of(
+            cb.desc(root.get("activo")),
+            cb.asc(root.get("nombre"))
+        );
     }
 
-    public List<Rol> findByNombre(String nombre) {
-        return em.createNamedQuery("Rol.findByNombre", Rol.class)
-                .setParameter("nombre", nombre)
-                .getResultList();
+    public List<Rol> findByNombre(String texto, int first, int max) {
+        if (first < 0 || max <= 0) {
+            throw new IllegalArgumentException("Parámetros de paginación inválidos");
+        }
+        String filtro = patronLike(texto);
+        return ejecutar("No se pudieron buscar los roles por nombre", () ->
+            em.createNamedQuery("Rol.findByNombre", Rol.class)
+                .setParameter("nombre", filtro)
+                .setFirstResult(first)
+                .setMaxResults(max)
+                .getResultList()
+        );
     }
-    
+
+    public List<Rol> findByNombre(String texto, int max) {
+        return findByNombre(texto, 0, max);
+    }
+
+    public Long countByNombre(String texto) {
+        String filtro = patronLike(texto);
+        return ejecutar("No se pudo contar los roles por nombre", () ->
+            em.createNamedQuery("Rol.countByNombre", Long.class)
+                .setParameter("nombre", filtro)
+                .getSingleResult()
+        );
+    }
 }

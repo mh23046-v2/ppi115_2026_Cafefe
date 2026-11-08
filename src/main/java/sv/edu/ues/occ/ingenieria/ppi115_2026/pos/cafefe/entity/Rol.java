@@ -17,16 +17,12 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
-/**
- *
- * @author hernandez
- */
 @Entity
 @Table(name = "rol")
 @NamedQueries({
     @NamedQuery(name = "Rol.findAll", query = "SELECT r FROM Rol r"),
-    @NamedQuery(name = "Rol.findByNombre", query = "SELECT r FROM Rol r WHERE r.nombre = :nombre"),
-    @NamedQuery(name = "Rol.findByActivo", query = "SELECT r FROM Rol r WHERE r.activo = :activo"),
+    @NamedQuery(name = "Rol.findByNombre", query = "SELECT r FROM Rol r WHERE LOWER(r.nombre) LIKE :nombre ORDER BY r.activo DESC, r.nombre ASC"),
+    @NamedQuery(name = "Rol.countByNombre", query = "SELECT COUNT(r) FROM Rol r WHERE LOWER(r.nombre) LIKE :nombre"),
     @NamedQuery(name = "Rol.findByObservaciones", query = "SELECT r FROM Rol r WHERE r.observaciones = :observaciones")})
 public class Rol implements Serializable {
 

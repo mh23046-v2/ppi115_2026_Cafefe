@@ -26,11 +26,12 @@ import java.util.UUID;
 @Table(name = "empleado_rol")
 @NamedQueries({
     @NamedQuery(name = "EmpleadoRol.findAll", query = "SELECT e FROM EmpleadoRol e"),
-    @NamedQuery(name = "EmpleadoRol.findByActivo", query = "SELECT e FROM EmpleadoRol e WHERE e.activo = :activo"),
-    @NamedQuery(name = "EmpleadoRol.findByObservaciones", query = "SELECT e FROM EmpleadoRol e WHERE e.observaciones = :observaciones"),
-    // Usadas en la pestaña "Roles asignados" de la página de empleados (maestro-detalle)
-    @NamedQuery(name = "EmpleadoRol.findByIdEmpleado", query = "SELECT e FROM EmpleadoRol e LEFT JOIN e.idRol r WHERE e.idEmpleado.idEmpleado = :idEmpleado ORDER BY r.nombre ASC"),
-    @NamedQuery(name = "EmpleadoRol.countByIdEmpleado", query = "SELECT COUNT(e) FROM EmpleadoRol e WHERE e.idEmpleado.idEmpleado = :idEmpleado")})
+    @NamedQuery(name = "EmpleadoRol.findByEmpleado", query = "SELECT e FROM EmpleadoRol e LEFT JOIN e.idRol r WHERE e.idEmpleado = :empleado ORDER BY e.activo DESC, r.nombre ASC"),
+    @NamedQuery(name = "EmpleadoRol.findByEmpleadoNombre", query = "SELECT er FROM EmpleadoRol er JOIN FETCH er.idEmpleado e JOIN FETCH er.idRol r "
+            + "WHERE er.activo = true AND e.activo = true AND r.activo = true "
+            + "AND (LOWER(CONCAT(e.nombre, ' ', e.apellido)) LIKE :nombre OR LOWER(e.nombre) LIKE :nombre OR LOWER(e.apellido) LIKE :nombre) "
+            + "ORDER BY e.apellido ASC, e.nombre ASC"),
+    @NamedQuery(name = "EmpleadoRol.countByEmpleado", query = "SELECT COUNT(e) FROM EmpleadoRol e WHERE e.idEmpleado = :empleado")})
 public class EmpleadoRol implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -144,5 +145,5 @@ public class EmpleadoRol implements Serializable {
     public String toString() {
         return "sv.edu.ues.ingenieria.pos.ppi115_2026.cafefe.entity.EmpleadoRol[ idEmpleadoRol=" + idEmpleadoRol + " ]";
     }
-    
+
 }

@@ -1,9 +1,12 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
-import java.util.Collections;
-import java.util.Date;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Root;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -11,126 +14,103 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.DescuentoProducto;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Producto;
-
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
-/**
- *
- * @author johnyv
- */
 @ExtendWith(MockitoExtension.class)
-public class DescuentoProductoDAOTest {
+class DescuentoProductoDAOTest {
 
     @Mock
     private EntityManager em;
 
     @Mock
-    private TypedQuery<DescuentoProducto> typedQuery;
+    private TypedQuery<DescuentoProducto> queryList;
+
+    @Mock
+    private TypedQuery<Long> queryCount;
 
     @InjectMocks
-    private DescuentoProductoDAO descuentoProductoDAO;
+    private DescuentoProductoDAO dao;
 
     @Test
-    @DisplayName("Verifica que el EntityManager está correctamente inyectado")
-    void testGetEntityManager() {
-        assertNotNull(descuentoProductoDAO.getEntityManager());
-        assertEquals(em, descuentoProductoDAO.getEntityManager());
+    @DisplayName("findByProducto: Lanza IllegalArgumentException si producto o parámetros de paginación son inválidos")
+    void testFindByProductoArgumentosInvalidos() {
+        Producto productoValido = new Producto(UUID.randomUUID());
+        Producto productoSinId = new Producto();
+
+        assertThrows(IllegalArgumentException.class, () -> dao.findByProducto(null, 0, 10));
+        assertThrows(IllegalArgumentException.class, () -> dao.findByProducto(productoSinId, 0, 10));
+        assertThrows(IllegalArgumentException.class, () -> dao.findByProducto(productoValido, -1, 10));
+        assertThrows(IllegalArgumentException.class, () -> dao.findByProducto(productoValido, 0, 0));
     }
 
     @Test
-    @DisplayName("findByProducto retorna lista vacía si el producto o su ID son nulos")
-    void testFindByProductoNull() {
-        // Caso 1: Objeto Producto nulo
-        List<DescuentoProducto> res1 = descuentoProductoDAO.findByProducto(null);
-        assertNotNull(res1);
-        assertTrue(res1.isEmpty());
-
-        // Caso 2: Objeto Producto con idProducto nulo
-        Producto pSinId = new Producto();
-        List<DescuentoProducto> res2 = descuentoProductoDAO.findByProducto(pSinId);
-        assertNotNull(res2);
-        assertTrue(res2.isEmpty());
-
-        verifyNoInteractions(em);
-    }
-
-    @Test
-    @DisplayName("findByProducto ejecuta la consulta JPQL correctamente si el producto es válido")
+    @DisplayName("findByProducto: Ejecuta la consulta paginada correctamente")
     void testFindByProductoExitoso() {
-        Producto producto = new Producto();
-        producto.setIdProducto(UUID.randomUUID());
-        List<DescuentoProducto> esperados = List.of(new DescuentoProducto());
-        String expectedQuery = "SELECT dp FROM DescuentoProducto dp WHERE dp.idProducto = :producto";
+        Producto producto = new Producto(UUID.randomUUID());
 
-        when(em.createQuery(expectedQuery, DescuentoProducto.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter("producto", producto)).thenReturn(typedQuery);
-        when(typedQuery.getResultList()).thenReturn(esperados);
+        when(em.createNamedQuery("DescuentoProducto.findByProducto", DescuentoProducto.class)).thenReturn(queryList);
+        when(queryList.setParameter("producto", producto)).thenReturn(queryList);
+        when(queryList.setFirstResult(0)).thenReturn(queryList);
+        when(queryList.setMaxResults(10)).thenReturn(queryList);
+        when(queryList.getResultList()).thenReturn(List.of(new DescuentoProducto()));
 
-        List<DescuentoProducto> resultado = descuentoProductoDAO.findByProducto(producto);
+        List<DescuentoProducto> resultado = dao.findByProducto(producto, 0, 10);
 
-        assertNotNull(resultado);
-        assertEquals(1, resultado.size());
-        verify(em).createQuery(expectedQuery, DescuentoProducto.class);
-        verify(typedQuery).setParameter("producto", producto);
+        assertFalse(resultado.isEmpty());
+        verify(queryList).setParameter("producto", producto);
+        verify(queryList).setFirstResult(0);
+        verify(queryList).setMaxResults(10);
     }
 
     @Test
-    @DisplayName("findByFechaDesde ejecuta NamedQuery y devuelve la lista correspondiente")
-    void testFindByFechaDesde() {
-        Date fecha = new Date();
-        List<DescuentoProducto> esperados = Collections.singletonList(new DescuentoProducto());
+    @DisplayName("countByProducto: Retorna el total de registros por producto")
+    void testCountByProductoExitoso() {
+        Producto producto = new Producto(UUID.randomUUID());
 
-        when(em.createNamedQuery("DescuentoProducto.findByFechaDesde", DescuentoProducto.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter("fechaDesde", fecha)).thenReturn(typedQuery);
-        when(typedQuery.getResultList()).thenReturn(esperados);
+        when(em.createNamedQuery("DescuentoProducto.countByProducto", Long.class)).thenReturn(queryCount);
+        when(queryCount.setParameter("producto", producto)).thenReturn(queryCount);
+        when(queryCount.getSingleResult()).thenReturn(5L);
 
-        List<DescuentoProducto> resultado = descuentoProductoDAO.findByFechaDesde(fecha);
+        int total = dao.countByProducto(producto);
 
-        assertNotNull(resultado);
-        assertEquals(1, resultado.size());
-        verify(em).createNamedQuery("DescuentoProducto.findByFechaDesde", DescuentoProducto.class);
-        verify(typedQuery).setParameter("fechaDesde", fecha);
+        assertEquals(5, total);
+        verify(queryCount).setParameter("producto", producto);
     }
 
     @Test
-    @DisplayName("findByFechaHasta ejecuta NamedQuery y devuelve la lista correspondiente")
-    void testFindByFechaHasta() {
-        Date fecha = new Date();
-        List<DescuentoProducto> esperados = Collections.singletonList(new DescuentoProducto());
+    @DisplayName("findByProducto: Propaga AccesoDatosException envolviendo PersistenceException")
+    void testFindByProductoLanzaExcepcionBD() {
+        Producto producto = new Producto(UUID.randomUUID());
 
-        when(em.createNamedQuery("DescuentoProducto.findByFechaHasta", DescuentoProducto.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter("fechaHasta", fecha)).thenReturn(typedQuery);
-        when(typedQuery.getResultList()).thenReturn(esperados);
+        when(em.createNamedQuery("DescuentoProducto.findByProducto", DescuentoProducto.class)).thenReturn(queryList);
+        when(queryList.setParameter("producto", producto)).thenReturn(queryList);
+        when(queryList.setFirstResult(anyInt())).thenReturn(queryList);
+        when(queryList.setMaxResults(anyInt())).thenReturn(queryList);
 
-        List<DescuentoProducto> resultado = descuentoProductoDAO.findByFechaHasta(fecha);
+        PersistenceException causa = new PersistenceException("Error al consultar la BD");
+        when(queryList.getResultList()).thenThrow(causa);
 
-        assertNotNull(resultado);
-        assertEquals(1, resultado.size());
-        verify(em).createNamedQuery("DescuentoProducto.findByFechaHasta", DescuentoProducto.class);
-        verify(typedQuery).setParameter("fechaHasta", fecha);
+        AccesoDatosException ex = assertThrows(AccesoDatosException.class, () -> 
+            dao.findByProducto(producto, 0, 10)
+        );
+        assertSame(causa, ex.getCause());
     }
 
     @Test
-    @DisplayName("findByValor ejecuta NamedQuery y devuelve la lista correspondiente")
-    void testFindByValor() {
-        Integer valor = 10;
-        List<DescuentoProducto> esperados = Collections.singletonList(new DescuentoProducto());
+    @DisplayName("ordenar: Verifica la lista de criterios de ordenamiento de DescuentoProducto")
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    void testOrdenarRetornaListaCriterios() {
+        CriteriaBuilder cb = mock(CriteriaBuilder.class);
+        Root<DescuentoProducto> root = mock(Root.class);
 
-        when(em.createNamedQuery("DescuentoProducto.findByValor", DescuentoProducto.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter("valor", valor)).thenReturn(typedQuery);
-        when(typedQuery.getResultList()).thenReturn(esperados);
-
-        List<DescuentoProducto> resultado = descuentoProductoDAO.findByValor(valor);
+        List<Order> resultado = dao.ordenar(cb, root);
 
         assertNotNull(resultado);
-        assertEquals(1, resultado.size());
-        verify(em).createNamedQuery("DescuentoProducto.findByValor", DescuentoProducto.class);
-        verify(typedQuery).setParameter("valor", valor);
+        assertEquals(0, resultado.size());
     }
 }

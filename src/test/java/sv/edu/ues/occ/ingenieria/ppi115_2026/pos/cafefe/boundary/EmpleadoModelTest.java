@@ -1,23 +1,20 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.boundary;
 
+import java.util.List;
 import java.util.UUID;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import static org.mockito.Mockito.verify;
 import org.mockito.junit.jupiter.MockitoExtension;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.EmpleadoDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Empleado;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-/**
- * 
- * @author hernandez
- */
 @ExtendWith(MockitoExtension.class)
-public class EmpleadoModelTest {
+class EmpleadoModelTest {
 
     @Mock
     private EmpleadoDAO empleadoDAO;
@@ -26,47 +23,83 @@ public class EmpleadoModelTest {
     private EmpleadoRolModel empleadoRolModel;
 
     @InjectMocks
-    private EmpleadoModel empleadoModel;
+    private EmpleadoModel model;
 
     @Test
-    @DisplayName("getDAO debe retornar la instancia inyectada del DAO")
-    void testGetDAO() {
-        assertEquals(empleadoDAO, empleadoModel.getDAO());
-    }
-
-    @Test
-    @DisplayName("getId debe retornar el UUID de la entidad")
-    void testGetId() {
-        UUID id = UUID.randomUUID();
-
-        assertEquals(id, empleadoModel.getId(new Empleado(id)));
-    }
-
-    @Test
-    @DisplayName("nuevoRegistro crea el empleado con ID y activo por defecto")
+    @DisplayName("nuevoRegistro: Inicializa un Empleado con UUID y estado activo")
     void testNuevoRegistro() {
-        Empleado resultado = empleadoModel.nuevoRegistro();
-
-        assertNotNull(resultado.getIdEmpleado());
-        assertTrue(resultado.getActivo());
+        Empleado nuevo = model.nuevoRegistro();
+        assertNotNull(nuevo);
+        assertNotNull(nuevo.getIdEmpleado());
+        assertTrue(nuevo.getActivo());
     }
 
     @Test
-    @DisplayName("nombreBean debe retornar el nombre descriptivo para la vista")
-    void testNombreBean() {
-        assertEquals("Empleado", empleadoModel.nombreBean());
+    @DisplayName("registroCambio: Notifica al model de EmpleadoRol y resetea pestaña activa")
+    void testRegistroCambio() {
+        Empleado e = new Empleado(UUID.randomUUID());
+        model.setRegistro(e);
+        model.setTabActiva(1);
+
+        model.registroCambio();
+
+        verify(empleadoRolModel).setEmpleado(e);
+        verify(empleadoRolModel).btnCancelarHandler();
+        assertEquals(0, model.getTabActiva());
     }
 
     @Test
-    @DisplayName("Al seleccionar un empleado, el detalle de roles pasa a ser el de ese empleado")
-    void testSeleccionarEmpleadoActualizaDetalle() {
-        Empleado empleado = new Empleado(UUID.randomUUID());
-        empleadoModel.setTabActiva(1);
+    @DisplayName("validarRegistro: Valida presencia de nombre y apellido")
+    void testValidarRegistro() {
+        Empleado e = new Empleado();
 
-        empleadoModel.setRegistro(empleado);
+        assertNotNull(model.validarRegistro(null));
 
-        verify(empleadoRolModel).setEmpleado(empleado);   // el detalle ahora es de este empleado
-        verify(empleadoRolModel).btnCancelarHandler();     // se cierra cualquier formulario de rol abierto
-        assertEquals(0, empleadoModel.getTabActiva(), "Vuelve a la pestaña de datos");
+        e.setNombre(null);
+        e.setApellido("Pérez");
+        assertNotNull(model.validarRegistro(e));
+
+        e.setNombre("Juan");
+        e.setApellido(null);
+        assertNotNull(model.validarRegistro(e));
+
+        e.setNombre("   ");
+        e.setApellido("Pérez");
+        assertNotNull(model.validarRegistro(e));
+
+        e.setNombre("Juan");
+        e.setApellido("Pérez");
+        assertNull(model.validarRegistro(e));
+    }
+
+    @Test
+    @DisplayName("cargarDatos: Consulta la tabla principal paginada vía DAO")
+    void testCargarDatos() {
+        when(empleadoDAO.findByNombre("", 0, 10)).thenReturn(List.of(new Empleado()));
+
+        List<Empleado> resultado = model.cargarDatos(0, 10);
+
+        assertFalse(resultado.isEmpty());
+        verify(empleadoDAO).findByNombre("", 0, 10);
+    }
+
+    @Test
+    @DisplayName("contarDatos: Obtiene el total de registros para la paginación principal")
+    void testContarDatos() {
+        when(empleadoDAO.countByNombre("")).thenReturn(8L);
+
+        assertEquals(8, model.contarDatos());
+        verify(empleadoDAO).countByNombre("");
+    }
+
+    @Test
+    @DisplayName("completarEmpleado: Retorna acotado a 10 resultados para autocompletado")
+    void testCompletarEmpleado() {
+        when(empleadoDAO.findByNombre("juan", 10)).thenReturn(List.of(new Empleado()));
+
+        List<Empleado> resultado = model.completarEmpleado("juan");
+
+        assertFalse(resultado.isEmpty());
+        verify(empleadoDAO).findByNombre("juan", 10);
     }
 }

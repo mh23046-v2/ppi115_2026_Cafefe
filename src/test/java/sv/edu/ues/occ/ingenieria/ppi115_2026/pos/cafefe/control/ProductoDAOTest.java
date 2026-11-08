@@ -2,76 +2,75 @@ package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
-import java.util.Collections;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Root;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Producto;
-
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-/**
- *
- * @author johnyv
- */
 @ExtendWith(MockitoExtension.class)
-public class ProductoDAOTest {
+class ProductoDAOTest {
 
     @Mock
     private EntityManager em;
 
     @Mock
-    private TypedQuery<Producto> typedQuery;
+    private TypedQuery<Producto> query;
 
     @InjectMocks
-    private ProductoDAO productoDAO;
+    private ProductoDAO dao;
 
     @Test
-    @DisplayName("Verifica que el EntityManager está correctamente inyectado")
-    void testGetEntityManager() {
-        assertNotNull(productoDAO.getEntityManager());
-        assertEquals(em, productoDAO.getEntityManager());
+    @DisplayName("buscarPorNombre: Lanza IllegalArgumentException si max <= 0")
+    void testBuscarPorNombreMaxInvalido() {
+        assertThrows(IllegalArgumentException.class, () -> dao.buscarPorNombre("Espresso", 0));
+        assertThrows(IllegalArgumentException.class, () -> dao.buscarPorNombre("Espresso", -1));
     }
 
     @Test
-    @DisplayName("findByActivo debe retornar la lista de productos correspondiente al filtro")
-    void testFindByActivo() {
-        Boolean activo = true;
-        List<Producto> esperados = Collections.singletonList(new Producto());
+    @DisplayName("buscarPorNombre: Ejecuta la consulta correctamente")
+    void testBuscarPorNombreExitoso() {
+        when(em.createNamedQuery("Producto.buscarPorNombre", Producto.class)).thenReturn(query);
+        when(query.setParameter(eq("texto"), anyString())).thenReturn(query);
+        when(query.setMaxResults(10)).thenReturn(query);
+        when(query.getResultList()).thenReturn(List.of(new Producto()));
 
-        when(em.createNamedQuery("Producto.findByActivo", Producto.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter("activo", activo)).thenReturn(typedQuery);
-        when(typedQuery.getResultList()).thenReturn(esperados);
+        List<Producto> resultado = dao.buscarPorNombre("  Espresso ", 10);
 
-        List<Producto> resultado = productoDAO.findByActivo(activo);
-
-        assertNotNull(resultado);
-        assertEquals(1, resultado.size());
-        verify(em).createNamedQuery("Producto.findByActivo", Producto.class);
-        verify(typedQuery).setParameter("activo", activo);
+        assertFalse(resultado.isEmpty());
+        verify(query).setParameter(eq("texto"), anyString());
+        verify(query).setMaxResults(10);
     }
 
     @Test
-    @DisplayName("findByNombre consulta con el parámetro nombre y devuelve el resultado")
-    void testFindByNombre() {
-        String nombre = "Café Americano";
-        List<Producto> esperados = Collections.singletonList(new Producto());
+    @DisplayName("ordenar: Retorna criterios por nombre e idProducto")
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    void testOrdenar() {
+        CriteriaBuilder cb = mock(CriteriaBuilder.class);
+        Root<Producto> root = mock(Root.class);
+        Path pathNombre = mock(Path.class);
+        Path pathId = mock(Path.class);
+        Order orderNombre = mock(Order.class);
+        Order orderId = mock(Order.class);
 
-        when(em.createNamedQuery("Producto.findByNombre", Producto.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter("nombre", nombre)).thenReturn(typedQuery);
-        when(typedQuery.getResultList()).thenReturn(esperados);
+        when(root.get("nombre")).thenReturn(pathNombre);
+        when(root.get("idProducto")).thenReturn(pathId);
+        when(cb.asc(pathNombre)).thenReturn(orderNombre);
+        when(cb.asc(pathId)).thenReturn(orderId);
 
-        List<Producto> resultado = productoDAO.findByNombre(nombre);
+        List<Order> resultado = dao.ordenar(cb, root);
 
-        assertNotNull(resultado);
-        assertEquals(1, resultado.size());
-        verify(em).createNamedQuery("Producto.findByNombre", Producto.class);
-        verify(typedQuery).setParameter("nombre", nombre);
+        assertEquals(2, resultado.size());
+        assertEquals(orderNombre, resultado.get(0));
+        assertEquals(orderId, resultado.get(1));
     }
 }

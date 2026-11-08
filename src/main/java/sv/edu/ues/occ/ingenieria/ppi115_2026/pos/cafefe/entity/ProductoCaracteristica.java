@@ -23,8 +23,9 @@ import java.util.UUID;
 @Entity
 @Table(name = "producto_caracteristica")
 @NamedQueries({
-    @NamedQuery(name = "ProductoCaracteristica.findAll", query = "SELECT p FROM ProductoCaracteristica p"),
-    @NamedQuery(name = "ProductoCaracteristica.findByValor", query = "SELECT p FROM ProductoCaracteristica p WHERE p.valor = :valor")})
+    @NamedQuery(name = "ProductoCaracteristica.findAll", query = "SELECT pc FROM ProductoCaracteristica pc"),
+    @NamedQuery(name = "ProductoCaracteristica.findByProducto", query = "SELECT pc FROM ProductoCaracteristica pc JOIN FETCH pc.idCaracteristica c JOIN FETCH c.idTipoCaracteristica WHERE pc.idProducto = :producto ORDER BY c.nombre ASC, pc.idProductoCaracteristica ASC"),
+    @NamedQuery(name = "ProductoCaracteristica.countByProducto", query = "SELECT COUNT(pc) FROM ProductoCaracteristica pc WHERE pc.idProducto = :producto")})
 public class ProductoCaracteristica implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -107,5 +108,5 @@ public class ProductoCaracteristica implements Serializable {
     public String toString() {
         return "sv.edu.ues.ingenieria.pos.ppi115_2026.cafefe.entity.ProductoCaracteristica[ idProductoCaracteristica=" + idProductoCaracteristica + " ]";
     }
-    
+
 }

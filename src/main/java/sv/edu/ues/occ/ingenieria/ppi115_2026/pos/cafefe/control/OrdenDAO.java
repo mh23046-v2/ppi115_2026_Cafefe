@@ -3,14 +3,12 @@ package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Root;
 import java.util.List;
-import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.EmpleadoRol;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Orden;
 
-/**
- *
- * @author hernandez
- */
 @Stateless
 public class OrdenDAO extends AbstractDataAccess<Orden> {
 
@@ -26,40 +24,44 @@ public class OrdenDAO extends AbstractDataAccess<Orden> {
         return em;
     }
 
-    /** Página del listado, de la orden más reciente a la más antigua. */
-    public List<Orden> findRangeOrdenado(int first, int max) {
-        return em.createNamedQuery("Orden.findAllOrdenado", Orden.class)
+    @Override
+    protected List<Order> ordenar(CriteriaBuilder cb, Root<Orden> root) {
+        return List.of(
+            cb.desc(root.get("fechaCreacion"))
+        );
+    }
+
+    public List<Orden> findRange(int first, int max) {
+        if (first < 0 || max <= 0) {
+            throw new IllegalArgumentException("Parámetros de paginación inválidos");
+        }
+        return ejecutar("No se pudieron cargar las órdenes", () ->
+            em.createNamedQuery("Orden.findAll", Orden.class)
                 .setFirstResult(first)
                 .setMaxResults(max)
-                .getResultList();
+                .getResultList()
+        );
     }
 
-    /**
-     * Asignaciones empleado-rol activas (empleado y rol también activos).
-     * El filtro por rol admitido (camarero, barista...) se hace después con
-     * ReglasOrden.puedeTomarOrdenes, para no repetir la regla en JPQL.
-     */
-    public List<EmpleadoRol> findEmpleadoRolActivos() {
-        return em.createQuery(
-                "SELECT er FROM EmpleadoRol er JOIN er.idEmpleado e JOIN er.idRol r"
-                + " WHERE er.activo = true AND e.activo = true AND r.activo = true"
-                + " ORDER BY e.nombre, e.apellido, r.nombre", EmpleadoRol.class)
-                .getResultList();
+    public int countAll() {
+        return ejecutar("No se pudo contar las órdenes", () -> {
+            Long count = em.createNamedQuery("Orden.countAll", Long.class).getSingleResult();
+            return count != null ? count.intValue() : 0;
+        });
     }
 
-    /**
-     * Borra la orden junto con sus productos (en la misma transacción).
-     * Si algún producto ya está facturado, la BD rechaza el borrado y se
-     * muestra el error en pantalla.
-     */
+    // Elimina la orden junto con sus productos asociados en la misma transacción.
     @Override
     public void delete(Orden orden) {
-        if (orden == null) {
-            throw new IllegalArgumentException("La entidad no puede ser nula");
+        if (orden == null || orden.getIdOrden() == null) {
+            throw new IllegalArgumentException("La orden no puede ser nula ni estar sin ID");
         }
-        em.createQuery("DELETE FROM OrdenProducto op WHERE op.idOrden.idOrden = :idOrden")
-                .setParameter("idOrden", orden.getIdOrden())
-                .executeUpdate();
+        ejecutar("No se pudo eliminar el detalle de la orden", () -> {
+            em.createQuery("DELETE FROM OrdenProducto op WHERE op.idOrden.idOrden = :idOrden")
+                    .setParameter("idOrden", orden.getIdOrden())
+                    .executeUpdate();
+            return null;
+        });
         super.delete(orden);
     }
 }

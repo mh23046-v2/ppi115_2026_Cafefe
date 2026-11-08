@@ -137,16 +137,16 @@
                                         <p:inputText id="txtIdTipoProd" value="#{productoModel.productoTipoProductoModel.registro.idProductoTipoProducto}" 
                                                      disabled="true"/>
 
-                                        <p:outputLabel value="Tipo de producto" for="cmbTipo"/>
-                                        <p:selectOneMenu id="cmbTipo" value="#{productoModel.productoTipoProductoModel.registro.idTipoProducto}"
-                                                         converter="#{entidadConverter}"
-                                                         required="true" requiredMessage="El tipo de producto es obligatorio"
-                                                         disabled="#{productoModel.productoTipoProductoModel.estado != 'CREAR'}">
-                                            <f:selectItem itemLabel="#{tradcrud['jsf.crud.seleccione']}"
-                                                          itemValue="#{null}" noSelectionOption="true"/>
-                                            <f:selectItems value="#{productoModel.productoTipoProductoModel.opcionesTipoProducto}"/>
-                                        </p:selectOneMenu>
-
+                                        <p:outputLabel value="Tipo de producto" for="acTipoProducto"/>
+                                        <p:autoComplete id="acTipoProducto" value="#{productoModel.productoTipoProductoModel.registro.idTipoProducto}"
+                                                        completeMethod="#{productoModel.productoTipoProductoModel.completarTipoProducto}" var="tp" itemLabel="#{etiquetas.tipoProducto(tp)}" itemValue="#{tp}"
+                                                        converter="#{entidadConverter}" required="true" requiredMessage="El tipo de producto es obligatorio" disabled="#{productoModel.productoTipoProductoModel.estado ne 'CREAR'}"
+                                                        forceSelection="true" dropdown="true" placeholder="Escriba para buscar tipo...">
+                                            <p:column>
+                                                <h:outputText value="#{tp.nombre}" styleClass="#{tp.activo ? '' : 'text-muted'}"/>
+                                            </p:column>
+                                        </p:autoComplete>
+                                        
                                         <p:outputLabel value="Fecha de creación" for="fechaTipo"/>
                                         <p:inputText id="fechaTipo" value="#{productoModel.productoTipoProductoModel.registro.fechaCreacion}" disabled="true">
                                             <f:convertDateTime pattern="dd/MM/yyyy HH:mm"/>
@@ -312,9 +312,9 @@
 
                                         <p:outputLabel value="Porcentaje " for="valorDesc"/>
                                         <p:inputNumber id="valorDesc" value="#{productoModel.descuentoProductoModel.registro.valor}"
-                                                     required="true" requiredMessage="El porcentaje es obligatorio"
-                                                     decimalPlaces="0"
-                                                     validator="#{productoModel.descuentoProductoModel.validarPorcentaje}">
+                                                       required="true" requiredMessage="El porcentaje es obligatorio"
+                                                       decimalPlaces="0"
+                                                       validator="#{productoModel.descuentoProductoModel.validarPorcentaje}">
                                             <f:validateLongRange minimum="0" maximum="100"/>
                                         </p:inputNumber>
 
@@ -360,23 +360,38 @@
                 <p:messages id="msgDlgCarac" closable="true" />
 
                 <p:panelGrid columns="2" styleClass="ui-noborder grid-formulario">
-                    <p:outputLabel value="Tipo de característica" for="dlgTipo"/>
-                    <p:selectOneMenu id="dlgTipo" value="#{productoModel.productoCaracteristicaModel.tipoCaracteristicaSeleccionado}"
-                                     converter="#{entidadConverter}">
-                        <f:selectItem itemLabel="#{tradcrud['jsf.crud.seleccione']}"
-                                      itemValue="#{null}" noSelectionOption="true"/>
-                        <f:selectItems value="#{productoModel.productoCaracteristicaModel.opcionesTipoCaracteristica}"/>
-                        <p:ajax listener="#{productoModel.productoCaracteristicaModel.cambioTipoCaracteristica}" update="dlgCarac"/>
-                    </p:selectOneMenu>
+                    <p:outputLabel value="Tipo de característica" for="acTipoCarac"/>
+                    <p:autoComplete id="acTipoCarac"
+                                    value="#{productoModel.productoCaracteristicaModel.tipoCaracteristicaSeleccionado}"
+                                    completeMethod="#{productoModel.productoCaracteristicaModel.completarTipoCaracteristica}"
+                                    var="tc"
+                                    itemLabel="#{tc.nombre}"
+                                    itemValue="#{tc}"
+                                    converter="#{entidadConverter}"
+                                    forceSelection="true"
+                                    dropdown="true"
+                                    placeholder="Escriba para buscar tipo...">
+                        <p:column>
+                            <h:outputText value="#{tc.nombre}" styleClass="#{tc.activo ? '' : 'text-muted'}"/>
+                        </p:column>
+                        <p:ajax event="itemSelect" update="acCarac"/>
+                    </p:autoComplete>
 
-                    <p:outputLabel value="Característica" for="dlgCarac"/>
-                    <p:selectOneMenu id="dlgCarac" value="#{productoModel.productoCaracteristicaModel.registro.idCaracteristica}"
-                                     converter="#{entidadConverter}"
-                                     required="true" requiredMessage="Seleccione una característica">
-                        <f:selectItem itemLabel="#{tradcrud['jsf.crud.seleccione']}"
-                                      itemValue="#{null}" noSelectionOption="true"/>
-                        <f:selectItems value="#{productoModel.productoCaracteristicaModel.opcionesCaracteristica}"/>
-                    </p:selectOneMenu>
+                    <p:outputLabel value="Característica" for="acCarac"/>
+                    <p:autoComplete id="acCarac"
+                                    value="#{productoModel.productoCaracteristicaModel.registro.idCaracteristica}"
+                                    completeMethod="#{productoModel.productoCaracteristicaModel.completarCaracteristicaPorTipo}"
+                                    var="c"
+                                    itemLabel="#{c.nombre}"
+                                    itemValue="#{c}"
+                                    converter="#{entidadConverter}"
+                                    forceSelection="true"
+                                    dropdown="true"
+                                    disabled="#{productoModel.productoCaracteristicaModel.tipoCaracteristicaSeleccionado eq null}"
+                                    required="true"
+                                    requiredMessage="Seleccione una característica"
+                                    placeholder="Escriba para buscar característica...">
+                    </p:autoComplete>
                 </p:panelGrid>
 
                 <p:commandButton value="Aceptar" styleClass="boton-cafe" icon="pi pi-check"
@@ -390,35 +405,53 @@
         <p:dialog header="Seleccionar Descuento" widgetVar="dlgDescuento"
                   modal="true" width="550" resizable="false"
                   height="auto" responsive="true" draggable="false">
+
+            <p:ajax event="close" update="frmDlgDescuento" resetValues="true"/>
+
             <h:form id="frmDlgDescuento">
+                <p:messages id="msgDlgDesc" closable="true" />
+
                 <p:panelGrid columns="2" styleClass="ui-noborder grid-formulario">
 
-                    <p:outputLabel value="Tipo de Descuento" for="dlgTipoDesc"/>
-                    <p:selectOneMenu id="dlgTipoDesc" 
-                                     value="#{productoModel.descuentoProductoModel.tipoDescuentoSeleccionado}"
-                                     converter="#{entidadConverter}">
-                        <f:selectItem itemLabel="#{tradcrud['jsf.crud.seleccione']}"
-                                      itemValue="#{null}" noSelectionOption="true"/>
-                        <f:selectItems value="#{productoModel.descuentoProductoModel.opcionesTipoDescuento}"/>
-                        <p:ajax listener="#{productoModel.descuentoProductoModel.cambioTipoDescuento}" update="dlgDesc"/>
-                    </p:selectOneMenu>
+                    <p:outputLabel value="Tipo de Descuento" for="acTipoDesc"/>
+                    <p:autoComplete id="acTipoDesc"
+                                    value="#{productoModel.descuentoProductoModel.tipoDescuentoSeleccionado}"
+                                    completeMethod="#{productoModel.descuentoProductoModel.completarTipoDescuento}"
+                                    var="td"
+                                    itemLabel="#{td.nombre}"
+                                    itemValue="#{td}"
+                                    converter="#{entidadConverter}"
+                                    forceSelection="true"
+                                    dropdown="true"
+                                    placeholder="Escriba para buscar tipo...">
+                        <p:column>
+                            <h:outputText value="#{td.nombre}" styleClass="#{td.activo ? '' : 'text-muted'}"/>
+                        </p:column>
+                        <p:ajax event="itemSelect" update="acDesc"/>
+                    </p:autoComplete>
 
-                    <p:outputLabel value="Descuento" for="dlgDesc"/>
-                    <p:selectOneMenu id="dlgDesc" 
-                                     value="#{productoModel.descuentoProductoModel.descuentoSeleccionado}"
-                                     converter="#{entidadConverter}"
-                                     required="true" requiredMessage="Seleccione un descuento">
-                        <f:selectItem itemLabel="#{tradcrud['jsf.crud.seleccione']}"
-                                      itemValue="#{null}" noSelectionOption="true"/>
-                        <f:selectItems value="#{productoModel.descuentoProductoModel.opcionesIdDescuento}"/>
-                    </p:selectOneMenu>
+                    <p:outputLabel value="Descuento" for="acDesc"/>
+                    <p:autoComplete id="acDesc"
+                                    value="#{productoModel.descuentoProductoModel.descuentoSeleccionado}"
+                                    completeMethod="#{productoModel.descuentoProductoModel.completarDescuentoPorTipo}"
+                                    var="d"
+                                    itemLabel="#{etiquetas.descuento(d)}"
+                                    itemValue="#{d}"
+                                    converter="#{entidadConverter}"
+                                    forceSelection="true"
+                                    dropdown="true"
+                                    disabled="#{productoModel.descuentoProductoModel.tipoDescuentoSeleccionado eq null}"
+                                    required="true" 
+                                    requiredMessage="Seleccione un descuento"
+                                    placeholder="Escriba para buscar descuento...">
+                    </p:autoComplete>
 
                 </p:panelGrid>
 
                 <p:commandButton value="Aceptar" styleClass="boton-cafe" icon="pi pi-check"
                                  action="#{productoModel.descuentoProductoModel.asignarDescuento}"
                                  process="@form"
-                                 update=":frmMantenimiento:tabView:pnlDetalleDesc"
+                                 update="msgDlgDesc :frmMantenimiento:tabView:pnlDetalleDesc"
                                  oncomplete="if (!args.validationFailed) PF('dlgDescuento').hide()"/>
             </h:form>
         </p:dialog>
