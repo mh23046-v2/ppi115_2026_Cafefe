@@ -221,6 +221,23 @@ public class DefaultModelTest {
     class MensajesErrorTests {
 
         @Test
+        @DisplayName("Una regla de negocio se muestra tal cual al usuario")
+        public void testReglaNegocio() {
+            model.setRegistro(registroPrueba);
+            doThrow(new sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.ReglaNegocioException("La caja está inactiva"))
+                    .when(mockDAO).modify(registroPrueba);
+
+            try (MockedStatic<FacesContext> mockedFacesContext = mockStatic(FacesContext.class)) {
+                mockedFacesContext.when(FacesContext::getCurrentInstance).thenReturn(mockFacesContext);
+
+                model.btnModificarHandler();
+
+                verify(mockFacesContext).addMessage(eq(null), argThat(msg
+                        -> "La caja está inactiva".equals(msg.getDetail())));
+            }
+        }
+
+        @Test
         @DisplayName("Eliminar algo en uso (FK de PostgreSQL): mensaje amigable, sin nombres de tablas ni restricciones")
         public void testErrorBaseNoExponeDetalle() {
             model.setRegistro(registroPrueba);

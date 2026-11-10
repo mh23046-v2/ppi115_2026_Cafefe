@@ -18,6 +18,7 @@ import org.primefaces.model.LazyDataModel;
 import org.primefaces.model.SortMeta;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.AbstractDataAccess;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.AccesoDatosException;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.ReglaNegocioException;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.TraductorErrores;
 
 public abstract class DefaultModel<T> implements Serializable {
@@ -168,6 +169,13 @@ public abstract class DefaultModel<T> implements Serializable {
 
     // Identifica el tipo de error capturado y extrae un mensaje comprensible
     protected void notificarError(String resumen, Exception ex) {
+        // Regla del negocio: el mensaje ya está pensado para el usuario.
+        ReglaNegocioException regla = buscarCausa(ex, ReglaNegocioException.class);
+        if (regla != null) {
+            notificar(FacesMessage.SEVERITY_ERROR, resumen, regla.getMessage());
+            return;
+        }
+
         AccesoDatosException acceso = buscarCausa(ex, AccesoDatosException.class);
         if (acceso != null) {
             // El detalle técnico (tabla, columna, restricción) va al log del servidor, nunca a la pantalla.

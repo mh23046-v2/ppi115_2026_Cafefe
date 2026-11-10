@@ -95,10 +95,13 @@
                                     <p:submenu label="#{tradcrud['menu.personal']}">
                                         <p:menuitem value="#{tradcrud['entidad.empleado']}" outcome="/paginas/empleado" icon="pi pi-users"/>
                                         <p:menuitem value="#{tradcrud['entidad.rol']}" outcome="/paginas/rol" icon="pi pi-id-card"/>
+                                        <p:menuitem value="#{tradcrud['entidad.caja']}" outcome="/paginas/caja" icon="pi pi-inbox"/>
                                     </p:submenu>
 
                                     <p:submenu label="#{tradcrud['menu.ventas']}">
                                         <p:menuitem value="#{tradcrud['entidad.orden']}" outcome="/paginas/orden" icon="pi pi-shopping-cart"/>
+                                        <p:menuitem value="#{tradcrud['entidad.factura']}" outcome="/paginas/factura" icon="pi pi-file"/>
+                                        <p:menuitem value="#{tradcrud['entidad.pago']}" outcome="/paginas/pago" icon="pi pi-wallet"/>
                                     </p:submenu>
                                 </p:menu>
                             </h:form>

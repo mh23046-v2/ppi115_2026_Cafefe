@@ -57,6 +57,12 @@ public class ProductoModel extends DefaultModel<Producto> {
         if (registro.getNombre() == null || registro.getNombre().isBlank()) {
             return "El nombre del producto es obligatorio";
         }
+        if (registro.getPrecioSugerido() == null) {
+            return "El precio sugerido es obligatorio";
+        }
+        if (registro.getPrecioSugerido().signum() < 0) {
+            return "El precio sugerido no puede ser negativo";
+        }
         return null;
     }
 

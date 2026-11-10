@@ -17,7 +17,7 @@ public final class ReglasFactura {
     public static final Set<String> ROLES_ADMITIDOS = Set.of("cajero");
 
     public static final String PENDIENTE = "PENDIENTE";
-    /** Lo pone el cobro (pagos) cuando la factura queda saldada. */
+    /** La pone PagoDAO.completar cuando la factura queda saldada (y la quita PagoDAO.anular). */
     public static final String PAGADA = "PAGADA";
     public static final String ANULADA = "ANULADA";
 
