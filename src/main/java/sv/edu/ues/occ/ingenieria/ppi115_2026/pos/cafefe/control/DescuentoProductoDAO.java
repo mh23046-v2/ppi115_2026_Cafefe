@@ -50,4 +50,17 @@ public class DescuentoProductoDAO extends AbstractDataAccess<DescuentoProducto> 
             return total != null ? total.intValue() : 0;
         });
     }
+    
+    @Override
+    public List<DescuentoProducto> findRange(int first, int max) {
+        if (first < 0 || max <= 0) {
+            throw new IllegalArgumentException("Los parámetros de paginación son inválidos");
+        }
+        return ejecutar("No se pudieron cargar los registros de descuento_producto", () ->
+            em.createNamedQuery("DescuentoProducto.findConRelaciones", DescuentoProducto.class)
+                .setFirstResult(first)
+                .setMaxResults(max)
+                .getResultList()
+        );
+    }
 }

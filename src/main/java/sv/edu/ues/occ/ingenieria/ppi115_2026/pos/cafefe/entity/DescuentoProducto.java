@@ -1,5 +1,6 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity;
 
+import jakarta.json.bind.annotation.JsonbDateFormat;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -27,6 +28,7 @@ import java.util.UUID;
 @Table(name = "descuento_producto")
 @NamedQueries({
     @NamedQuery(name = "DescuentoProducto.findAll", query = "SELECT dp FROM DescuentoProducto dp"),
+    @NamedQuery(name = "DescuentoProducto.findConRelaciones", query = "SELECT dp FROM DescuentoProducto dp JOIN FETCH dp.idDescuento d JOIN FETCH dp.idProducto p ORDER BY dp.fechaDesde DESC"),
     @NamedQuery(name = "DescuentoProducto.findByProducto", query = "SELECT dp FROM DescuentoProducto dp JOIN FETCH dp.idDescuento d JOIN FETCH d.idTipoDescuento WHERE dp.idProducto = :producto ORDER BY dp.fechaDesde DESC, dp.idDescuentoProducto ASC"),
     @NamedQuery(name = "DescuentoProducto.findByProductosEnOrden", query = "SELECT dp FROM DescuentoProducto dp JOIN dp.idDescuento d WHERE dp.idProducto IN (SELECT op.idProducto FROM OrdenProducto op WHERE op.idOrden = :orden) ORDER BY d.nombre ASC"),
     @NamedQuery(name = "DescuentoProducto.countByProducto", query = "SELECT COUNT(dp) FROM DescuentoProducto dp WHERE dp.idProducto = :producto")})
@@ -41,9 +43,11 @@ public class DescuentoProducto implements Serializable {
     private UUID idDescuentoProducto;
     @Column(name = "fecha_desde")
     @Temporal(TemporalType.TIMESTAMP)
+    @JsonbDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
     private Date fechaDesde;
     @Column(name = "fecha_hasta")
     @Temporal(TemporalType.TIMESTAMP)
+    @JsonbDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
     private Date fechaHasta;
     @Column(name = "valor")
     private Integer valor;
