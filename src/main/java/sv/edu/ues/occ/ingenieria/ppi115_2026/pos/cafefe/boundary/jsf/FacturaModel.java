@@ -13,6 +13,7 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.AbstractDataAcce
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.CajaDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.EmpleadoRolDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.FacturaDAO;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.PagoDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.ReglasFactura;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.RolDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Caja;
@@ -39,6 +40,8 @@ public class FacturaModel extends DefaultModel<Factura> {
     private EmpleadoRolDAO empleadoRolDAO;
     @Inject
     private RolDAO rolDAO;
+    @Inject
+    private PagoDAO pagoDAO;
     @Inject
     private FacturaOrdenProductoModel facturaOrdenProductoModel;
     @Inject
@@ -104,6 +107,10 @@ public class FacturaModel extends DefaultModel<Factura> {
                     ? "Una factura nueva debe quedar PENDIENTE"
                     : "Una factura " + guardado + " ya no puede pasar a " + f.getEstado();
         }
+        if (ReglasFactura.ANULADA.equals(f.getEstado()) && !ReglasFactura.ANULADA.equals(guardado)
+                && pagoDAO.countVigentesByFactura(f, null) > 0) {
+            return "La factura tiene un pago en curso: anule primero el pago";
+        }
         f.setCliente(ReglasFactura.normalizarCliente(f.getCliente()));
         return null;
     }
@@ -161,7 +168,7 @@ public class FacturaModel extends DefaultModel<Factura> {
         }
     }
 
-    /** Estados que se pueden elegir. Si ya está PAGADA, solo se muestra ese (lo maneja el cobro). */
+    /** Estados que se pueden elegir. Si ya está PAGADA, solo se muestra ese (lo maneja la pantalla de Pagos). */
     public List<String> getEstados() {
         if (registro != null && ReglasFactura.PAGADA.equals(registro.getEstado())) {
             return List.of(ReglasFactura.PAGADA);

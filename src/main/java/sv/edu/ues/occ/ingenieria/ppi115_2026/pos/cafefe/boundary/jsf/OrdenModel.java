@@ -12,8 +12,10 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.AbstractDataAcce
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.EmpleadoRolDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.OrdenDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.ReglasOrden;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.RolDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.EmpleadoRol;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Orden;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Rol;
 
 @Named
 @ViewScoped
@@ -26,6 +28,9 @@ public class OrdenModel extends DefaultModel<Orden> {
 
     @Inject
     private EmpleadoRolDAO empleadoRolDAO;
+
+    @Inject
+    private RolDAO rolDAO;
 
     @Inject
     private OrdenProductoModel ordenProductoModel;
@@ -95,12 +100,12 @@ public class OrdenModel extends DefaultModel<Orden> {
 
     public List<EmpleadoRol> completarEmpleadoRol(String query) {
         try {
-            // Consulta los roles asignados cuyo empleado coincida con la búsqueda (máximo 15 para margen de filtrado por reglas)
-            List<EmpleadoRol> resultados = empleadoRolDAO.findByEmpleadoNombre(query, 15);
-            return resultados.stream()
-                    .filter(ReglasOrden::puedeTomarOrdenes)
-                    .limit(10)
+            // Los roles admitidos se comparan sin tildes ni mayúsculas (tabla pequeña); el filtro
+            // de empleado, rol y asignación activos y el límite de 10 se hacen en la base.
+            List<Rol> roles = rolDAO.findActivos().stream()
+                    .filter(ReglasOrden::rolAdmitido)
                     .toList();
+            return empleadoRolDAO.findActivosPorRolesYNombre(roles, query, 10);
         } catch (Exception ex) {
             notificarError("No se pudieron cargar los empleados aptos para tomar la orden", ex);
             return new ArrayList<>();

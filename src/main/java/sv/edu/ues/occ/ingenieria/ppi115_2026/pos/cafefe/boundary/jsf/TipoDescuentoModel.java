@@ -46,7 +46,7 @@ public class TipoDescuentoModel extends DefaultModel<TipoDescuento> {
         if (registro.getNombre() == null || registro.getNombre().isBlank()) {
             return "El nombre del tipo de descuento es obligatorio";
         }
-        if (registro.getDescuentoMaximo() <= 0 || registro.getDescuentoMaximo() > 100) {
+        if (registro.getDescuentoMaximo() == null || registro.getDescuentoMaximo() <= 0 || registro.getDescuentoMaximo() > 100) {
             return "El descuento máximo debe ser un porcentaje entre 1 y 100";
         }
         return null;

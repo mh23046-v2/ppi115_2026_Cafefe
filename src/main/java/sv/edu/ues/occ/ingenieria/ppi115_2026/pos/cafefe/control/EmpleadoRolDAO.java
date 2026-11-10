@@ -7,6 +7,7 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Order;
 import jakarta.persistence.criteria.Root;
 import java.util.List;
+import java.util.UUID;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Empleado;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.EmpleadoRol;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Rol;
@@ -97,6 +98,21 @@ public class EmpleadoRolDAO extends AbstractDataAccess<EmpleadoRol> {
                         .setParameter("nombre", patronLike(texto))
                         .setMaxResults(max)
                         .getResultList()
+        );
+    }
+
+    /** ¿El empleado ya tiene asignado ese rol? Excluye el propio registro (por si se está modificando). */
+    public boolean existeAsignacion(Empleado empleado, Rol rol, UUID excluir) {
+        if (empleado == null || empleado.getIdEmpleado() == null || rol == null || rol.getIdRol() == null) {
+            return false;
+        }
+        UUID idExcluido = excluir != null ? excluir : new UUID(0L, 0L);
+        return ejecutar("No se pudo verificar si el rol ya está asignado", () ->
+            em.createNamedQuery("EmpleadoRol.countByEmpleadoYRol", Long.class)
+                .setParameter("empleado", empleado)
+                .setParameter("rol", rol)
+                .setParameter("excluir", idExcluido)
+                .getSingleResult() > 0
         );
     }
 }

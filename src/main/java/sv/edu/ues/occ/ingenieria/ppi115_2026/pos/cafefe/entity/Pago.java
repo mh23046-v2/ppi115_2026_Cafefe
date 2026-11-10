@@ -25,6 +25,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "pago")
 @NamedQueries({
+    @NamedQuery(name = "Pago.findRecientes", query = "SELECT p FROM Pago p JOIN FETCH p.idFactura f ORDER BY f.fechaFacturacion DESC, p.idPago"),
+    @NamedQuery(name = "Pago.countVigentesByFactura", query = "SELECT COUNT(p) FROM Pago p WHERE p.idFactura = :factura AND p.estado <> :anulado AND p.idPago <> :excluir"),
     @NamedQuery(name = "Pago.findAll", query = "SELECT p FROM Pago p"),
     @NamedQuery(name = "Pago.count", query = "SELECT COUNT(p) FROM Pago p"),
     @NamedQuery(name = "Pago.findByEstado", query = "SELECT p FROM Pago p WHERE p.estado = :estado"),
@@ -41,6 +43,7 @@ public class Pago implements Serializable {
     @Column(name = "id_pago")
     private UUID idPago;
     
+    @NotNull(message = "El estado del pago es obligatorio")
     @Size(max = 20)
     @Column(name = "estado")
     private String estado;
@@ -49,6 +52,7 @@ public class Pago implements Serializable {
     @Column(name = "observaciones")
     private String observaciones;
     
+    @NotNull(message = "Seleccione la factura que se paga")
     @JoinColumn(name = "id_factura", referencedColumnName = "id_factura")
     @ManyToOne(fetch = FetchType.LAZY)
     private Factura idFactura;

@@ -95,4 +95,21 @@ class ProductoTipoProductoModelTest {
         tpInactivo.setActivo(true);
         assertNull(model.validarRegistro(ptp));
     }
+
+    @Test
+    @DisplayName("validarRegistro: no deja asignar dos veces el mismo tipo al producto")
+    void testValidarRegistroDuplicado() {
+        Producto producto = new Producto(java.util.UUID.randomUUID());
+        TipoProducto tipo = new TipoProducto(java.util.UUID.randomUUID());
+        tipo.setActivo(true);
+        ProductoTipoProducto ptp = new ProductoTipoProducto(java.util.UUID.randomUUID());
+        ptp.setProducto(producto);
+        ptp.setIdTipoProducto(tipo);
+        when(productoTipoProductoDAO.existeAsignacion(producto, tipo, ptp.getIdProductoTipoProducto())).thenReturn(true);
+
+        String error = model.validarRegistro(ptp);
+
+        assertNotNull(error);
+        assertTrue(error.contains("ya tiene asignado"));
+    }
 }

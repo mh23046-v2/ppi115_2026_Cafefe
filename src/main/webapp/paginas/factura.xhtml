@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Facturas: maestro-detalle con el mismo patrón que orden.xhtml.
+    Pestaña 1 "Generalidades" = la factura (FacturaModel).
+    Pestaña 2 "Productos"     = sus productos de órdenes (FacturaOrdenProductoModel).
+    Regla global: los combos/autocompletes solo se cambian al CREAR.
+-->
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:p="primefaces"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:botones="jakarta.faces.composite/botones"
+                template="/WEB-INF/plantillas/general.xhtml">
+
+    <ui:define name="leyenda">#{tradcrud['entidad.factura']}</ui:define>
+
+    <ui:define name="contenido">
+
+        <!-- ===== LISTADO DE FACTURAS (visible cuando estado == NINGUNO) ===== -->
+        <h:form id="frmListado">
+            <h:panelGroup id="pnlListado" layout="block">
+                <p:dataTable id="tblListado" value="#{facturaModel.lazyModel}" var="fila"
+                             lazy="true" paginator="true" rows="10"
+                             rowsPerPageTemplate="5,10,25"
+                             paginatorPosition="bottom"
+                             selectionMode="single"
+                             emptyMessage="#{tradcrud['jsf.crud.sinRegistros']}"
+                             rendered="#{facturaModel.estado == 'NINGUNO'}">
+                    <f:facet name="header">
+                        #{tradcrud['jsf.crud.ayudaSeleccion']}
+                    </f:facet>
+                    <p:ajax event="rowSelect" listener="#{facturaModel.onRowSelect}"
+                            update=":frmMantenimiento:pnlDetalle :frmListado:pnlListado"/>
+                    <p:column headerText="ID">
+                        <h:outputText value="#{fila.idFactura}"/>
+                    </p:column>
+                    <p:column headerText="Fecha">
+                        <h:outputText value="#{facturaModel.formatoFecha(fila.fechaFacturacion)}"/>
+                    </p:column>
+                    <p:column headerText="Cliente">
+                        <h:outputText value="#{fila.cliente}"/>
+                    </p:column>
+                    <p:column headerText="Caja">
+                        <h:outputText value="#{etiquetas.caja(fila.idCaja)}"/>
+                    </p:column>
+                    <p:column headerText="Cajero">
+                        <h:outputText value="#{etiquetas.empleadoRol(fila.idEmpleadoRol)}"/>
+                    </p:column>
+                    <p:column headerText="Estado">
+                        <h:outputText value="#{fila.estado}"/>
+                    </p:column>
+                </p:dataTable>
+
+                <botones:botones-arriba modelo="#{facturaModel}"
+                                        actualizarListado=":frmListado:pnlListado"
+                                        actualizarDetalle=":frmMantenimiento:pnlDetalle"/>
+            </h:panelGroup>
+        </h:form>
+
+        <h:form id="frmMantenimiento">
+            <h:panelGroup id="pnlDetalle" layout="block">
+                <h:panelGroup rendered="#{facturaModel.estado != 'NINGUNO'}" layout="block">
+                    <h2>#{tradcrud['jsf.crud.mantenimiento']} #{facturaModel.nombreBean()}</h2>
+
+                    <p:tabView id="tabView" dynamic="true" cache="false"
+                               activeIndex="#{facturaModel.tabActiva}">
+
+                        <!-- PESTAÑA 1: GENERALIDADES (maestro) -->
+                        <p:tab title="Generalidades">
+                            <h:panelGroup id="pnlGeneralidades" layout="block" styleClass="formulario-cafe">
+                                <p:panelGrid columns="2" styleClass="ui-noborder grid-formulario">
+                                    <p:outputLabel value="ID"/>
+                                    <p:inputText id="id" value="#{facturaModel.registro.idFactura}" disabled="true"/>
+
+                                    <p:outputLabel value="Cajero" for="acEmpleado"/>
+                                    <p:autoComplete id="acEmpleado"
+                                                    value="#{facturaModel.registro.idEmpleadoRol}"
+                                                    completeMethod="#{facturaModel.completarEmpleadoRol}"
+                                                    var="er"
+                                                    itemLabel="#{etiquetas.empleadoRol(er)}"
+                                                    itemValue="#{er}"
+                                                    converter="#{entidadConverter}"
+                                                    dropdown="true"
+                                                    dropdownMode="blank"
+                                                    placeholder="Escriba o seleccione un cajero..."
+                                                    forceSelection="true"
+                                                    disabled="#{facturaModel.estado ne 'CREAR'}"
+                                                    required="true"
+                                                    requiredMessage="Seleccione el empleado que factura"/>
+
+                                    <p:outputLabel value="Caja" for="acCaja"/>
+                                    <p:autoComplete id="acCaja"
+                                                    value="#{facturaModel.registro.idCaja}"
+                                                    completeMethod="#{facturaModel.completarCaja}"
+                                                    var="c"
+                                                    itemLabel="#{etiquetas.caja(c)}"
+                                                    itemValue="#{c}"
+                                                    converter="#{entidadConverter}"
+                                                    dropdown="true"
+                                                    dropdownMode="blank"
+                                                    placeholder="Seleccione una caja activa..."
+                                                    forceSelection="true"
+                                                    disabled="#{facturaModel.estado ne 'CREAR'}"
+                                                    required="true"
+                                                    requiredMessage="Seleccione la caja"/>
+
+                                    <p:outputLabel value="Fecha de facturación"/>
+                                    <p:inputText id="fecha" value="#{facturaModel.formatoFecha(facturaModel.registro.fechaFacturacion)}"
+                                                 disabled="true"/>
+
+                                    <p:outputLabel value="Cliente" for="cliente"/>
+                                    <p:inputText id="cliente" value="#{facturaModel.registro.cliente}" maxlength="155"
+                                                 placeholder="Consumidor final"/>
+
+                                    <p:outputLabel value="Estado" for="estado"/>
+                                    <p:selectOneMenu id="estado" value="#{facturaModel.registro.estado}"
+                                                     disabled="#{not facturaModel.estadoEditable}">
+                                        <f:selectItems value="#{facturaModel.estados}"/>
+                                    </p:selectOneMenu>
+
+                                    <p:outputLabel value="Observaciones" for="observaciones"/>
+                                    <p:inputTextarea id="observaciones" value="#{facturaModel.registro.observaciones}"
+                                                     rows="3" autoResize="false"/>
+                                </p:panelGrid>
+
+                                <!-- procesar: solo los campos de la factura, no los de productos -->
+                                <botones:botones-abajo modelo="#{facturaModel}"
+                                                       procesar=":frmMantenimiento:tabView:pnlGeneralidades"
+                                                       actualizarListado=":frmListado:pnlListado"
+                                                       actualizarDetalle=":frmMantenimiento:pnlDetalle"/>
+                            </h:panelGroup>
+                        </p:tab>
+
+                        <!-- PESTAÑA 2: PRODUCTOS (detalle). Se habilita cuando la factura ya existe. -->
+                        <p:tab title="Productos" disabled="#{facturaModel.estado == 'CREAR'}">
+
+                            <h:panelGroup id="pnlListadoFop" layout="block">
+                                <p:dataTable id="tblFacturaProducto" value="#{facturaModel.facturaOrdenProductoModel.lazyModel}" var="fop"
+                                             lazy="true" paginator="true" rows="5"
+                                             paginatorPosition="both"
+                                             selectionMode="single"
+                                             emptyMessage="#{tradcrud['jsf.crud.sinRegistros']}"
+                                             rendered="#{facturaModel.facturaOrdenProductoModel.estado == 'NINGUNO'}">
+                                    <p:ajax event="rowSelect" listener="#{facturaModel.facturaOrdenProductoModel.onRowSelect}"
+                                            update=":frmMantenimiento:tabView:pnlDetalleFop :frmMantenimiento:tabView:pnlListadoFop"/>
+                                    <p:column headerText="Producto">
+                                        <h:outputText value="#{etiquetas.producto(fop.idOrdenProducto.idProducto)}"/>
+                                    </p:column>
+                                    <p:column headerText="Orden">
+                                        <h:outputText value="#{etiquetas.orden(fop.idOrdenProducto.idOrden)}"/>
+                                    </p:column>
+                                    <p:column headerText="Precio">
+                                        <h:outputText value="#{fop.precio}">
+                                            <f:convertNumber type="currency" currencySymbol="$" locale="es_SV"/>
+                                        </h:outputText>
+                                    </p:column>
+                                    <p:column headerText="Observaciones">
+                                        <h:outputText value="#{fop.observaciones}"/>
+                                    </p:column>
+                                    <f:facet name="footer">
+                                        Total:
+                                        <h:outputText value="#{facturaModel.facturaOrdenProductoModel.total}">
+                                            <f:convertNumber type="currency" currencySymbol="$" locale="es_SV"/>
+                                        </h:outputText>
+                                    </f:facet>
+                                </p:dataTable>
+
+                                <!-- Solo una factura PENDIENTE admite agregar productos -->
+                                <h:panelGroup rendered="#{facturaModel.facturaOrdenProductoModel.editable}" layout="block">
+                                    <botones:botones-arriba modelo="#{facturaModel.facturaOrdenProductoModel}"
+                                                            actualizarListado=":frmMantenimiento:tabView:pnlListadoFop"
+                                                            actualizarDetalle=":frmMantenimiento:tabView:pnlDetalleFop"/>
+
+                                    <p:commandButton value="Agregar orden completa" icon="pi pi-shopping-cart"
+                                                     styleClass="boton-cafe"
+                                                     actionListener="#{facturaModel.facturaOrdenProductoModel.prepararOrdenes}"
+                                                     process="@this" update=":frmOrden:pnlOrden"
+                                                     rendered="#{facturaModel.facturaOrdenProductoModel.estado == 'NINGUNO'}"
+                                                     oncomplete="PF('dlgOrden').show()"/>
+                                </h:panelGroup>
+                            </h:panelGroup>
+
+                            <!-- Formulario para agregar / editar un producto de la factura -->
+                            <h:panelGroup id="pnlDetalleFop" layout="block">
+                                <h:panelGroup rendered="#{facturaModel.facturaOrdenProductoModel.estado != 'NINGUNO'}"
+                                              layout="block" styleClass="formulario-cafe">
+                                    <h3>#{tradcrud['jsf.crud.mantenimiento']} #{facturaModel.facturaOrdenProductoModel.nombreBean()}</h3>
+
+                                    <p:panelGrid columns="2" styleClass="ui-noborder grid-formulario">
+                                        <p:outputLabel value="ID"/>
+                                        <p:inputText id="idFop"
+                                                     value="#{facturaModel.facturaOrdenProductoModel.registro.idFacturaOrdenProducto}"
+                                                     disabled="true"/>
+
+                                        <p:outputLabel value="Producto de orden" for="acOrdenProducto"/>
+                                        <p:autoComplete id="acOrdenProducto"
+                                                        value="#{facturaModel.facturaOrdenProductoModel.registro.idOrdenProducto}"
+                                                        completeMethod="#{facturaModel.facturaOrdenProductoModel.completarOrdenProducto}"
+                                                        var="op"
+                                                        itemLabel="#{etiquetas.ordenProducto(op)}"
+                                                        itemValue="#{op}"
+                                                        converter="#{entidadConverter}"
+                                                        dropdown="true"
+                                                        dropdownMode="blank"
+                                                        placeholder="Escriba para buscar un producto sin facturar..."
+                                                        forceSelection="true"
+                                                        disabled="#{facturaModel.facturaOrdenProductoModel.estado ne 'CREAR'}"
+                                                        required="true"
+                                                        requiredMessage="Seleccione el producto de una orden">
+                                            <p:ajax event="itemSelect"
+                                                    listener="#{facturaModel.facturaOrdenProductoModel.seleccionarOrdenProducto(facturaModel.facturaOrdenProductoModel.registro.idOrdenProducto)}"
+                                                    update="precioFop"/>
+                                        </p:autoComplete>
+
+                                        <p:outputLabel value="Precio"/>
+                                        <p:inputText id="precioFop" readonly="true"
+                                                     value="#{facturaModel.facturaOrdenProductoModel.registro.precio}"/>
+
+                                        <p:outputLabel value="Observaciones" for="fopObservaciones"/>
+                                        <p:inputTextarea id="fopObservaciones"
+                                                         value="#{facturaModel.facturaOrdenProductoModel.registro.observaciones}"
+                                                         rows="3" autoResize="false"/>
+                                    </p:panelGrid>
+
+                                    <botones:botones-abajo modelo="#{facturaModel.facturaOrdenProductoModel}"
+                                                           procesar=":frmMantenimiento:tabView:pnlDetalleFop"
+                                                           actualizarListado=":frmMantenimiento:tabView:pnlListadoFop"
+                                                           actualizarDetalle=":frmMantenimiento:tabView:pnlDetalleFop"/>
+                                    <p:commandButton value="#{tradcrud['jsf.crud.cancelar']}"
+                                                     styleClass="boton-cafe" icon="pi pi-times"
+                                                     actionListener="#{facturaModel.facturaOrdenProductoModel.btnCancelarHandler}"
+                                                     process="@this" resetValues="true"
+                                                     update=":frmMantenimiento:tabView:pnlDetalleFop :frmMantenimiento:tabView:pnlListadoFop"
+                                                     rendered="#{not facturaModel.facturaOrdenProductoModel.editable}"/>
+                                </h:panelGroup>
+                            </h:panelGroup>
+
+                        </p:tab>
+
+                    </p:tabView>
+                </h:panelGroup>
+            </h:panelGroup>
+        </h:form>
+
+        <!-- ===== DIÁLOGO: AGREGAR ORDEN COMPLETA ===== -->
+        <p:dialog header="Agregar orden completa" widgetVar="dlgOrden" modal="true" width="650"
+                  resizable="false" closeOnEscape="true">
+            <h:form id="frmOrden">
+                <h:panelGroup id="pnlOrden" layout="block" styleClass="formulario-cafe">
+                    <p>Se agregan todos los productos de la orden que aún no están facturados, con el precio de la orden.</p>
+                    <p:panelGrid columns="2" styleClass="ui-noborder grid-formulario">
+                        <p:outputLabel value="Orden" for="orden"/>
+                        <p:selectOneMenu id="orden"
+                                         value="#{facturaModel.facturaOrdenProductoModel.ordenSeleccionada}"
+                                         converter="#{entidadConverter}">
+                            <f:selectItem itemLabel="Seleccione una orden" noSelectionOption="true"/>
+                            <f:selectItems value="#{facturaModel.facturaOrdenProductoModel.opcionesOrden}"/>
+                        </p:selectOneMenu>
+                    </p:panelGrid>
+                    <p:commandButton value="Agregar" icon="pi pi-check" styleClass="boton-cafe"
+                                     actionListener="#{facturaModel.facturaOrdenProductoModel.agregarOrden}"
+                                     process="@form"
+                                     update=":frmMantenimiento:tabView:pnlListadoFop"
+                                     oncomplete="if (args &amp;&amp; !args.validationFailed) PF('dlgOrden').hide()"/>
+                </h:panelGroup>
+            </h:form>
+        </p:dialog>
+
+    </ui:define>
+
+</ui:composition>

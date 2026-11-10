@@ -197,46 +197,39 @@ public class OrdenProductoModelTest {
     }
 
     @Test
-    @DisplayName("Aplicar descuento: solo cambia el precio de los productos que lo tienen")
+    @DisplayName("Aplicar descuento: delega en el DAO (una sola transacción) solo los descuentos vigentes")
     void testAplicarDescuento() {
         try (MockedStatic<FacesContext> faces = mockStatic(FacesContext.class)) {
             faces.when(FacesContext::getCurrentInstance).thenReturn(facesContext);
-            OrdenProducto lineaPie = linea(pie);
-            OrdenProducto lineaCafe = linea(cafe);
-            when(ordenProductoDAO.findDescuentosDeProductosEnOrden(orden))
-                    .thenReturn(List.of(asignar(platinum, pie, 20)));
-            when(ordenProductoDAO.countByOrden(orden)).thenReturn(2);
-            when(ordenProductoDAO.findByOrden(orden, 0, 2)).thenReturn(List.of(lineaPie, lineaCafe));
+            DescuentoProducto dpPie = asignar(platinum, pie, 20);
+            when(ordenProductoDAO.findDescuentosDeProductosEnOrden(orden)).thenReturn(List.of(dpPie));
+            when(ordenProductoDAO.aplicarDescuento(orden, List.of(dpPie))).thenReturn(1);
 
             ordenProductoModel.setDescuentoSeleccionado(new Descuento(platinum.getIdDescuento()));
-
             ordenProductoModel.aplicarDescuento();
 
-            assertEquals(new BigDecimal("4.00"), lineaPie.getPrecio());
-            assertEquals(new BigDecimal("2.50"), lineaCafe.getPrecio());
-            verify(ordenProductoDAO).modify(lineaPie);
-            verify(ordenProductoDAO, never()).modify(lineaCafe);
+            verify(ordenProductoDAO).aplicarDescuento(orden, List.of(dpPie));
+            verify(ordenProductoDAO, never()).modify(any());
             assertEquals(FacesMessage.SEVERITY_INFO, severidadDelMensaje());
+            assertNull(ordenProductoModel.getDescuentoSeleccionado());
         }
     }
 
     @Test
-    @DisplayName("Aplicar el mismo descuento dos veces no descuenta doble")
-    void testAplicarDosVeces() {
+    @DisplayName("Aplicar descuento: si la base falla muestra el error y no cambia nada")
+    void testAplicarDescuentoError() {
         try (MockedStatic<FacesContext> faces = mockStatic(FacesContext.class)) {
             faces.when(FacesContext::getCurrentInstance).thenReturn(facesContext);
-            OrdenProducto lineaPie = linea(pie);
-            when(ordenProductoDAO.findDescuentosDeProductosEnOrden(orden))
-                    .thenReturn(List.of(asignar(platinum, pie, 20)));
-            when(ordenProductoDAO.countByOrden(orden)).thenReturn(1);
-            when(ordenProductoDAO.findByOrden(orden, 0, 1)).thenReturn(List.of(lineaPie));
+            DescuentoProducto dpPie = asignar(platinum, pie, 20);
+            when(ordenProductoDAO.findDescuentosDeProductosEnOrden(orden)).thenReturn(List.of(dpPie));
+            when(ordenProductoDAO.aplicarDescuento(any(), any()))
+                    .thenThrow(new IllegalArgumentException("No hay descuentos vigentes para aplicar"));
 
             ordenProductoModel.setDescuentoSeleccionado(platinum);
             ordenProductoModel.aplicarDescuento();
-            ordenProductoModel.setDescuentoSeleccionado(platinum);
-            ordenProductoModel.aplicarDescuento();
 
-            assertEquals(new BigDecimal("4.00"), lineaPie.getPrecio());
+            assertEquals(FacesMessage.SEVERITY_ERROR, severidadDelMensaje());
+            assertSame(platinum, ordenProductoModel.getDescuentoSeleccionado());
         }
     }
 
@@ -252,7 +245,7 @@ public class OrdenProductoModelTest {
 
             ordenProductoModel.aplicarDescuento();
 
-            verify(ordenProductoDAO, never()).modify(any());
+            verify(ordenProductoDAO, never()).aplicarDescuento(any(), any());
             assertEquals(FacesMessage.SEVERITY_ERROR, severidadDelMensaje());
         }
     }
@@ -297,14 +290,6 @@ public class OrdenProductoModelTest {
         dp.setIdProducto(p);
         dp.setValor(valor);
         return dp;
-    }
-
-    private OrdenProducto linea(Producto p) {
-        OrdenProducto op = new OrdenProducto(UUID.randomUUID());
-        op.setIdOrden(orden);
-        op.setIdProducto(p);
-        op.setPrecio(p.getPrecioSugerido());
-        return op;
     }
 
     private FacesMessage.Severity severidadDelMensaje() {

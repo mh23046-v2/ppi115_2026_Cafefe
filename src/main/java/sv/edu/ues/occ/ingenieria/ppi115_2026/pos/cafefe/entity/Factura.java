@@ -28,6 +28,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "factura")
 @NamedQueries({
+    @NamedQuery(name = "Factura.findPorCobrar", query = "SELECT f FROM Factura f WHERE f.estado = :pendiente AND LOWER(f.cliente) LIKE :texto AND EXISTS (SELECT fop FROM FacturaOrdenProducto fop WHERE fop.idFactura = f) AND NOT EXISTS (SELECT p FROM Pago p WHERE p.idFactura = f AND p.estado <> :anulado) ORDER BY f.fechaFacturacion DESC, f.idFactura"),
     @NamedQuery(name = "Factura.findAll", query = "SELECT f FROM Factura f"),
     @NamedQuery(name = "Factura.findRecientes", query = "SELECT f FROM Factura f ORDER BY f.fechaFacturacion DESC, f.idFactura"),
     @NamedQuery(name = "Factura.count", query = "SELECT COUNT(f) FROM Factura f"),

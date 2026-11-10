@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.CajaDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.EmpleadoRolDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.FacturaDAO;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.PagoDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.RolDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Caja;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Empleado;
@@ -36,6 +37,8 @@ public class FacturaModelTest {
     private EmpleadoRolDAO empleadoRolDAO;
     @Mock
     private RolDAO rolDAO;
+    @Mock
+    private PagoDAO pagoDAO;
     @Mock
     private FacturaOrdenProductoModel facturaOrdenProductoModel;
     @Mock
@@ -126,6 +129,23 @@ public class FacturaModelTest {
             anulada.setEstado("PENDIENTE");
             model.btnModificarHandler();
             verify(facturaDAO, never()).modify(anulada);
+        });
+    }
+
+    @Test
+    @DisplayName("Modificar: no se anula una factura que tiene un pago en curso")
+    void testNoAnularConPagoVigente() {
+        conFaces(() -> {
+            Factura f = facturaGuardada("PENDIENTE");
+            model.onRowSelect(new org.primefaces.event.SelectEvent<>(mock(jakarta.faces.component.UIComponent.class),
+                    mock(jakarta.faces.component.behavior.Behavior.class), f));
+            when(pagoDAO.countVigentesByFactura(f, null)).thenReturn(1);
+            f.setEstado("ANULADA");
+
+            model.btnModificarHandler();
+
+            verify(facturaDAO, never()).modify(any());
+            assertEquals(FacesMessage.SEVERITY_ERROR, severidad());
         });
     }
 

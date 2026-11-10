@@ -12,6 +12,8 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Size;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -24,6 +26,9 @@ import java.util.UUID;
 @Entity
 @Table(name = "pago_detalle")
 @NamedQueries({
+    @NamedQuery(name = "PagoDetalle.findByPagoOrdenado", query = "SELECT p FROM PagoDetalle p WHERE p.idPago = :pago ORDER BY p.tipoPago, p.idPagoDetalle"),
+    @NamedQuery(name = "PagoDetalle.sumMontoByPago", query = "SELECT COALESCE(SUM(p.monto), 0) FROM PagoDetalle p WHERE p.idPago = :pago"),
+    @NamedQuery(name = "PagoDetalle.deleteByPago", query = "DELETE FROM PagoDetalle p WHERE p.idPago.idPago = :idPago"),
     @NamedQuery(name = "PagoDetalle.findAll", query = "SELECT p FROM PagoDetalle p"),
     @NamedQuery(name = "PagoDetalle.count", query = "SELECT COUNT(p) FROM PagoDetalle p"),
     @NamedQuery(name = "PagoDetalle.findByPago", query = "SELECT p FROM PagoDetalle p WHERE p.idPago = :pago"),
@@ -42,9 +47,12 @@ public class PagoDetalle implements Serializable {
     @Convert(converter = UUIDConverter.class)
     @Column(name = "id_pago_detalle")
     private UUID idPagoDetalle;
-    // @Max(value=?)  @Min(value=?)//if you know range of your decimal fields consider using these annotations to enforce field validation
+    @NotNull(message = "El monto es obligatorio")
+    @DecimalMin(value = "0.01", message = "El monto debe ser mayor que cero")
+    @Digits(integer = 6, fraction = 2, message = "El monto admite hasta 6 enteros y 2 decimales")
     @Column(name = "monto")
     private BigDecimal monto;
+    @NotNull(message = "Seleccione el tipo de pago")
     @Size(max = 20)
     @Column(name = "tipo_pago")
     private String tipoPago;
@@ -54,6 +62,7 @@ public class PagoDetalle implements Serializable {
     @Size(max = 2147483647)
     @Column(name = "referencia_externa")
     private String referenciaExterna;
+    @NotNull(message = "El detalle debe pertenecer a un pago")
     @JoinColumn(name = "id_pago", referencedColumnName = "id_pago")
     @ManyToOne(fetch = FetchType.LAZY)
     private Pago idPago;

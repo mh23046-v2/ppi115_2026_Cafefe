@@ -108,9 +108,17 @@ class DescuentoProductoDAOTest {
         CriteriaBuilder cb = mock(CriteriaBuilder.class);
         Root<DescuentoProducto> root = mock(Root.class);
 
+        Path path = mock(Path.class);
+        Order desc = mock(Order.class);
+        Order asc = mock(Order.class);
+        when(root.get(anyString())).thenReturn(path);
+        when(cb.desc(path)).thenReturn(desc);
+        when(cb.asc(path)).thenReturn(asc);
+
         List<Order> resultado = dao.ordenar(cb, root);
 
-        assertNotNull(resultado);
-        assertEquals(0, resultado.size());
+        assertEquals(List.of(desc, asc), resultado);
+        verify(root).get("fechaDesde");
+        verify(root).get("idDescuentoProducto");
     }
 }

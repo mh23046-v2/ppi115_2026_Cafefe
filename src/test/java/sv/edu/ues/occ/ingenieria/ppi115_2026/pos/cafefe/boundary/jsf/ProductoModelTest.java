@@ -108,8 +108,14 @@ class ProductoModelTest {
         assertNotNull(err2);
         assertTrue(err2.contains("obligatorio"));
 
-        // 3. Registro válido
+        // 3. Sin precio sugerido o negativo
         p.setNombre("Espresso Doble");
+        assertTrue(productoModel.validarRegistro(p).contains("precio sugerido es obligatorio"));
+        p.setPrecioSugerido(new java.math.BigDecimal("-1"));
+        assertTrue(productoModel.validarRegistro(p).contains("negativo"));
+
+        // 4. Registro válido
+        p.setPrecioSugerido(new java.math.BigDecimal("2.50"));
         assertNull(productoModel.validarRegistro(p));
     }
 
