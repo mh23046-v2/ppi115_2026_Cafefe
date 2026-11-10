@@ -58,4 +58,11 @@ public class RolDAO extends AbstractDataAccess<Rol> {
                 .getSingleResult()
         );
     }
+
+    /** Roles activos (tabla pequeña): sirve para filtrar por nombre de rol con tildes/mayúsculas. */
+    public List<Rol> findActivos() {
+        return ejecutar("No se pudieron consultar los roles activos", () ->
+            em.createNamedQuery("Rol.findActivos", Rol.class).getResultList()
+        );
+    }
 }

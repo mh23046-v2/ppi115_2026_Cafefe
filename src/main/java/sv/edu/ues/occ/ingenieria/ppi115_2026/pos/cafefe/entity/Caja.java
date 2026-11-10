@@ -23,6 +23,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "caja")
 @NamedQueries({
+    @NamedQuery(name = "Caja.buscarActivasPorNombre", query = "SELECT c FROM Caja c WHERE c.activo = true AND LOWER(c.nombre) LIKE :texto ORDER BY c.nombre, c.idCaja"),
     @NamedQuery(name = "Caja.findAll", query = "SELECT c FROM Caja c"),
     @NamedQuery(name = "Caja.count", query = "SELECT COUNT(c) FROM Caja c"),
     @NamedQuery(name = "Caja.findByNombre", query = "SELECT c FROM Caja c WHERE c.nombre = :nombre"),

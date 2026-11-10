@@ -88,4 +88,18 @@ public class OrdenProductoDAO extends AbstractDataAccess<OrdenProducto> {
                         .getResultList()
         );
     }
+
+    /** Productos de órdenes que todavía no están en una factura (o solo en anuladas). */
+    public List<OrdenProducto> findPendientesDeFacturar(String texto, int max) {
+        if (max <= 0) {
+            throw new IllegalArgumentException("El máximo debe ser mayor a cero");
+        }
+        return ejecutar("No se pudieron buscar los productos pendientes de facturar", ()
+                -> em.createNamedQuery("OrdenProducto.findPendientesDeFacturar", OrdenProducto.class)
+                        .setParameter("texto", patronLike(texto))
+                        .setParameter("anulada", ReglasFactura.ANULADA)
+                        .setMaxResults(max)
+                        .getResultList()
+        );
+    }
 }

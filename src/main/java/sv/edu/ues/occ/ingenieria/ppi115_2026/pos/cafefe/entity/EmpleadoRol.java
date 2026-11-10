@@ -25,6 +25,10 @@ import java.util.UUID;
 @Entity
 @Table(name = "empleado_rol")
 @NamedQueries({
+    @NamedQuery(name = "EmpleadoRol.findActivosPorRolesYNombre", query = "SELECT er FROM EmpleadoRol er JOIN FETCH er.idEmpleado e JOIN FETCH er.idRol r "
+            + "WHERE er.activo = true AND e.activo = true AND r.activo = true AND r IN :roles "
+            + "AND (LOWER(CONCAT(e.nombre, ' ', e.apellido)) LIKE :nombre OR LOWER(e.nombre) LIKE :nombre OR LOWER(e.apellido) LIKE :nombre) "
+            + "ORDER BY e.apellido, e.nombre, er.idEmpleadoRol"),
     @NamedQuery(name = "EmpleadoRol.findAll", query = "SELECT e FROM EmpleadoRol e"),
     @NamedQuery(name = "EmpleadoRol.findByEmpleado", query = "SELECT e FROM EmpleadoRol e LEFT JOIN e.idRol r WHERE e.idEmpleado = :empleado ORDER BY e.activo DESC, r.nombre ASC"),
     @NamedQuery(name = "EmpleadoRol.findByEmpleadoNombre", query = "SELECT er FROM EmpleadoRol er JOIN FETCH er.idEmpleado e JOIN FETCH er.idRol r "
