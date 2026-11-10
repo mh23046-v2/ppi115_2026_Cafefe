@@ -144,6 +144,11 @@ public class ProductoTipoProductoModel extends DefaultModel<ProductoTipoProducto
     }
 
     public List<TipoProducto> completarTipoProducto(String query) {
-        return tipoProductoDAO.buscarPorNombre(query, 10);
+        try {
+            return tipoProductoDAO.buscarActivosPorNombre(query, 10);
+        } catch (Exception ex) {
+            notificarError("No se pudieron cargar los tipos de producto", ex);
+            return new ArrayList<>();
+        }
     }
 }

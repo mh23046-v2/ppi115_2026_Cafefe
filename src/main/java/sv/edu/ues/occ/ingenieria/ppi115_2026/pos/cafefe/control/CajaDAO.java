@@ -48,4 +48,17 @@ public class CajaDAO extends AbstractDataAccess<Caja> {
             return total != null ? total.intValue() : 0;
         });
     }
+
+    /** Para el autocomplete de la factura: solo cajas activas, filtradas en la consulta. */
+    public List<Caja> buscarActivasPorNombre(String texto, int max) {
+        if (max <= 0) {
+            throw new IllegalArgumentException("El máximo debe ser mayor a cero");
+        }
+        return ejecutar("No se pudieron buscar las cajas activas", () ->
+            em.createNamedQuery("Caja.buscarActivasPorNombre", Caja.class)
+                .setParameter("texto", patronLike(texto))
+                .setMaxResults(max)
+                .getResultList()
+        );
+    }
 }

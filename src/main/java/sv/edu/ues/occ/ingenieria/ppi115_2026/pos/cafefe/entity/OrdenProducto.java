@@ -28,6 +28,11 @@ import java.util.UUID;
 @Entity
 @Table(name = "orden_producto")
 @NamedQueries({
+    @NamedQuery(name = "OrdenProducto.findPendientesDeFacturar", query = "SELECT op FROM OrdenProducto op JOIN FETCH op.idProducto p JOIN FETCH op.idOrden o "
+            + "WHERE LOWER(p.nombre) LIKE :texto AND NOT EXISTS (SELECT f FROM FacturaOrdenProducto f WHERE f.idOrdenProducto = op AND (f.idFactura.estado IS NULL OR f.idFactura.estado <> :anulada)) "
+            + "ORDER BY o.fechaCreacion DESC, p.nombre, op.idOrdenProducto"),
+    @NamedQuery(name = "OrdenProducto.findPendientesByOrden", query = "SELECT op FROM OrdenProducto op JOIN FETCH op.idProducto p "
+            + "WHERE op.idOrden = :orden AND NOT EXISTS (SELECT f FROM FacturaOrdenProducto f WHERE f.idOrdenProducto = op AND (f.idFactura.estado IS NULL OR f.idFactura.estado <> :anulada)) ORDER BY p.nombre, op.idOrdenProducto"),
     @NamedQuery(name = "OrdenProducto.findAll", query = "SELECT o FROM OrdenProducto o"),
     @NamedQuery(name = "OrdenProducto.findByOrden", query = "SELECT o FROM OrdenProducto o LEFT JOIN FETCH o.idProducto p WHERE o.idOrden = :orden ORDER BY p.nombre ASC"),
     @NamedQuery(name = "OrdenProducto.countByOrden", query = "SELECT COUNT(o) FROM OrdenProducto o WHERE o.idOrden = :orden"),

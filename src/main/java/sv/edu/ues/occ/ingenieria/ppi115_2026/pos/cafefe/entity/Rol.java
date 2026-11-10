@@ -20,6 +20,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "rol")
 @NamedQueries({
+    @NamedQuery(name = "Rol.buscarActivosPorNombre", query = "SELECT r FROM Rol r WHERE r.activo = true AND LOWER(r.nombre) LIKE :nombre ORDER BY r.nombre, r.idRol"),
+    @NamedQuery(name = "Rol.findActivos", query = "SELECT r FROM Rol r WHERE r.activo = true ORDER BY r.nombre, r.idRol"),
     @NamedQuery(name = "Rol.findAll", query = "SELECT r FROM Rol r"),
     @NamedQuery(name = "Rol.findByNombre", query = "SELECT r FROM Rol r WHERE LOWER(r.nombre) LIKE :nombre ORDER BY r.activo DESC, r.nombre ASC"),
     @NamedQuery(name = "Rol.countByNombre", query = "SELECT COUNT(r) FROM Rol r WHERE LOWER(r.nombre) LIKE :nombre"),

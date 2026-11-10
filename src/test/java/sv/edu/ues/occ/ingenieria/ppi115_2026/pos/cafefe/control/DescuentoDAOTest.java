@@ -8,6 +8,7 @@ import jakarta.persistence.criteria.Order;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Root;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -57,6 +58,7 @@ class DescuentoDAOTest {
         when(em.createNamedQuery("Descuento.buscarActivosPorTipoYNombre", Descuento.class)).thenReturn(query);
         when(query.setParameter("tipo", tipo)).thenReturn(query);
         when(query.setParameter("texto", "%navideño%")).thenReturn(query);
+        when(query.setParameter(eq("hoy"), any(Date.class))).thenReturn(query);
         when(query.setMaxResults(5)).thenReturn(query);
         when(query.getResultList()).thenReturn(List.of(new Descuento()));
 
@@ -66,6 +68,7 @@ class DescuentoDAOTest {
         verify(query).setParameter("tipo", tipo);
         verify(query).setParameter("texto", "%navideño%");
         verify(query).setMaxResults(5);
+        verify(query).setParameter("hoy", DescuentoDAO.inicioDeHoy());
     }
 
     @Test
@@ -77,6 +80,7 @@ class DescuentoDAOTest {
         when(em.createNamedQuery("Descuento.buscarActivosPorTipoYNombre", Descuento.class)).thenReturn(query);
         when(query.setParameter("tipo", tipo)).thenReturn(query);
         when(query.setParameter("texto", "%%")).thenReturn(query);
+        when(query.setParameter(eq("hoy"), any(Date.class))).thenReturn(query);
         when(query.setMaxResults(5)).thenReturn(query);
         when(query.getResultList()).thenReturn(Collections.emptyList());
 
@@ -95,6 +99,7 @@ class DescuentoDAOTest {
         when(em.createNamedQuery("Descuento.buscarActivosPorTipoYNombre", Descuento.class)).thenReturn(query);
         when(query.setParameter("tipo", tipo)).thenReturn(query);
         when(query.setParameter("texto", "%%")).thenReturn(query);
+        when(query.setParameter(eq("hoy"), any(Date.class))).thenReturn(query);
         when(query.setMaxResults(5)).thenReturn(query);
         
         PersistenceException causa = new PersistenceException("Error conexión BD");

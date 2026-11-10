@@ -29,6 +29,7 @@ import java.util.UUID;
 @Table(name = "factura")
 @NamedQueries({
     @NamedQuery(name = "Factura.findAll", query = "SELECT f FROM Factura f"),
+    @NamedQuery(name = "Factura.findRecientes", query = "SELECT f FROM Factura f ORDER BY f.fechaFacturacion DESC, f.idFactura"),
     @NamedQuery(name = "Factura.count", query = "SELECT COUNT(f) FROM Factura f"),
     @NamedQuery(name = "Factura.findByEstado", query = "SELECT f FROM Factura f WHERE f.estado = :estado"),
     @NamedQuery(name = "Factura.countByEstado", query = "SELECT COUNT(f) FROM Factura f WHERE f.estado = :estado"),
@@ -47,12 +48,14 @@ public class Factura implements Serializable {
     @Convert(converter = UUIDConverter.class)    
     @Column(name = "id_factura")
     private UUID idFactura;
-    @Size(max = 155)
+    @Size(max = 155, message = "El cliente admite hasta 155 caracteres")
     @Column(name = "cliente")
     private String cliente;
+    @NotNull(message = "La fecha de facturación es obligatoria")
     @Column(name = "fecha_facturacion")
     @Temporal(TemporalType.TIMESTAMP)
     private Date fechaFacturacion;
+    @NotNull(message = "El estado es obligatorio")
     @Size(max = 20)
     @Column(name = "estado")
     private String estado;
@@ -63,9 +66,11 @@ public class Factura implements Serializable {
     private List<Pago> pagoList;
     @OneToMany(mappedBy = "idFactura", fetch = FetchType.LAZY)
     private List<FacturaOrdenProducto> facturaOrdenProductoList;
+    @NotNull(message = "Seleccione la caja")
     @JoinColumn(name = "id_caja", referencedColumnName = "id_caja")
     @ManyToOne(fetch = FetchType.LAZY)
     private Caja idCaja;
+    @NotNull(message = "Seleccione el empleado que factura")
     @JoinColumn(name = "id_empleado_rol", referencedColumnName = "id_empleado_rol")
     @ManyToOne(fetch = FetchType.LAZY)
     private EmpleadoRol idEmpleadoRol;

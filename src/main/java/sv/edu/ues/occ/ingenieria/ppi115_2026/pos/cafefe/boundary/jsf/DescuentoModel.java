@@ -48,7 +48,7 @@ public class DescuentoModel extends DefaultModel<Descuento> {
 
     public List<TipoDescuento> completarTipoDescuento(String query) {
         try {
-            return tipoDescuentoDAO.buscarPorNombre(query, 10);
+            return tipoDescuentoDAO.buscarActivosPorNombre(query, 10);
         } catch (Exception ex) {
             notificarError("No se pudieron cargar los tipos de descuento", ex);
             return new ArrayList<>();

@@ -64,4 +64,17 @@ public class OrdenDAO extends AbstractDataAccess<Orden> {
         });
         super.delete(orden);
     }
+
+    /** Órdenes con al menos un producto sin facturar (para "Agregar orden completa"). */
+    public List<Orden> findConPendientesDeFacturar(int max) {
+        if (max <= 0) {
+            throw new IllegalArgumentException("El máximo debe ser mayor a cero");
+        }
+        return ejecutar("No se pudieron buscar las órdenes pendientes de facturar", () ->
+            em.createNamedQuery("Orden.findConPendientesDeFacturar", Orden.class)
+                .setParameter("anulada", ReglasFactura.ANULADA)
+                .setMaxResults(max)
+                .getResultList()
+        );
+    }
 }

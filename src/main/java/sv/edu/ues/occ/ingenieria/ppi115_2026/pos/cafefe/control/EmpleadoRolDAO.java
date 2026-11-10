@@ -9,6 +9,7 @@ import jakarta.persistence.criteria.Root;
 import java.util.List;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Empleado;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.EmpleadoRol;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Rol;
 
 @Stateless
 public class EmpleadoRolDAO extends AbstractDataAccess<EmpleadoRol> {
@@ -77,5 +78,25 @@ public class EmpleadoRolDAO extends AbstractDataAccess<EmpleadoRol> {
 
     public List<EmpleadoRol> findByEmpleadoNombre(String texto, int max) {
         return findByEmpleadoNombre(texto, 0, max);
+    }
+
+    /**
+     * Asignaciones activas (asignación, empleado y rol) cuyo rol está en la lista
+     * y cuyo empleado coincide con el texto. El filtro se hace en la consulta.
+     */
+    public List<EmpleadoRol> findActivosPorRolesYNombre(List<Rol> roles, String texto, int max) {
+        if (max <= 0) {
+            throw new IllegalArgumentException("El máximo debe ser mayor a cero");
+        }
+        if (roles == null || roles.isEmpty()) {
+            return List.of();
+        }
+        return ejecutar("No se pudieron buscar los empleados por rol", ()
+                -> em.createNamedQuery("EmpleadoRol.findActivosPorRolesYNombre", EmpleadoRol.class)
+                        .setParameter("roles", roles)
+                        .setParameter("nombre", patronLike(texto))
+                        .setMaxResults(max)
+                        .getResultList()
+        );
     }
 }
