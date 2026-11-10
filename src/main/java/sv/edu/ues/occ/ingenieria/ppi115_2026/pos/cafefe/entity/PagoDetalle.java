@@ -25,8 +25,12 @@ import java.util.UUID;
 @Table(name = "pago_detalle")
 @NamedQueries({
     @NamedQuery(name = "PagoDetalle.findAll", query = "SELECT p FROM PagoDetalle p"),
-    @NamedQuery(name = "PagoDetalle.findByMonto", query = "SELECT p FROM PagoDetalle p WHERE p.monto = :monto"),
+    @NamedQuery(name = "PagoDetalle.count", query = "SELECT COUNT(p) FROM PagoDetalle p"),
+    @NamedQuery(name = "PagoDetalle.findByPago", query = "SELECT p FROM PagoDetalle p WHERE p.idPago = :pago"),
+    @NamedQuery(name = "PagoDetalle.countByPago", query = "SELECT COUNT(p) FROM PagoDetalle p WHERE p.idPago = :pago"),
     @NamedQuery(name = "PagoDetalle.findByTipoPago", query = "SELECT p FROM PagoDetalle p WHERE p.tipoPago = :tipoPago"),
+    @NamedQuery(name = "PagoDetalle.countByTipoPago", query = "SELECT COUNT(p) FROM PagoDetalle p WHERE p.tipoPago = :tipoPago"),
+    @NamedQuery(name = "PagoDetalle.findByMonto", query = "SELECT p FROM PagoDetalle p WHERE p.monto = :monto"),
     @NamedQuery(name = "PagoDetalle.findByObservaciones", query = "SELECT p FROM PagoDetalle p WHERE p.observaciones = :observaciones"),
     @NamedQuery(name = "PagoDetalle.findByReferenciaExterna", query = "SELECT p FROM PagoDetalle p WHERE p.referenciaExterna = :referenciaExterna")})
 public class PagoDetalle implements Serializable {

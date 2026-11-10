@@ -26,8 +26,11 @@ import java.util.UUID;
 @Table(name = "pago")
 @NamedQueries({
     @NamedQuery(name = "Pago.findAll", query = "SELECT p FROM Pago p"),
+    @NamedQuery(name = "Pago.count", query = "SELECT COUNT(p) FROM Pago p"),
     @NamedQuery(name = "Pago.findByEstado", query = "SELECT p FROM Pago p WHERE p.estado = :estado"),
-    @NamedQuery(name = "Pago.findByObservaciones", query = "SELECT p FROM Pago p WHERE p.observaciones = :observaciones")})
+    @NamedQuery(name = "Pago.countByEstado", query = "SELECT COUNT(p) FROM Pago p WHERE p.estado = :estado"),
+    @NamedQuery(name = "Pago.findByFactura", query = "SELECT p FROM Pago p WHERE p.idFactura = :factura"),
+    @NamedQuery(name = "Pago.countByFactura", query = "SELECT COUNT(p) FROM Pago p WHERE p.idFactura = :factura")})
 public class Pago implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -37,15 +40,19 @@ public class Pago implements Serializable {
     @Convert(converter = UUIDConverter.class)
     @Column(name = "id_pago")
     private UUID idPago;
+    
     @Size(max = 20)
     @Column(name = "estado")
     private String estado;
+    
     @Size(max = 2147483647)
     @Column(name = "observaciones")
     private String observaciones;
+    
     @JoinColumn(name = "id_factura", referencedColumnName = "id_factura")
     @ManyToOne(fetch = FetchType.LAZY)
     private Factura idFactura;
+    
     @OneToMany(mappedBy = "idPago", fetch = FetchType.LAZY)
     private List<PagoDetalle> pagoDetalleList;
 

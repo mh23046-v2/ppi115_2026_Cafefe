@@ -24,8 +24,10 @@ import java.util.UUID;
 @Table(name = "caja")
 @NamedQueries({
     @NamedQuery(name = "Caja.findAll", query = "SELECT c FROM Caja c"),
+    @NamedQuery(name = "Caja.count", query = "SELECT COUNT(c) FROM Caja c"),
     @NamedQuery(name = "Caja.findByNombre", query = "SELECT c FROM Caja c WHERE c.nombre = :nombre"),
     @NamedQuery(name = "Caja.findByActivo", query = "SELECT c FROM Caja c WHERE c.activo = :activo"),
+    @NamedQuery(name = "Caja.countByActivo", query = "SELECT COUNT(c) FROM Caja c WHERE c.activo = :activo"),
     @NamedQuery(name = "Caja.findByObservaciones", query = "SELECT c FROM Caja c WHERE c.observaciones = :observaciones")})
 public class Caja implements Serializable {
 
@@ -36,14 +38,18 @@ public class Caja implements Serializable {
     @Convert(converter = UUIDConverter.class)
     @Column(name = "id_caja", columnDefinition = "uuid")
     private UUID idCaja;
+    
     @Size(max = 155)
     @Column(name = "nombre")
-    private String nombre;  
+    private String nombre;
+    
     @Column(name = "activo")
     private Boolean activo;
+    
     @Size(max = 2147483647)
     @Column(name = "observaciones")
     private String observaciones;
+    
     @OneToMany(mappedBy = "idCaja", fetch = FetchType.LAZY)
     private List<Factura> facturaList;
 

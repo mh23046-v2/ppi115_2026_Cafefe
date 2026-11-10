@@ -25,6 +25,11 @@ import java.util.UUID;
 @Table(name = "factura_orden_producto")
 @NamedQueries({
     @NamedQuery(name = "FacturaOrdenProducto.findAll", query = "SELECT f FROM FacturaOrdenProducto f"),
+    @NamedQuery(name = "FacturaOrdenProducto.count", query = "SELECT COUNT(f) FROM FacturaOrdenProducto f"),
+    @NamedQuery(name = "FacturaOrdenProducto.findByFactura", query = "SELECT f FROM FacturaOrdenProducto f WHERE f.idFactura = :factura"),
+    @NamedQuery(name = "FacturaOrdenProducto.countByFactura", query = "SELECT COUNT(f) FROM FacturaOrdenProducto f WHERE f.idFactura = :factura"),
+    @NamedQuery(name = "FacturaOrdenProducto.findByOrdenProducto", query = "SELECT f FROM FacturaOrdenProducto f WHERE f.idOrdenProducto = :ordenProducto"),
+    @NamedQuery(name = "FacturaOrdenProducto.countByOrdenProducto", query = "SELECT COUNT(f) FROM FacturaOrdenProducto f WHERE f.idOrdenProducto = :ordenProducto"),
     @NamedQuery(name = "FacturaOrdenProducto.findByPrecio", query = "SELECT f FROM FacturaOrdenProducto f WHERE f.precio = :precio"),
     @NamedQuery(name = "FacturaOrdenProducto.findByObservaciones", query = "SELECT f FROM FacturaOrdenProducto f WHERE f.observaciones = :observaciones")})
 public class FacturaOrdenProducto implements Serializable {
