@@ -6,6 +6,9 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Order;
 import jakarta.persistence.criteria.Root;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.List;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Descuento;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.TipoDescuento;
@@ -44,8 +47,14 @@ public class DescuentoDAO extends AbstractDataAccess<Descuento> {
             em.createNamedQuery("Descuento.buscarActivosPorTipoYNombre", Descuento.class)
                 .setParameter("tipo", tipo)
                 .setParameter("texto", patronLike(texto))
+                .setParameter("hoy", inicioDeHoy())
                 .setMaxResults(max)
                 .getResultList()
         );
+    }
+
+    /** Hoy a las 00:00: un descuento que vence hoy todavía se puede elegir. */
+    static Date inicioDeHoy() {
+        return Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
     }
 }

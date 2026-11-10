@@ -43,4 +43,17 @@ public class TipoDescuentoDAO extends AbstractDataAccess<TipoDescuento> {
                 .getResultList()
         );
     }
+
+    /** Para autocompletes: solo los registros activos, filtrados en la consulta. */
+    public List<TipoDescuento> buscarActivosPorNombre(String texto, int max) {
+        if (max <= 0) {
+            throw new IllegalArgumentException("El máximo debe ser mayor a cero");
+        }
+        return ejecutar("No se pudieron buscar los tipos de descuento activos", () ->
+            em.createNamedQuery("TipoDescuento.buscarActivosPorNombre", TipoDescuento.class)
+                .setParameter("texto", patronLike(texto))
+                .setMaxResults(max)
+                .getResultList()
+        );
+    }
 }

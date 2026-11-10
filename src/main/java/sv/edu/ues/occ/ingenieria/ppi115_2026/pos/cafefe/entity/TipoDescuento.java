@@ -22,6 +22,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "tipo_descuento")
 @NamedQueries({
+    @NamedQuery(name = "TipoDescuento.buscarActivosPorNombre", query = "SELECT t FROM TipoDescuento t WHERE t.activo = true AND LOWER(t.nombre) LIKE :texto ORDER BY t.nombre, t.idTipoDescuento"),
     @NamedQuery(name = "TipoDescuento.findAll", query = "SELECT t FROM TipoDescuento t"),
     @NamedQuery(name = "TipoDescuento.buscarPorNombre", query = "SELECT t FROM TipoDescuento t WHERE LOWER(t.nombre) LIKE :texto ORDER BY t.activo DESC, t.nombre, t.idTipoDescuento")})
 public class TipoDescuento implements Serializable {

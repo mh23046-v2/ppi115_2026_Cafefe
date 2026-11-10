@@ -109,12 +109,12 @@ class ProductoCaracteristicaModelTest {
     @DisplayName("completarTipoCaracteristica delega la búsqueda acotada a 10 al DAO")
     void testCompletarTipoCaracteristica() {
         TipoCaracteristica tc = new TipoCaracteristica();
-        when(tipoCaracteristicaDAO.buscarPorNombre("Origen", 10)).thenReturn(List.of(tc));
+        when(tipoCaracteristicaDAO.buscarActivosPorNombre("Origen", 10)).thenReturn(List.of(tc));
 
         List<TipoCaracteristica> res = productoCaracteristicaModel.completarTipoCaracteristica("Origen");
 
         assertFalse(res.isEmpty());
-        verify(tipoCaracteristicaDAO).buscarPorNombre("Origen", 10);
+        verify(tipoCaracteristicaDAO).buscarActivosPorNombre("Origen", 10);
     }
 
     @Test

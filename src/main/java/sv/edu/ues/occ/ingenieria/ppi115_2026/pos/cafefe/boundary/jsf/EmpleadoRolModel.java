@@ -85,7 +85,7 @@ public class EmpleadoRolModel extends DefaultModel<EmpleadoRol> implements Seria
 
     public List<Rol> completarRol(String query) {
         try {
-            return rolDAO.findByNombre(query, 10);
+            return rolDAO.buscarActivosPorNombre(query, 10);
         } catch (Exception ex) {
             notificarError("No se pudieron cargar los roles", ex);
             return new ArrayList<>();

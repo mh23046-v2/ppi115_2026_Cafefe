@@ -107,11 +107,11 @@ class EmpleadoRolModelTest {
     @Test
     @DisplayName("completarRol: Retorna la lista acotada desde RolDAO")
     void testCompletarRol() {
-        when(rolDAO.findByNombre("admin", 10)).thenReturn(List.of(new Rol()));
+        when(rolDAO.buscarActivosPorNombre("admin", 10)).thenReturn(List.of(new Rol()));
 
         List<Rol> resultado = model.completarRol("admin");
 
         assertFalse(resultado.isEmpty());
-        verify(rolDAO).findByNombre("admin", 10);
+        verify(rolDAO).buscarActivosPorNombre("admin", 10);
     }
 }

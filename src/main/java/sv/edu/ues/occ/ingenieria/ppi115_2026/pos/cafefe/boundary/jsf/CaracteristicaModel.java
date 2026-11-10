@@ -47,7 +47,7 @@ public class CaracteristicaModel extends DefaultModel<Caracteristica> {
 
     public List<TipoCaracteristica> completarTipoCaracteristica(String query) {
         try {
-            return tipoCaracteristicaDAO.buscarPorNombre(query, 10);
+            return tipoCaracteristicaDAO.buscarActivosPorNombre(query, 10);
         } catch (Exception ex) {
             notificarError("No se pudieron cargar los tipos de característica", ex);
             return new ArrayList<>();
