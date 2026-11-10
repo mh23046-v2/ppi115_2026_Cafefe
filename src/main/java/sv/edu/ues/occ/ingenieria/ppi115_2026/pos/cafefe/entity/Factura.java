@@ -29,9 +29,14 @@ import java.util.UUID;
 @Table(name = "factura")
 @NamedQueries({
     @NamedQuery(name = "Factura.findAll", query = "SELECT f FROM Factura f"),
-    @NamedQuery(name = "Factura.findByCliente", query = "SELECT f FROM Factura f WHERE f.cliente = :cliente"),
-    @NamedQuery(name = "Factura.findByFechaFacturacion", query = "SELECT f FROM Factura f WHERE f.fechaFacturacion = :fechaFacturacion"),
+    @NamedQuery(name = "Factura.count", query = "SELECT COUNT(f) FROM Factura f"),
     @NamedQuery(name = "Factura.findByEstado", query = "SELECT f FROM Factura f WHERE f.estado = :estado"),
+    @NamedQuery(name = "Factura.countByEstado", query = "SELECT COUNT(f) FROM Factura f WHERE f.estado = :estado"),
+    @NamedQuery(name = "Factura.findByCaja", query = "SELECT f FROM Factura f WHERE f.idCaja = :caja"),
+    @NamedQuery(name = "Factura.countByCaja", query = "SELECT COUNT(f) FROM Factura f WHERE f.idCaja = :caja"),
+    @NamedQuery(name = "Factura.findByCliente", query = "SELECT f FROM Factura f WHERE LOWER(f.cliente) LIKE :cliente"),
+    @NamedQuery(name = "Factura.countByCliente", query = "SELECT COUNT(f) FROM Factura f WHERE LOWER(f.cliente) LIKE :cliente"),
+    @NamedQuery(name = "Factura.findByFechaFacturacion", query = "SELECT f FROM Factura f WHERE f.fechaFacturacion = :fechaFacturacion"),
     @NamedQuery(name = "Factura.findByObservaciones", query = "SELECT f FROM Factura f WHERE f.observaciones = :observaciones")})
 public class Factura implements Serializable {
 
