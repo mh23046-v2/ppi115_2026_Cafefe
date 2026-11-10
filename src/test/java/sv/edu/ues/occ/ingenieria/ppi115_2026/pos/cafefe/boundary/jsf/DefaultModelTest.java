@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.AbstractDataAccess;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.AccesoDatosException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -211,6 +212,50 @@ public class DefaultModelTest {
                 verify(mockFacesContext, times(1)).addMessage(eq(null), argThat(msg
                         -> msg.getSeverity().equals(FacesMessage.SEVERITY_ERROR)
                 ));
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("Mensajes de error que ve el usuario")
+    class MensajesErrorTests {
+
+        @Test
+        @DisplayName("Eliminar algo en uso (FK de PostgreSQL): mensaje amigable, sin nombres de tablas ni restricciones")
+        public void testErrorBaseNoExponeDetalle() {
+            model.setRegistro(registroPrueba);
+            java.sql.SQLException sql = new java.sql.SQLException(
+                    "update or delete on table \"rol\" violates foreign key constraint \"fk_empleado_rol_rol\"", "23503");
+            doThrow(new AccesoDatosException("No se pudo eliminar el registro",
+                    new jakarta.persistence.PersistenceException(sql))).when(mockDAO).delete(registroPrueba);
+
+            try (MockedStatic<FacesContext> mockedFacesContext = mockStatic(FacesContext.class)) {
+                mockedFacesContext.when(FacesContext::getCurrentInstance).thenReturn(mockFacesContext);
+
+                model.btnEliminarHandler();
+
+                verify(mockFacesContext).addMessage(eq(null), argThat(msg
+                        -> msg.getSeverity().equals(FacesMessage.SEVERITY_ERROR)
+                        && msg.getDetail().contains("Desactívelo")
+                        && !msg.getDetail().contains("fk_empleado_rol_rol")));
+                assertSame(registroPrueba, model.getRegistro()); // no se pierde lo que se estaba editando
+            }
+        }
+
+        @Test
+        @DisplayName("Error de base sin código conocido: mensaje genérico")
+        public void testErrorBaseGenerico() {
+            model.setRegistro(registroPrueba);
+            doThrow(new AccesoDatosException("No se pudo modificar el registro",
+                    new jakarta.persistence.PersistenceException("timeout interno"))).when(mockDAO).modify(registroPrueba);
+
+            try (MockedStatic<FacesContext> mockedFacesContext = mockStatic(FacesContext.class)) {
+                mockedFacesContext.when(FacesContext::getCurrentInstance).thenReturn(mockFacesContext);
+
+                model.btnModificarHandler();
+
+                verify(mockFacesContext).addMessage(eq(null), argThat(msg
+                        -> sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.TraductorErrores.GENERICO.equals(msg.getDetail())));
             }
         }
     }

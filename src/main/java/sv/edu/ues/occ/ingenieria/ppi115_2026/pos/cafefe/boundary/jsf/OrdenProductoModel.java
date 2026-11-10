@@ -15,13 +15,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.AbstractDataAccess;
-import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.EmpleadoRolDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.OrdenProductoDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.ProductoDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.ReglasOrden;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Descuento;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.DescuentoProducto;
-import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.EmpleadoRol;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Orden;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.OrdenProducto;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Producto;
@@ -36,9 +34,6 @@ public class OrdenProductoModel extends DefaultModel<OrdenProducto> implements S
 
     @Inject
     private ProductoDAO productoDAO;
-
-    @Inject
-    private EmpleadoRolDAO empleadoRolDAO;
 
     private Orden orden;
 
@@ -99,20 +94,6 @@ public class OrdenProductoModel extends DefaultModel<OrdenProducto> implements S
             return "El producto no tiene un precio válido";
         }
         return null;
-    }
-
-    // Autocompletado acotado para seleccionar únicamente productos activos para la venta.
-    public List<EmpleadoRol> completarEmpleadoRol(String query) {
-        try {
-            List<EmpleadoRol> resultados = empleadoRolDAO.findByEmpleadoNombre(query, 0, 25);
-            return resultados.stream()
-                    .filter(ReglasOrden::puedeTomarOrdenes)
-                    .limit(10)
-                    .toList();
-        } catch (Exception ex) {
-            notificarError("No se pudieron cargar los empleados aptos para tomar la orden", ex);
-            return new ArrayList<>();
-        }
     }
 
     // Selección de producto vía autocompletado: setea el producto y asigna su precio sugerido por defecto.
@@ -197,30 +178,14 @@ public class OrdenProductoModel extends DefaultModel<OrdenProducto> implements S
                     "El descuento no está vigente en la fecha de la orden");
             return;
         }
-        Map<Producto, DescuentoProducto> porProducto = new LinkedHashMap<>();
-        for (DescuentoProducto dp : vigentes) {
-            porProducto.put(dp.getIdProducto(), dp);
-        }
-        int aplicados = 0;
         try {
-            // Se consulta el detalle paginado/completo vía orden
-            int totalRegistros = ordenProductoDAO.countByOrden(orden);
-            List<OrdenProducto> productosOrden = ordenProductoDAO.findByOrden(orden, 0, Math.max(1, totalRegistros));
-
-            for (OrdenProducto op : productosOrden) {
-                DescuentoProducto dp = porProducto.get(op.getIdProducto());
-                if (dp != null && op.getIdProducto().getPrecioSugerido() != null) {
-                    op.setPrecio(ReglasOrden.precioConDescuento(
-                            op.getIdProducto().getPrecioSugerido(), ReglasOrden.porcentajeEfectivo(dp)));
-                    ordenProductoDAO.modify(op);
-                    aplicados++;
-                }
-            }
+            // Todas las líneas se actualizan en una sola transacción (o ninguna si algo falla).
+            int aplicados = ordenProductoDAO.aplicarDescuento(orden, vigentes);
             mensaje(FacesMessage.SEVERITY_INFO, "Descuento aplicado",
                     descuentoSeleccionado.getNombre() + " se aplicó a " + aplicados + " producto(s)");
             descuentoSeleccionado = null;
-        } catch (Exception ex) {
-            mensaje(FacesMessage.SEVERITY_ERROR, "Descuento no aplicado", ex.getMessage());
+        } catch (RuntimeException ex) {
+            notificarError("Descuento no aplicado", ex);
         }
     }
 

@@ -18,6 +18,7 @@ import org.primefaces.model.LazyDataModel;
 import org.primefaces.model.SortMeta;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.AbstractDataAccess;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.AccesoDatosException;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.TraductorErrores;
 
 public abstract class DefaultModel<T> implements Serializable {
 
@@ -169,7 +170,9 @@ public abstract class DefaultModel<T> implements Serializable {
     protected void notificarError(String resumen, Exception ex) {
         AccesoDatosException acceso = buscarCausa(ex, AccesoDatosException.class);
         if (acceso != null) {
-            notificar(FacesMessage.SEVERITY_ERROR, resumen, acceso.getMessage() + ": " + causaRaiz(acceso));
+            // El detalle técnico (tabla, columna, restricción) va al log del servidor, nunca a la pantalla.
+            LOG.log(Level.WARNING, resumen, acceso);
+            notificar(FacesMessage.SEVERITY_ERROR, resumen, TraductorErrores.mensaje(acceso));
             return;
         }
 
@@ -200,14 +203,6 @@ public abstract class DefaultModel<T> implements Serializable {
             }
         }
         return null;
-    }
-
-    // Las excepciones de JPA llegan envueltas. La causa raíz trae el mensaje útil de PostgreSQL.
-    private String causaRaiz(Throwable t) {
-        while (t.getCause() != null && t.getCause() != t) {
-            t = t.getCause();
-        }
-        return t.getMessage();
     }
 
     public LazyDataModel<T> getLazyModel() {

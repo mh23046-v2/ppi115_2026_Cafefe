@@ -3,6 +3,9 @@ package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Root;
 import java.util.Date;
 import java.util.List;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.DescuentoProducto;
@@ -49,5 +52,11 @@ public class DescuentoProductoDAO extends AbstractDataAccess<DescuentoProducto> 
                     .getSingleResult();
             return total != null ? total.intValue() : 0;
         });
+    }
+
+    // Orden estable para que la paginación no repita ni salte filas.
+    @Override
+    protected List<Order> ordenar(CriteriaBuilder cb, Root<DescuentoProducto> root) {
+        return List.of(cb.desc(root.get("fechaDesde")), cb.asc(root.get("idDescuentoProducto")));
     }
 }

@@ -19,12 +19,15 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.EmpleadoRolDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.OrdenDAO;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.RolDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Empleado;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.EmpleadoRol;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Orden;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Rol;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 
@@ -36,6 +39,9 @@ public class OrdenModelTest {
 
     @Mock
     private EmpleadoRolDAO empleadoRolDAO;
+
+    @Mock
+    private RolDAO rolDAO;
 
     @Mock
     private OrdenProductoModel ordenProductoModel;
@@ -69,18 +75,33 @@ public class OrdenModelTest {
     }
 
     @Test
-    @DisplayName("completarEmpleadoRol: Invoca EmpleadoRolDAO por nombre y solo devuelve roles admitidos")
+    @DisplayName("completarEmpleadoRol: pide a la base solo los roles que pueden tomar órdenes, con límite de 10")
     void testCompletarEmpleadoRolSoloAdmitidos() {
         EmpleadoRol erBarista = empleadoRol("Barista");
-        EmpleadoRol erCajero = empleadoRol("Cajero");
+        Rol barista = erBarista.getIdRol();
+        Rol atencion = empleadoRol("Atención al Cliente").getIdRol();
+        Rol cajero = empleadoRol("Cajero").getIdRol();
 
-        when(empleadoRolDAO.findByEmpleadoNombre("juan", 15)).thenReturn(List.of(erBarista, erCajero));
+        when(rolDAO.findActivos()).thenReturn(List.of(barista, cajero, atencion));
+        when(empleadoRolDAO.findActivosPorRolesYNombre(List.of(barista, atencion), "juan", 10))
+                .thenReturn(List.of(erBarista));
 
         List<EmpleadoRol> resultado = ordenModel.completarEmpleadoRol("juan");
 
-        assertEquals(1, resultado.size());
-        assertEquals("Barista", resultado.get(0).getIdRol().getNombre());
-        verify(empleadoRolDAO).findByEmpleadoNombre("juan", 15);
+        assertEquals(List.of(erBarista), resultado);
+        verify(empleadoRolDAO, never()).findByEmpleadoNombre(anyString(), anyInt());
+    }
+
+    @Test
+    @DisplayName("completarEmpleadoRol: si la base falla devuelve lista vacía y avisa")
+    void testCompletarEmpleadoRolError() {
+        try (MockedStatic<FacesContext> faces = mockStatic(FacesContext.class)) {
+            faces.when(FacesContext::getCurrentInstance).thenReturn(facesContext);
+            when(rolDAO.findActivos()).thenThrow(new IllegalStateException("caída"));
+
+            assertTrue(ordenModel.completarEmpleadoRol("juan").isEmpty());
+            verify(facesContext).addMessage(isNull(), any(FacesMessage.class));
+        }
     }
 
     @Test
