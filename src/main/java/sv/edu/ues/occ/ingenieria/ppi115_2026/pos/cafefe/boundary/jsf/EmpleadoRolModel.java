@@ -80,12 +80,18 @@ public class EmpleadoRolModel extends DefaultModel<EmpleadoRol> implements Seria
         if (registro.getIdRol().getActivo() != null && !registro.getIdRol().getActivo()) {
             return "No se puede asignar un rol inactivo";
         }
+        if (estado == ESTADO_CRUD.CREAR && !Boolean.TRUE.equals(registro.getIdEmpleado().getActivo())) {
+            return "No se puede asignar un rol a un empleado inactivo";
+        }
+        if (empleadoRolDAO.existeAsignacion(registro.getIdEmpleado(), registro.getIdRol(), registro.getIdEmpleadoRol())) {
+            return "El empleado ya tiene asignado ese rol";
+        }
         return null;
     }
 
     public List<Rol> completarRol(String query) {
         try {
-            return rolDAO.findByNombre(query, 10);
+            return rolDAO.buscarActivosPorNombre(query, 10);
         } catch (Exception ex) {
             notificarError("No se pudieron cargar los roles", ex);
             return new ArrayList<>();

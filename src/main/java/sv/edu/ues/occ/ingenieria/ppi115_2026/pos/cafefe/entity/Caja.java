@@ -23,6 +23,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "caja")
 @NamedQueries({
+    @NamedQuery(name = "Caja.buscarActivasPorNombre", query = "SELECT c FROM Caja c WHERE c.activo = true AND LOWER(c.nombre) LIKE :texto ORDER BY c.nombre, c.idCaja"),
+    @NamedQuery(name = "Caja.countByNombreExcluyendo", query = "SELECT COUNT(c) FROM Caja c WHERE LOWER(TRIM(c.nombre)) = :nombre AND c.idCaja <> :excluir"),
     @NamedQuery(name = "Caja.findAll", query = "SELECT c FROM Caja c"),
     @NamedQuery(name = "Caja.count", query = "SELECT COUNT(c) FROM Caja c"),
     @NamedQuery(name = "Caja.findByNombre", query = "SELECT c FROM Caja c WHERE c.nombre = :nombre"),
@@ -39,7 +41,8 @@ public class Caja implements Serializable {
     @Column(name = "id_caja", columnDefinition = "uuid")
     private UUID idCaja;
     
-    @Size(max = 155)
+    @NotNull(message = "El nombre de la caja es obligatorio")
+    @Size(max = 155, message = "El nombre admite hasta 155 caracteres")
     @Column(name = "nombre")
     private String nombre;
     

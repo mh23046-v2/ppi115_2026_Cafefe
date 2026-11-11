@@ -4,11 +4,11 @@
    xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
    version="6.0">
 
-    <!-- Modo desarrollo de JSF: muestra más información al depurar.
-         Cambiar a Production al entregar/desplegar. -->
+    <!-- Production: no muestra trazas ni detalles internos al usuario.
+         Para depurar en local se puede cambiar temporalmente a Development. -->
     <context-param>
         <param-name>jakarta.faces.PROJECT_STAGE</param-name>
-        <param-value>Development</param-value>
+        <param-value>Production</param-value>
     </context-param>
 
     <!-- Los campos de texto vacíos se guardan como NULL en vez de "" -->

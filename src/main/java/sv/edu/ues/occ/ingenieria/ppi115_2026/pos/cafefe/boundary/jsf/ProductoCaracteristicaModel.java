@@ -77,7 +77,7 @@ public class ProductoCaracteristicaModel extends DefaultModel<ProductoCaracteris
     // Autocompletado para el selector de TipoCaracteristica (limitado a 10 registros).
     public List<TipoCaracteristica> completarTipoCaracteristica(String query) {
         try {
-            return tipoCaracteristicaDAO.buscarPorNombre(query, 10);
+            return tipoCaracteristicaDAO.buscarActivosPorNombre(query, 10);
         } catch (Exception ex) {
             notificarError("No se pudieron cargar los tipos de característica", ex);
             return new ArrayList<>();

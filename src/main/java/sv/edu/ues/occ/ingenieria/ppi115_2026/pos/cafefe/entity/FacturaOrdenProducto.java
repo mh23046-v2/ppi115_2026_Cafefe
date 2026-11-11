@@ -11,6 +11,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.io.Serializable;
@@ -26,7 +28,10 @@ import java.util.UUID;
 @NamedQueries({
     @NamedQuery(name = "FacturaOrdenProducto.findAll", query = "SELECT f FROM FacturaOrdenProducto f"),
     @NamedQuery(name = "FacturaOrdenProducto.count", query = "SELECT COUNT(f) FROM FacturaOrdenProducto f"),
-    @NamedQuery(name = "FacturaOrdenProducto.findByFactura", query = "SELECT f FROM FacturaOrdenProducto f WHERE f.idFactura = :factura"),
+    @NamedQuery(name = "FacturaOrdenProducto.findByFactura", query = "SELECT f FROM FacturaOrdenProducto f JOIN FETCH f.idOrdenProducto op LEFT JOIN FETCH op.idProducto p WHERE f.idFactura = :factura ORDER BY p.nombre, f.idFacturaOrdenProducto"),
+    @NamedQuery(name = "FacturaOrdenProducto.sumPrecioByFactura", query = "SELECT SUM(f.precio) FROM FacturaOrdenProducto f WHERE f.idFactura = :factura"),
+    @NamedQuery(name = "FacturaOrdenProducto.countVigentesByOrdenProducto", query = "SELECT COUNT(f) FROM FacturaOrdenProducto f WHERE f.idOrdenProducto = :ordenProducto AND (f.idFactura.estado IS NULL OR f.idFactura.estado <> :anulada)"),
+    @NamedQuery(name = "FacturaOrdenProducto.deleteByFactura", query = "DELETE FROM FacturaOrdenProducto f WHERE f.idFactura.idFactura = :idFactura"),
     @NamedQuery(name = "FacturaOrdenProducto.countByFactura", query = "SELECT COUNT(f) FROM FacturaOrdenProducto f WHERE f.idFactura = :factura"),
     @NamedQuery(name = "FacturaOrdenProducto.findByOrdenProducto", query = "SELECT f FROM FacturaOrdenProducto f WHERE f.idOrdenProducto = :ordenProducto"),
     @NamedQuery(name = "FacturaOrdenProducto.countByOrdenProducto", query = "SELECT COUNT(f) FROM FacturaOrdenProducto f WHERE f.idOrdenProducto = :ordenProducto"),
@@ -41,15 +46,19 @@ public class FacturaOrdenProducto implements Serializable {
     @Convert(converter = UUIDConverter.class)
     @Column(name = "id_factura_orden_producto")
     private UUID idFacturaOrdenProducto;
-    // @Max(value=?)  @Min(value=?)//if you know range of your decimal fields consider using these annotations to enforce field validation
+    @NotNull(message = "El precio es obligatorio")
+    @DecimalMin(value = "0.00", message = "El precio no puede ser negativo")
+    @Digits(integer = 6, fraction = 2, message = "El precio admite hasta 6 enteros y 2 decimales")
     @Column(name = "precio")
     private BigDecimal precio;
     @Size(max = 2147483647)
     @Column(name = "observaciones")
     private String observaciones;
+    @NotNull(message = "El detalle debe pertenecer a una factura")
     @JoinColumn(name = "id_factura", referencedColumnName = "id_factura")
     @ManyToOne(fetch = FetchType.LAZY)
     private Factura idFactura;
+    @NotNull(message = "Seleccione el producto de una orden")
     @JoinColumn(name = "id_orden_producto", referencedColumnName = "id_orden_producto")
     @ManyToOne(fetch = FetchType.LAZY)
     private OrdenProducto idOrdenProducto;

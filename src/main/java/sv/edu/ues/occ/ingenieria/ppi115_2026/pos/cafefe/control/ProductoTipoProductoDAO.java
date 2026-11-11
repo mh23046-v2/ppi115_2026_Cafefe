@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.UUID;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Producto;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.ProductoTipoProducto;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.TipoProducto;
 
 @Stateless
 public class ProductoTipoProductoDAO extends AbstractDataAccess<ProductoTipoProducto> {
@@ -60,6 +61,24 @@ public class ProductoTipoProductoDAO extends AbstractDataAccess<ProductoTipoProd
                 -> em.createNamedQuery("ProductoTipoProducto.countByProducto", Long.class)
                         .setParameter("producto", producto)
                         .getSingleResult()
+        );
+    }
+
+    /**
+     * ¿El producto ya tiene asignado ese tipo? Se excluye el propio registro
+     * (por si se está modificando) para no contarse a sí mismo.
+     */
+    public boolean existeAsignacion(Producto producto, TipoProducto tipo, UUID excluir) {
+        if (producto == null || producto.getIdProducto() == null || tipo == null || tipo.getIdTipoProducto() == null) {
+            return false;
+        }
+        UUID idExcluido = excluir != null ? excluir : new UUID(0L, 0L);
+        return ejecutar("No se pudo verificar si el tipo ya está asignado", ()
+                -> em.createNamedQuery("ProductoTipoProducto.countByProductoYTipo", Long.class)
+                        .setParameter("producto", producto)
+                        .setParameter("tipo", tipo)
+                        .setParameter("excluir", idExcluido)
+                        .getSingleResult() > 0
         );
     }
 }

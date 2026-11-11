@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Pagos: maestro-detalle con el mismo patrón que factura.xhtml.
+    Pestaña 1 "Generalidades" = el pago (PagoModel): factura que se cobra y estado.
+    Pestaña 2 "Detalles"      = cuánto se paga con cada medio (PagoDetalleModel).
+    El estado solo cambia con los botones "Completar pago" y "Anular pago".
+-->
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:p="primefaces"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:botones="jakarta.faces.composite/botones"
+                template="/WEB-INF/plantillas/general.xhtml">
+
+    <ui:define name="leyenda">#{tradcrud['entidad.pago']}</ui:define>
+
+    <ui:define name="contenido">
+
+        <!-- ===== LISTADO DE PAGOS ===== -->
+        <h:form id="frmListado">
+            <h:panelGroup id="pnlListado" layout="block">
+                <p:dataTable id="tblListado" value="#{pagoModel.lazyModel}" var="fila"
+                             lazy="true" paginator="true" rows="10"
+                             rowsPerPageTemplate="5,10,25"
+                             paginatorPosition="bottom"
+                             selectionMode="single"
+                             emptyMessage="#{tradcrud['jsf.crud.sinRegistros']}"
+                             rendered="#{pagoModel.estado == 'NINGUNO'}">
+                    <f:facet name="header">
+                        #{tradcrud['jsf.crud.ayudaSeleccion']}
+                    </f:facet>
+                    <p:ajax event="rowSelect" listener="#{pagoModel.onRowSelect}"
+                            update=":frmMantenimiento:pnlDetalle :frmListado:pnlListado"/>
+                    <p:column headerText="ID">
+                        <h:outputText value="#{fila.idPago}"/>
+                    </p:column>
+                    <p:column headerText="Factura">
+                        <h:outputText value="#{etiquetas.factura(fila.idFactura)}"/>
+                    </p:column>
+                    <p:column headerText="Estado del pago">
+                        <h:outputText value="#{fila.estado}"/>
+                    </p:column>
+                    <p:column headerText="Estado de la factura">
+                        <h:outputText value="#{fila.idFactura.estado}"/>
+                    </p:column>
+                    <p:column headerText="Observaciones">
+                        <h:outputText value="#{fila.observaciones}"/>
+                    </p:column>
+                </p:dataTable>
+
+                <botones:botones-arriba modelo="#{pagoModel}"
+                                        actualizarListado=":frmListado:pnlListado"
+                                        actualizarDetalle=":frmMantenimiento:pnlDetalle"/>
+            </h:panelGroup>
+        </h:form>
+
+        <h:form id="frmMantenimiento">
+            <h:panelGroup id="pnlDetalle" layout="block">
+                <h:panelGroup rendered="#{pagoModel.estado != 'NINGUNO'}" layout="block">
+                    <h2>#{tradcrud['jsf.crud.mantenimiento']} #{pagoModel.nombreBean()}</h2>
+
+                    <!-- Resumen siempre visible: total, pagado y saldo -->
+                    <p:panelGrid id="pnlResumen" columns="6" styleClass="ui-noborder grid-formulario"
+                                 rendered="#{pagoModel.estado == 'MODIFICAR'}">
+                        <p:outputLabel value="Total factura:"/>
+                        <h:outputText value="#{pagoModel.totalFactura}">
+                            <f:convertNumber type="currency" currencySymbol="$" locale="es_SV"/>
+                        </h:outputText>
+                        <p:outputLabel value="Pagado:"/>
+                        <h:outputText value="#{pagoModel.pagoDetalleModel.pagado}">
+                            <f:convertNumber type="currency" currencySymbol="$" locale="es_SV"/>
+                        </h:outputText>
+                        <p:outputLabel value="#{pagoModel.saldo.signum() lt 0 ? 'Cambio:' : 'Falta:'}"/>
+                        <h:outputText value="#{pagoModel.saldo.abs()}">
+                            <f:convertNumber type="currency" currencySymbol="$" locale="es_SV"/>
+                        </h:outputText>
+                    </p:panelGrid>
+
+                    <p:tabView id="tabView" dynamic="true" cache="false"
+                               activeIndex="#{pagoModel.tabActiva}">
+
+                        <!-- PESTAÑA 1: GENERALIDADES (maestro) -->
+                        <p:tab title="Generalidades">
+                            <h:panelGroup id="pnlGeneralidades" layout="block" styleClass="formulario-cafe">
+                                <p:panelGrid columns="2" styleClass="ui-noborder grid-formulario">
+                                    <p:outputLabel value="ID"/>
+                                    <p:inputText id="id" value="#{pagoModel.registro.idPago}" disabled="true"/>
+
+                                    <p:outputLabel value="Factura" for="acFactura"/>
+                                    <p:autoComplete id="acFactura"
+                                                    value="#{pagoModel.registro.idFactura}"
+                                                    completeMethod="#{pagoModel.completarFactura}"
+                                                    var="fa"
+                                                    itemLabel="#{etiquetas.factura(fa)}"
+                                                    itemValue="#{fa}"
+                                                    converter="#{entidadConverter}"
+                                                    dropdown="true"
+                                                    dropdownMode="blank"
+                                                    placeholder="Escriba el cliente o seleccione una factura pendiente..."
+                                                    forceSelection="true"
+                                                    disabled="#{pagoModel.estado ne 'CREAR'}"
+                                                    required="true"
+                                                    requiredMessage="Seleccione la factura que se paga"/>
+
+                                    <p:outputLabel value="Estado"/>
+                                    <p:inputText id="estado" value="#{pagoModel.registro.estado}" disabled="true"/>
+
+                                    <p:outputLabel value="Observaciones" for="observaciones"/>
+                                    <p:inputTextarea id="observaciones" value="#{pagoModel.registro.observaciones}"
+                                                     rows="3" autoResize="false"/>
+                                </p:panelGrid>
+
+                                <botones:botones-abajo modelo="#{pagoModel}"
+                                                       procesar=":frmMantenimiento:tabView:pnlGeneralidades"
+                                                       actualizarListado=":frmListado:pnlListado"
+                                                       actualizarDetalle=":frmMantenimiento:pnlDetalle"/>
+
+                                <p:commandButton value="Completar pago" icon="pi pi-check-circle"
+                                                 styleClass="boton-cafe"
+                                                 actionListener="#{pagoModel.btnCompletarHandler}"
+                                                 process="@this"
+                                                 update=":frmMantenimiento:pnlDetalle"
+                                                 rendered="#{pagoModel.puedeCompletar}">
+                                    <p:confirm header="Completar pago"
+                                               message="Se marcará el pago como COMPLETADO y la factura como PAGADA. ¿Continuar?"
+                                               icon="pi pi-question-circle"/>
+                                </p:commandButton>
+
+                                <p:commandButton value="Anular pago" icon="pi pi-ban"
+                                                 styleClass="boton-cafe boton-peligro"
+                                                 actionListener="#{pagoModel.btnAnularHandler}"
+                                                 process="@this"
+                                                 update=":frmMantenimiento:pnlDetalle"
+                                                 rendered="#{pagoModel.puedeAnular}">
+                                    <p:confirm header="Anular pago"
+                                               message="Si el pago estaba completado, la factura vuelve a PENDIENTE. ¿Continuar?"
+                                               icon="pi pi-exclamation-triangle"/>
+                                </p:commandButton>
+                            </h:panelGroup>
+                        </p:tab>
+
+                        <!-- PESTAÑA 2: DETALLES (medios de pago). Se habilita cuando el pago ya existe. -->
+                        <p:tab title="Detalles" disabled="#{pagoModel.estado == 'CREAR'}">
+
+                            <h:panelGroup id="pnlListadoDet" layout="block">
+                                <p:dataTable id="tblDetalle" value="#{pagoModel.pagoDetalleModel.lazyModel}" var="det"
+                                             lazy="true" paginator="true" rows="5"
+                                             paginatorPosition="both"
+                                             selectionMode="single"
+                                             emptyMessage="#{tradcrud['jsf.crud.sinRegistros']}"
+                                             rendered="#{pagoModel.pagoDetalleModel.estado == 'NINGUNO'}">
+                                    <p:ajax event="rowSelect" listener="#{pagoModel.pagoDetalleModel.onRowSelect}"
+                                            update=":frmMantenimiento:tabView:pnlDetalleDet :frmMantenimiento:tabView:pnlListadoDet"/>
+                                    <p:column headerText="Tipo de pago">
+                                        <h:outputText value="#{det.tipoPago}"/>
+                                    </p:column>
+                                    <p:column headerText="Monto">
+                                        <h:outputText value="#{det.monto}">
+                                            <f:convertNumber type="currency" currencySymbol="$" locale="es_SV"/>
+                                        </h:outputText>
+                                    </p:column>
+                                    <p:column headerText="Referencia">
+                                        <h:outputText value="#{det.referenciaExterna}"/>
+                                    </p:column>
+                                    <p:column headerText="Observaciones">
+                                        <h:outputText value="#{det.observaciones}"/>
+                                    </p:column>
+                                </p:dataTable>
+
+                                <!-- Solo un pago PENDIENTE admite agregar detalles -->
+                                <h:panelGroup rendered="#{pagoModel.pagoDetalleModel.editable}" layout="block">
+                                    <botones:botones-arriba modelo="#{pagoModel.pagoDetalleModel}"
+                                                            actualizarListado=":frmMantenimiento:tabView:pnlListadoDet"
+                                                            actualizarDetalle=":frmMantenimiento:tabView:pnlDetalleDet"/>
+                                </h:panelGroup>
+                            </h:panelGroup>
+
+                            <h:panelGroup id="pnlDetalleDet" layout="block">
+                                <h:panelGroup rendered="#{pagoModel.pagoDetalleModel.estado != 'NINGUNO'}"
+                                              layout="block" styleClass="formulario-cafe">
+                                    <h3>#{tradcrud['jsf.crud.mantenimiento']} #{pagoModel.pagoDetalleModel.nombreBean()}</h3>
+
+                                    <p:panelGrid id="gridDet" columns="2" styleClass="ui-noborder grid-formulario">
+                                        <p:outputLabel value="ID"/>
+                                        <p:inputText id="idDet" value="#{pagoModel.pagoDetalleModel.registro.idPagoDetalle}"
+                                                     disabled="true"/>
+
+                                        <p:outputLabel value="Tipo de pago" for="tipoPago"/>
+                                        <p:selectOneMenu id="tipoPago" value="#{pagoModel.pagoDetalleModel.registro.tipoPago}">
+                                            <f:selectItems value="#{pagoModel.pagoDetalleModel.tiposPago}"/>
+                                            <p:ajax update="gridDet"/>
+                                        </p:selectOneMenu>
+
+                                        <p:outputLabel value="Monto" for="monto"/>
+                                        <p:inputNumber id="monto" value="#{pagoModel.pagoDetalleModel.registro.monto}"
+                                                       symbol="$ " decimalPlaces="2" minValue="0.01" maxValue="999999.99"
+                                                       required="true" requiredMessage="El monto es obligatorio"/>
+
+                                        <p:outputLabel value="Referencia" for="referencia"
+                                                       rendered="#{pagoModel.pagoDetalleModel.referenciaRequerida}"/>
+                                        <p:inputText id="referencia" maxlength="100"
+                                                     value="#{pagoModel.pagoDetalleModel.registro.referenciaExterna}"
+                                                     placeholder="N.º de autorización o de transacción"
+                                                     rendered="#{pagoModel.pagoDetalleModel.referenciaRequerida}"/>
+
+                                        <p:outputLabel value="Observaciones" for="detObservaciones"/>
+                                        <p:inputTextarea id="detObservaciones"
+                                                         value="#{pagoModel.pagoDetalleModel.registro.observaciones}"
+                                                         rows="3" autoResize="false"/>
+                                    </p:panelGrid>
+
+                                    <botones:botones-abajo modelo="#{pagoModel.pagoDetalleModel}"
+                                                           procesar=":frmMantenimiento:tabView:pnlDetalleDet"
+                                                           actualizarListado=":frmMantenimiento:tabView:pnlListadoDet :frmMantenimiento:pnlResumen"
+                                                           actualizarDetalle=":frmMantenimiento:tabView:pnlDetalleDet"/>
+                                    <p:commandButton value="#{tradcrud['jsf.crud.cancelar']}"
+                                                     styleClass="boton-cafe" icon="pi pi-times"
+                                                     actionListener="#{pagoModel.pagoDetalleModel.btnCancelarHandler}"
+                                                     process="@this" resetValues="true"
+                                                     update=":frmMantenimiento:tabView:pnlDetalleDet :frmMantenimiento:tabView:pnlListadoDet"
+                                                     rendered="#{not pagoModel.pagoDetalleModel.editable}"/>
+                                </h:panelGroup>
+                            </h:panelGroup>
+
+                        </p:tab>
+
+                    </p:tabView>
+                </h:panelGroup>
+            </h:panelGroup>
+        </h:form>
+
+    </ui:define>
+
+</ui:composition>

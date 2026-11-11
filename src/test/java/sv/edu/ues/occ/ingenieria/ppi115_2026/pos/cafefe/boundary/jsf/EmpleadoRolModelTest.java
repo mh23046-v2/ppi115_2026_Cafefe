@@ -105,13 +105,32 @@ class EmpleadoRolModelTest {
     }
 
     @Test
+    @DisplayName("validarRegistro: no repite un rol ya asignado ni asigna roles a un empleado inactivo")
+    void testValidarDuplicadoEInactivo() {
+        Empleado e = new Empleado(UUID.randomUUID());
+        e.setActivo(false);
+        Rol r = new Rol(UUID.randomUUID());
+        r.setActivo(true);
+        EmpleadoRol er = new EmpleadoRol(UUID.randomUUID());
+        er.setIdEmpleado(e);
+        er.setIdRol(r);
+
+        model.estado = ESTADO_CRUD.CREAR;
+        assertTrue(model.validarRegistro(er).contains("empleado inactivo"));
+
+        e.setActivo(true);
+        when(empleadoRolDAO.existeAsignacion(e, r, er.getIdEmpleadoRol())).thenReturn(true);
+        assertTrue(model.validarRegistro(er).contains("ya tiene asignado"));
+    }
+
+    @Test
     @DisplayName("completarRol: Retorna la lista acotada desde RolDAO")
     void testCompletarRol() {
-        when(rolDAO.findByNombre("admin", 10)).thenReturn(List.of(new Rol()));
+        when(rolDAO.buscarActivosPorNombre("admin", 10)).thenReturn(List.of(new Rol()));
 
         List<Rol> resultado = model.completarRol("admin");
 
         assertFalse(resultado.isEmpty());
-        verify(rolDAO).findByNombre("admin", 10);
+        verify(rolDAO).buscarActivosPorNombre("admin", 10);
     }
 }

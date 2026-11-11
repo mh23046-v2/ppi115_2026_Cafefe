@@ -43,4 +43,17 @@ public class TipoProductoDAO extends AbstractDataAccess<TipoProducto> {
                 .getResultList()
         );
     }
+
+    /** Para autocompletes: solo los registros activos, filtrados en la consulta. */
+    public List<TipoProducto> buscarActivosPorNombre(String texto, int max) {
+        if (max <= 0) {
+            throw new IllegalArgumentException("El máximo debe ser mayor a cero");
+        }
+        return ejecutar("No se pudieron buscar los tipos de producto activos", () ->
+            em.createNamedQuery("TipoProducto.buscarActivosPorNombre", TipoProducto.class)
+                .setParameter("texto", patronLike(texto))
+                .setMaxResults(max)
+                .getResultList()
+        );
+    }
 }

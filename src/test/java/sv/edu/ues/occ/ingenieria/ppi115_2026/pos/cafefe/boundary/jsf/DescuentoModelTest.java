@@ -66,23 +66,23 @@ class DescuentoModelTest {
     }
 
     @Test
-    @DisplayName("completarTipoDescuento debe invocar buscarPorNombre en el DAO con limite de 10")
+    @DisplayName("completarTipoDescuento debe pedir al DAO solo los activos con limite de 10")
     void testCompletarTipoDescuentoExitoso() {
         TipoDescuento tipo = new TipoDescuento(UUID.randomUUID());
         tipo.setNombre("Temporada");
-        when(tipoDescuentoDAO.buscarPorNombre("Temp", 10)).thenReturn(List.of(tipo));
+        when(tipoDescuentoDAO.buscarActivosPorNombre("Temp", 10)).thenReturn(List.of(tipo));
 
         List<TipoDescuento> resultado = descuentoModel.completarTipoDescuento("Temp");
 
         assertFalse(resultado.isEmpty());
         assertEquals(1, resultado.size());
-        verify(tipoDescuentoDAO).buscarPorNombre("Temp", 10);
+        verify(tipoDescuentoDAO).buscarActivosPorNombre("Temp", 10);
     }
 
     @Test
     @DisplayName("completarTipoDescuento retorna lista vacia ante excepciones del DAO")
     void testCompletarTipoDescuentoConExcepcion() {
-        when(tipoDescuentoDAO.buscarPorNombre(anyString(), eq(10)))
+        when(tipoDescuentoDAO.buscarActivosPorNombre(anyString(), eq(10)))
                 .thenThrow(new RuntimeException("Error simulado en DAO"));
 
         // Evita que la notificación intente acceder a FacesContext (Mojarra)

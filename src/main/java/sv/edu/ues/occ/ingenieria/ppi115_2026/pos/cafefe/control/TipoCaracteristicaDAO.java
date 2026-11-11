@@ -43,4 +43,17 @@ public class TipoCaracteristicaDAO extends AbstractDataAccess<TipoCaracteristica
                 .getResultList()
         );
     }
+
+    /** Para autocompletes: solo los registros activos, filtrados en la consulta. */
+    public List<TipoCaracteristica> buscarActivosPorNombre(String texto, int max) {
+        if (max <= 0) {
+            throw new IllegalArgumentException("El máximo debe ser mayor a cero");
+        }
+        return ejecutar("No se pudieron buscar los tipos de característica activos", () ->
+            em.createNamedQuery("TipoCaracteristica.buscarActivosPorNombre", TipoCaracteristica.class)
+                .setParameter("texto", patronLike(texto))
+                .setMaxResults(max)
+                .getResultList()
+        );
+    }
 }

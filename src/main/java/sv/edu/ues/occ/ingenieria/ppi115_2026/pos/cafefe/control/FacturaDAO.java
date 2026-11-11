@@ -6,6 +6,9 @@ import jakarta.persistence.PersistenceContext;
 import java.util.List;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Caja;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Factura;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Root;
 
 @Stateless
 public class FacturaDAO extends AbstractDataAccess<Factura> {
@@ -104,5 +107,62 @@ public class FacturaDAO extends AbstractDataAccess<Factura> {
                 .getSingleResult();
             return total != null ? total.intValue() : 0;
         });
+    }
+
+    // Más recientes primero; el id desempata para que la paginación sea estable.
+    @Override
+    protected List<Order> ordenar(CriteriaBuilder cb, Root<Factura> root) {
+        return List.of(cb.desc(root.get("fechaFacturacion")), cb.asc(root.get("idFactura")));
+    }
+
+    @Override
+    public List<Factura> findRange(int first, int max) {
+        validarRango(first, max);
+        return ejecutar("No se pudieron cargar las facturas", () ->
+            em.createNamedQuery("Factura.findRecientes", Factura.class)
+                .setFirstResult(first)
+                .setMaxResults(max)
+                .getResultList()
+        );
+    }
+
+    // Elimina la factura junto con sus productos en la misma transacción (igual que OrdenDAO).
+    @Override
+    public void delete(Factura factura) {
+        if (factura == null || factura.getIdFactura() == null) {
+            throw new IllegalArgumentException("La factura no puede ser nula ni estar sin ID");
+        }
+        Long pagos = ejecutar("No se pudo verificar los pagos de la factura", () ->
+            em.createNamedQuery("Pago.countByFactura", Long.class)
+                .setParameter("factura", factura)
+                .getSingleResult());
+        if (pagos != null && pagos > 0) {
+            throw new ReglaNegocioException("La factura tiene pagos registrados: anúlela en lugar de eliminarla");
+        }
+        ejecutar("No se pudo eliminar el detalle de la factura", () -> {
+            em.createNamedQuery("FacturaOrdenProducto.deleteByFactura")
+                .setParameter("idFactura", factura.getIdFactura())
+                .executeUpdate();
+            return null;
+        });
+        super.delete(factura);
+    }
+
+    /**
+     * Para el autocomplete de Pagos: facturas PENDIENTES que tienen productos y
+     * todavía no tienen un pago vigente, buscando por cliente.
+     */
+    public List<Factura> findPorCobrar(String texto, int max) {
+        if (max <= 0) {
+            throw new IllegalArgumentException("El máximo debe ser mayor a cero");
+        }
+        return ejecutar("No se pudieron buscar las facturas por cobrar", () ->
+            em.createNamedQuery("Factura.findPorCobrar", Factura.class)
+                .setParameter("pendiente", ReglasFactura.PENDIENTE)
+                .setParameter("anulado", ReglasPago.ANULADO)
+                .setParameter("texto", patronLike(texto))
+                .setMaxResults(max)
+                .getResultList()
+        );
     }
 }

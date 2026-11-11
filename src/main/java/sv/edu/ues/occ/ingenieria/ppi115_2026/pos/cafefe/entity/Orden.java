@@ -27,6 +27,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "orden")
 @NamedQueries({
+    @NamedQuery(name = "Orden.findConPendientesDeFacturar", query = "SELECT o FROM Orden o WHERE EXISTS (SELECT op FROM OrdenProducto op WHERE op.idOrden = o AND NOT EXISTS (SELECT f FROM FacturaOrdenProducto f WHERE f.idOrdenProducto = op AND (f.idFactura.estado IS NULL OR f.idFactura.estado <> :anulada))) "
+            + "ORDER BY o.fechaCreacion DESC, o.idOrden"),
     @NamedQuery(name = "Orden.findAll", query = "SELECT o FROM Orden o ORDER BY o.fechaCreacion DESC"),
     @NamedQuery(name = "Orden.countAll", query = "SELECT COUNT(o) FROM Orden o")})
 public class Orden implements Serializable {

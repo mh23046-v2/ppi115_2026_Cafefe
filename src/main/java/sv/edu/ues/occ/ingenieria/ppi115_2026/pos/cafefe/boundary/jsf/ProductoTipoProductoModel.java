@@ -1,15 +1,12 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.boundary.jsf;
 
 import jakarta.enterprise.context.Dependent;
-import jakarta.faces.model.SelectItem;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.AbstractDataAccess;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.ProductoTipoProductoDAO;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.TipoProductoDAO;
@@ -22,8 +19,6 @@ public class ProductoTipoProductoModel extends DefaultModel<ProductoTipoProducto
 
     private static final long serialVersionUID = 1L;
 
-    private static final int MAX_OPCIONES_COMBO = 50;
-
     @Inject
     private ProductoTipoProductoDAO productoTipoProductoDAO;
 
@@ -34,7 +29,6 @@ public class ProductoTipoProductoModel extends DefaultModel<ProductoTipoProducto
     private Etiquetas etiquetas;
 
     private Producto producto;
-    private List<SelectItem> opcionesTipoProducto;
 
     @Override
     protected AbstractDataAccess<ProductoTipoProducto> getDAO() {
@@ -67,13 +61,12 @@ public class ProductoTipoProductoModel extends DefaultModel<ProductoTipoProducto
         if (registro.getIdTipoProducto().getActivo() != null && !registro.getIdTipoProducto().getActivo()) {
             return "El tipo de producto seleccionado se encuentra inactivo";
         }
+        // Antes lo evitaba el combo (ocultaba los ya asignados); con el autocomplete se valida aquí.
+        if (productoTipoProductoDAO.existeAsignacion(registro.getProducto(), registro.getIdTipoProducto(),
+                registro.getIdProductoTipoProducto())) {
+            return "El producto ya tiene asignado ese tipo";
+        }
         return null;
-    }
-
-    @Override
-    public void setRegistro(ProductoTipoProducto registro) {
-        super.setRegistro(registro);
-        cargarOpciones();
     }
 
     @Override
@@ -93,42 +86,6 @@ public class ProductoTipoProductoModel extends DefaultModel<ProductoTipoProducto
         return total != null ? total.intValue() : 0;
     }
 
-    @Override
-    protected void cargarOpciones() {
-        opcionesTipoProducto = new ArrayList<>();
-
-        if (this.producto != null && this.producto.getIdProducto() != null) {
-            // Obtenemos los asignados paginados para descartar duplicados en el selector
-            List<ProductoTipoProducto> asignados = productoTipoProductoDAO.findByProducto(this.producto, 0, 100);
-
-            Set<UUID> idsAsignados = asignados.stream()
-                    .filter(ptp -> ptp != null && ptp.getIdTipoProducto() != null)
-                    .map(ptp -> ptp.getIdTipoProducto().getIdTipoProducto())
-                    .collect(Collectors.toSet());
-
-            UUID idTipoEnEdicion = null;
-            if (this.registro != null && this.registro.getIdTipoProducto() != null) {
-                idTipoEnEdicion = this.registro.getIdTipoProducto().getIdTipoProducto();
-            }
-
-            // Consultamos únicamente una lista acotada vía DAO (máximo MAX_OPCIONES_COMBO)
-            List<TipoProducto> catTipos = tipoProductoDAO.buscarPorNombre("", MAX_OPCIONES_COMBO);
-
-            for (TipoProducto tp : catTipos) {
-                boolean esElSeleccionadoActualmente = (idTipoEnEdicion != null && idTipoEnEdicion.equals(tp.getIdTipoProducto()));
-
-                if (!idsAsignados.contains(tp.getIdTipoProducto()) || esElSeleccionadoActualmente) {
-                    opcionesTipoProducto.add(new SelectItem(tp, etiquetas.tipoProducto(tp), null, !tp.getActivo()));
-                }
-            }
-        } else {
-            List<TipoProducto> catTipos = tipoProductoDAO.buscarPorNombre("", MAX_OPCIONES_COMBO);
-            for (TipoProducto tp : catTipos) {
-                opcionesTipoProducto.add(new SelectItem(tp, etiquetas.tipoProducto(tp), null, !tp.getActivo()));
-            }
-        }
-    }
-
     // Getters y setters para la vista
     public Producto getProducto() {
         return producto;
@@ -136,14 +93,14 @@ public class ProductoTipoProductoModel extends DefaultModel<ProductoTipoProducto
 
     public void setProducto(Producto producto) {
         this.producto = producto;
-        cargarOpciones();
-    }
-
-    public List<SelectItem> getOpcionesTipoProducto() {
-        return opcionesTipoProducto;
     }
 
     public List<TipoProducto> completarTipoProducto(String query) {
-        return tipoProductoDAO.buscarPorNombre(query, 10);
+        try {
+            return tipoProductoDAO.buscarActivosPorNombre(query, 10);
+        } catch (Exception ex) {
+            notificarError("No se pudieron cargar los tipos de producto", ex);
+            return new ArrayList<>();
+        }
     }
 }

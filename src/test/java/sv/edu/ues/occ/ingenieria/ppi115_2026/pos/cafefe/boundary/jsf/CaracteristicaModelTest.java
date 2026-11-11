@@ -65,23 +65,23 @@ class CaracteristicaModelTest {
     }
 
     @Test
-    @DisplayName("completarTipoCaracteristica debe invocar buscarPorNombre en el DAO con límite de 10")
+    @DisplayName("completarTipoCaracteristica debe pedir al DAO solo los activos con límite de 10")
     void testCompletarTipoCaracteristicaExitoso() {
         TipoCaracteristica tipo = new TipoCaracteristica(UUID.randomUUID());
         tipo.setNombre("Origen");
-        when(tipoCaracteristicaDAO.buscarPorNombre("Origen", 10)).thenReturn(List.of(tipo));
+        when(tipoCaracteristicaDAO.buscarActivosPorNombre("Origen", 10)).thenReturn(List.of(tipo));
 
         List<TipoCaracteristica> resultado = caracteristicaModel.completarTipoCaracteristica("Origen");
 
         assertFalse(resultado.isEmpty());
         assertEquals(1, resultado.size());
-        verify(tipoCaracteristicaDAO).buscarPorNombre("Origen", 10);
+        verify(tipoCaracteristicaDAO).buscarActivosPorNombre("Origen", 10);
     }
 
     @Test
     @DisplayName("completarTipoCaracteristica retorna lista vacía ante excepciones del DAO")
     void testCompletarTipoCaracteristicaConExcepcion() {
-        when(tipoCaracteristicaDAO.buscarPorNombre(anyString(), eq(10)))
+        when(tipoCaracteristicaDAO.buscarActivosPorNombre(anyString(), eq(10)))
                 .thenThrow(new RuntimeException("Error simulado de base de datos"));
 
         // Evita que la notificación intente acceder a FacesContext (Mojarra)

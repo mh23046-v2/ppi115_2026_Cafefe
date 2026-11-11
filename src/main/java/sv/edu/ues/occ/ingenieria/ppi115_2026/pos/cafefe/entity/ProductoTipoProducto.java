@@ -24,7 +24,8 @@ import java.util.UUID;
 @NamedQueries({
     @NamedQuery(name = "ProductoTipoProducto.findAll", query = "SELECT ptp FROM ProductoTipoProducto ptp"),
     @NamedQuery(name = "ProductoTipoProducto.findByProducto", query = "SELECT ptp FROM ProductoTipoProducto ptp WHERE ptp.producto = :producto ORDER BY ptp.fechaCreacion DESC, ptp.idProductoTipoProducto"),
-    @NamedQuery(name = "ProductoTipoProducto.countByProducto", query = "SELECT COUNT(ptp) FROM ProductoTipoProducto ptp WHERE ptp.producto = :producto")})
+    @NamedQuery(name = "ProductoTipoProducto.countByProducto", query = "SELECT COUNT(ptp) FROM ProductoTipoProducto ptp WHERE ptp.producto = :producto"),
+    @NamedQuery(name = "ProductoTipoProducto.countByProductoYTipo", query = "SELECT COUNT(ptp) FROM ProductoTipoProducto ptp WHERE ptp.producto = :producto AND ptp.idTipoProducto = :tipo AND ptp.idProductoTipoProducto <> :excluir")})
 public class ProductoTipoProducto implements Serializable {
 
     private static final long serialVersionUID = 1L;

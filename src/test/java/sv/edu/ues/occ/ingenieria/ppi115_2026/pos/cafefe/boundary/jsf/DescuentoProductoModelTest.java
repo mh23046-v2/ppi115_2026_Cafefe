@@ -112,12 +112,12 @@ class DescuentoProductoModelTest {
     @DisplayName("completarTipoDescuento delega la búsqueda acotada a 10 al DAO")
     void testCompletarTipoDescuento() {
         TipoDescuento td = new TipoDescuento();
-        when(tipoDescuentoDAO.buscarPorNombre("Temp", 10)).thenReturn(List.of(td));
+        when(tipoDescuentoDAO.buscarActivosPorNombre("Temp", 10)).thenReturn(List.of(td));
 
         List<TipoDescuento> res = descuentoProductoModel.completarTipoDescuento("Temp");
 
         assertFalse(res.isEmpty());
-        verify(tipoDescuentoDAO).buscarPorNombre("Temp", 10);
+        verify(tipoDescuentoDAO).buscarActivosPorNombre("Temp", 10);
     }
 
     @Test

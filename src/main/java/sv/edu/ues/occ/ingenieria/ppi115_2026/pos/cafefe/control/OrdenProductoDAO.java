@@ -7,10 +7,14 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Order;
 import jakarta.persistence.criteria.Root;
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.DescuentoProducto;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Orden;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.OrdenProducto;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.Producto;
 
 @Stateless
 public class OrdenProductoDAO extends AbstractDataAccess<OrdenProducto> {
@@ -87,5 +91,59 @@ public class OrdenProductoDAO extends AbstractDataAccess<OrdenProducto> {
                         .setParameter("orden", orden)
                         .getResultList()
         );
+    }
+
+    /** Productos de órdenes que todavía no están en una factura (o solo en anuladas). */
+    public List<OrdenProducto> findPendientesDeFacturar(String texto, int max) {
+        if (max <= 0) {
+            throw new IllegalArgumentException("El máximo debe ser mayor a cero");
+        }
+        return ejecutar("No se pudieron buscar los productos pendientes de facturar", ()
+                -> em.createNamedQuery("OrdenProducto.findPendientesDeFacturar", OrdenProducto.class)
+                        .setParameter("texto", patronLike(texto))
+                        .setParameter("anulada", ReglasFactura.ANULADA)
+                        .setMaxResults(max)
+                        .getResultList()
+        );
+    }
+
+    /**
+     * Aplica un descuento a todas las líneas de la orden cuyo producto lo tenga,
+     * en UNA sola transacción (método de un EJB @Stateless): o se actualizan
+     * todas las líneas o ninguna. El precio se calcula sobre el precio sugerido
+     * del producto con el porcentaje efectivo de cada DescuentoProducto.
+     *
+     * @return cantidad de líneas actualizadas
+     */
+    public int aplicarDescuento(Orden orden, List<DescuentoProducto> vigentes) {
+        if (orden == null || orden.getIdOrden() == null) {
+            throw new IllegalArgumentException("La orden no puede ser nula ni carecer de ID");
+        }
+        if (vigentes == null || vigentes.isEmpty()) {
+            throw new IllegalArgumentException("No hay descuentos vigentes para aplicar");
+        }
+        Map<UUID, Integer> porcentajePorProducto = new HashMap<>();
+        for (DescuentoProducto dp : vigentes) {
+            if (dp != null && dp.getIdProducto() != null && dp.getIdProducto().getIdProducto() != null) {
+                porcentajePorProducto.put(dp.getIdProducto().getIdProducto(), ReglasOrden.porcentajeEfectivo(dp));
+            }
+        }
+        return ejecutar("No se pudo aplicar el descuento a la orden", () -> {
+            List<OrdenProducto> lineas = em.createNamedQuery("OrdenProducto.findByOrden", OrdenProducto.class)
+                    .setParameter("orden", orden)
+                    .getResultList();
+            int aplicados = 0;
+            for (OrdenProducto op : lineas) {
+                Producto producto = op.getIdProducto();
+                Integer porcentaje = producto == null ? null : porcentajePorProducto.get(producto.getIdProducto());
+                if (porcentaje != null && producto.getPrecioSugerido() != null) {
+                    // La línea está administrada por el EntityManager: el cambio se guarda al confirmar.
+                    op.setPrecio(ReglasOrden.precioConDescuento(producto.getPrecioSugerido(), porcentaje));
+                    aplicados++;
+                }
+            }
+            em.flush();
+            return aplicados;
+        });
     }
 }
