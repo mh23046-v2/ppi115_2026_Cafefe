@@ -1,5 +1,6 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity;
 
+import jakarta.json.bind.annotation.JsonbDateFormat;
 import jakarta.json.bind.annotation.JsonbTransient;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
@@ -48,9 +49,11 @@ public class Descuento implements Serializable {
     private String nombre;
     @Column(name = "fecha_desde")
     @Temporal(TemporalType.TIMESTAMP)
+    @JsonbDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
     private Date fechaDesde;
     @Column(name = "fecha_hasta")
     @Temporal(TemporalType.TIMESTAMP)
+    @JsonbDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
     private Date fechaHasta;
     @Size(max = 2147483647)
     @Column(name = "observaciones")

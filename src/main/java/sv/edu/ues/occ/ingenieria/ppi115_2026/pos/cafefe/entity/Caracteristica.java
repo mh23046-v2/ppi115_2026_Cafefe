@@ -1,5 +1,6 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity;
 
+import jakarta.json.bind.annotation.JsonbTransient;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -26,6 +27,8 @@ import java.util.UUID;
 @Table(name = "caracteristica")
 @NamedQueries({
     @NamedQuery(name = "Caracteristica.findAll", query = "SELECT c FROM Caracteristica c"),
+    @NamedQuery(name = "Caracteristica.findByTipo", query = "SELECT c FROM Caracteristica c WHERE c.idTipoCaracteristica = :tipo ORDER BY c.nombre, c.idCaracteristica"),
+    @NamedQuery(name = "Caracteristica.countByTipo", query = "SELECT COUNT(c) FROM Caracteristica c WHERE c.idTipoCaracteristica = :tipo"),
     @NamedQuery(name = "Caracteristica.buscarActivasPorTipoYNombre", query = "SELECT c FROM Caracteristica c WHERE c.idTipoCaracteristica = :tipo AND c.activo = true AND LOWER(c.nombre) LIKE :texto ORDER BY c.nombre, c.idCaracteristica")})
 public class Caracteristica implements Serializable {
 
@@ -47,6 +50,7 @@ public class Caracteristica implements Serializable {
     @JoinColumn(name = "id_tipo_caracteristica", referencedColumnName = "id_tipo_caracteristica")
     @ManyToOne(fetch = FetchType.LAZY)
     private TipoCaracteristica idTipoCaracteristica;
+    @JsonbTransient
     @OneToMany(mappedBy = "idCaracteristica", fetch = FetchType.LAZY)
     private List<ProductoCaracteristica> productoCaracteristicaList;
 

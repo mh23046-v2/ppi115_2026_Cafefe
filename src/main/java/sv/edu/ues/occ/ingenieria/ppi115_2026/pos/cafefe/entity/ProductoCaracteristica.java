@@ -1,25 +1,12 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity;
 
-import jakarta.persistence.Basic;
-import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedQueries;
-import jakarta.persistence.NamedQuery;
-import jakarta.persistence.Table;
+import jakarta.json.bind.annotation.JsonbTransient;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.io.Serializable;
 import java.util.UUID;
 
-/**
- *
- * @author hernandez
- */
 @Entity
 @Table(name = "producto_caracteristica")
 @NamedQueries({
@@ -29,18 +16,23 @@ import java.util.UUID;
 public class ProductoCaracteristica implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
     @Id
     @Basic(optional = false)
     @NotNull
     @Convert(converter = UUIDConverter.class)
     @Column(name = "id_producto_caracteristica")
     private UUID idProductoCaracteristica;
+
     @Size(max = 2147483647)
     @Column(name = "valor")
     private String valor;
+
     @JoinColumn(name = "id_caracteristica", referencedColumnName = "id_caracteristica")
     @ManyToOne(fetch = FetchType.LAZY)
     private Caracteristica idCaracteristica;
+    
+    @JsonbTransient
     @JoinColumn(name = "id_producto", referencedColumnName = "id_producto")
     @ManyToOne(fetch = FetchType.LAZY)
     private Producto idProducto;

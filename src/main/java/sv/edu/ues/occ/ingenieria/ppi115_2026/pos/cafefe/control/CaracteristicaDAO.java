@@ -38,9 +38,7 @@ public class CaracteristicaDAO extends AbstractDataAccess<Caracteristica> {
     }
     
     public List<Caracteristica> buscarActivasPorTipoYNombre(TipoCaracteristica tipo, String texto, int max) {
-        if (tipo == null || tipo.getIdTipoCaracteristica() == null) {
-            throw new IllegalArgumentException("El tipo de característica es obligatorio");
-        }
+        validarTipo(tipo);
         if (max <= 0) {
             throw new IllegalArgumentException("El máximo debe ser mayor a cero");
         }
@@ -51,5 +49,32 @@ public class CaracteristicaDAO extends AbstractDataAccess<Caracteristica> {
                 .setMaxResults(max)
                 .getResultList()
         );
+    }
+
+    public List<Caracteristica> findByTipo(TipoCaracteristica tipo, int first, int max) {
+        validarTipo(tipo);
+        validarRango(first, max);
+        return ejecutar("No se pudieron cargar las características del tipo", () ->
+            em.createNamedQuery("Caracteristica.findByTipo", Caracteristica.class)
+                .setParameter("tipo", tipo)
+                .setFirstResult(first)
+                .setMaxResults(max)
+                .getResultList()
+        );
+    }
+
+    public long countByTipo(TipoCaracteristica tipo) {
+        validarTipo(tipo);
+        return ejecutar("No se pudo contar las características del tipo", () ->
+            em.createNamedQuery("Caracteristica.countByTipo", Long.class)
+                .setParameter("tipo", tipo)
+                .getSingleResult()
+        );
+    }
+
+    private static void validarTipo(TipoCaracteristica tipo) {
+        if (tipo == null || tipo.getIdTipoCaracteristica() == null) {
+            throw new IllegalArgumentException("El tipo de característica es obligatorio");
+        }
     }
 }

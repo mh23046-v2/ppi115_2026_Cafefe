@@ -32,63 +32,7 @@ public class DescuentoProductoResourceTest {
     @InjectMocks
     private DescuentoProductoResource resource;
 
-    // Tests de findRange
-    @Test
-    public void testFindRangeExitoso() {
-        DescuentoProducto dp = new DescuentoProducto();
-        dp.setIdDescuentoProducto(UUID.randomUUID());
-
-        Mockito.when(descuentoProductoDAO.findRange(0, 50)).thenReturn(List.of(dp));
-        Mockito.when(descuentoProductoDAO.count()).thenReturn(1L);
-
-        Response res = resource.findRange(0, 50);
-
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
-        Assertions.assertEquals("1", res.getHeaderString("Total-registros"));
-
-        List<?> lista = (List<?>) res.getEntity();
-        Assertions.assertNotNull(lista);
-        Assertions.assertEquals(1, lista.size());
-    }
-
-    @Test
-    public void testFindRangeAjustaMaxEfectivo() {
-        Mockito.when(descuentoProductoDAO.findRange(0, 50)).thenReturn(List.of());
-        Mockito.when(descuentoProductoDAO.count()).thenReturn(0L);
-
-        Response res = resource.findRange(0, 100);
-
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
-        Mockito.verify(descuentoProductoDAO).findRange(0, 50);
-    }
-
-    // Tests de findById
-    @Test
-    public void testFindByIdExistente() {
-        UUID id = UUID.randomUUID();
-        DescuentoProducto dp = new DescuentoProducto();
-        dp.setIdDescuentoProducto(id);
-
-        Mockito.when(descuentoProductoDAO.findById(id)).thenReturn(dp);
-
-        Response res = resource.findById(id);
-
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
-        Assertions.assertEquals(dp, res.getEntity());
-    }
-
-    @Test
-    public void testFindByIdNoEncontrado() {
-        UUID id = UUID.randomUUID();
-        Mockito.when(descuentoProductoDAO.findById(id)).thenReturn(null);
-
-        Response res = resource.findById(id);
-
-        Assertions.assertEquals(Response.Status.NOT_FOUND.getStatusCode(), res.getStatus());
-        Assertions.assertEquals(id.toString(), res.getHeaderString("Entity-Not-Found"));
-    }
-
-    // Tests de findByProducto
+    // Tests de findByProducto (GET producto/{idProducto}/descuento)
     @Test
     public void testFindByProductoExitoso() {
         UUID idProducto = UUID.randomUUID();
@@ -110,100 +54,179 @@ public class DescuentoProductoResourceTest {
     }
 
     @Test
-    public void testFindByProductoIdNulo() {
-        Response res = resource.findByProducto(null, 0, 50);
+    public void testFindByProductoParametrosInvalidos() {
+        UUID idProducto = UUID.randomUUID();
 
+        Response res = resource.findByProducto(idProducto, -1, 50);
         Assertions.assertEquals(422, res.getStatus());
-        Assertions.assertEquals("idProducto", res.getHeaderString("Wrong-Param"));
-    }
+        Assertions.assertEquals("first", res.getHeaderString("Wrong-Param"));
 
-    // Tests de crear
-    @Test
-    public void testCrearExitoso() throws Exception {
-        DescuentoProducto dp = new DescuentoProducto();
-        URI uriDummy = new URI("http://localhost:8080/Cafefe-1.0-SNAPSHOT/resources/v2/descuento_producto/dummy-id");
-
-        Mockito.when(uriInfo.getAbsolutePathBuilder()).thenReturn(uriBuilder);
-        Mockito.when(uriBuilder.path(Mockito.anyString())).thenReturn(uriBuilder);
-        Mockito.when(uriBuilder.build()).thenReturn(uriDummy);
-
-        Response res = resource.crear(dp, uriInfo);
-
-        Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), res.getStatus());
-        Assertions.assertNotNull(dp.getIdDescuentoProducto());
-        Assertions.assertEquals(uriDummy, res.getLocation());
-        Mockito.verify(descuentoProductoDAO).create(dp);
-    }
-
-    @Test
-    public void testCrearRegistroNulo() {
-        Response res = resource.crear(null, uriInfo);
-
+        res = resource.findByProducto(idProducto, 0, 0);
         Assertions.assertEquals(422, res.getStatus());
-        Assertions.assertEquals("registro", res.getHeaderString("Wrong-Param"));
+        Assertions.assertEquals("max", res.getHeaderString("Wrong-Param"));
     }
 
-    // Tests de modificar
+    // Tests de findById (GET producto/{idProducto}/descuento/{id})
     @Test
-    public void testModificarExitoso() {
+    public void testFindByIdExistenteYPerteneciente() {
+        UUID idProducto = UUID.randomUUID();
         UUID id = UUID.randomUUID();
-        DescuentoProducto existente = new DescuentoProducto();
-        existente.setIdDescuentoProducto(id);
+        
+        DescuentoProducto dp = new DescuentoProducto();
+        dp.setIdDescuentoProducto(id);
+        dp.setIdProducto(new Producto(idProducto));
 
-        DescuentoProducto cambios = new DescuentoProducto();
+        Mockito.when(descuentoProductoDAO.findById(id)).thenReturn(dp);
 
-        Mockito.when(descuentoProductoDAO.findById(id)).thenReturn(existente);
-        Mockito.when(descuentoProductoDAO.modify(cambios)).thenReturn(cambios);
-
-        Response res = resource.modificar(id, cambios);
+        Response res = resource.findById(idProducto, id);
 
         Assertions.assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
-        Assertions.assertEquals(id, cambios.getIdDescuentoProducto());
-        Mockito.verify(descuentoProductoDAO).modify(cambios);
+        Assertions.assertEquals(dp, res.getEntity());
     }
 
     @Test
-    public void testModificarNoExistente() {
+    public void testFindByIdNoPerteneceAProducto() {
+        UUID idProducto = UUID.randomUUID();
+        UUID otroProducto = UUID.randomUUID();
         UUID id = UUID.randomUUID();
-        DescuentoProducto cambios = new DescuentoProducto();
+        
+        DescuentoProducto dp = new DescuentoProducto();
+        dp.setIdDescuentoProducto(id);
+        dp.setIdProducto(new Producto(otroProducto));
 
-        Mockito.when(descuentoProductoDAO.findById(id)).thenReturn(null);
+        Mockito.when(descuentoProductoDAO.findById(id)).thenReturn(dp);
 
-        Response res = resource.modificar(id, cambios);
+        Response res = resource.findById(idProducto, id);
 
         Assertions.assertEquals(Response.Status.NOT_FOUND.getStatusCode(), res.getStatus());
         Assertions.assertEquals(id.toString(), res.getHeaderString("Entity-Not-Found"));
     }
 
     @Test
-    public void testModificarParametrosNulos() {
-        Response res = resource.modificar(null, null);
+    public void testFindByIdNoEncontrado() {
+        UUID idProducto = UUID.randomUUID();
+        UUID id = UUID.randomUUID();
+        
+        Mockito.when(descuentoProductoDAO.findById(id)).thenReturn(null);
 
-        Assertions.assertEquals(422, res.getStatus());
-        Assertions.assertEquals("id/registro", res.getHeaderString("Wrong-Param"));
+        Response res = resource.findById(idProducto, id);
+
+        Assertions.assertEquals(Response.Status.NOT_FOUND.getStatusCode(), res.getStatus());
+        Assertions.assertEquals(id.toString(), res.getHeaderString("Entity-Not-Found"));
     }
 
-    // Tests de eliminar
+    // Tests de crear (POST producto/{idProducto}/descuento)
     @Test
-    public void testEliminarExitoso() {
+    public void testCrearExitoso() throws Exception {
+        UUID idProducto = UUID.randomUUID();
+        DescuentoProducto dp = new DescuentoProducto();
+        URI uriDummy = new URI("http://localhost:8080/Cafefe-1.0-SNAPSHOT/resources/v2/producto/" + idProducto + "/descuento/dummy-id");
+
+        Mockito.when(uriInfo.getAbsolutePathBuilder()).thenReturn(uriBuilder);
+        Mockito.when(uriBuilder.path(Mockito.anyString())).thenReturn(uriBuilder);
+        Mockito.when(uriBuilder.build()).thenReturn(uriDummy);
+
+        Response res = resource.crear(idProducto, dp, uriInfo);
+
+        Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), res.getStatus());
+        Assertions.assertNotNull(dp.getIdDescuentoProducto());
+        Assertions.assertEquals(idProducto, dp.getIdProducto().getIdProducto());
+        Assertions.assertEquals(uriDummy, res.getLocation());
+        Mockito.verify(descuentoProductoDAO).create(dp);
+    }
+
+    @Test
+    public void testCrearRegistroNulo() {
+        UUID idProducto = UUID.randomUUID();
+        Response res = resource.crear(idProducto, null, uriInfo);
+
+        Assertions.assertEquals(422, res.getStatus());
+        Assertions.assertEquals("registro", res.getHeaderString("Wrong-Param"));
+    }
+
+    // Tests de modificar (PUT producto/{idProducto}/descuento/{id})
+    @Test
+    public void testModificarExitoso() {
+        UUID idProducto = UUID.randomUUID();
         UUID id = UUID.randomUUID();
+        
         DescuentoProducto existente = new DescuentoProducto();
         existente.setIdDescuentoProducto(id);
+        existente.setIdProducto(new Producto(idProducto));
+
+        DescuentoProducto cambios = new DescuentoProducto();
+
+        Mockito.when(descuentoProductoDAO.findById(id)).thenReturn(existente);
+        Mockito.when(descuentoProductoDAO.modify(cambios)).thenReturn(cambios);
+
+        Response res = resource.modificar(idProducto, id, cambios);
+
+        Assertions.assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
+        Assertions.assertEquals(id, cambios.getIdDescuentoProducto());
+        Assertions.assertEquals(idProducto, cambios.getIdProducto().getIdProducto());
+        Mockito.verify(descuentoProductoDAO).modify(cambios);
+    }
+
+    @Test
+    public void testModificarNoPertenece() {
+        UUID idProducto = UUID.randomUUID();
+        UUID otroProducto = UUID.randomUUID();
+        UUID id = UUID.randomUUID();
+
+        DescuentoProducto existente = new DescuentoProducto();
+        existente.setIdDescuentoProducto(id);
+        existente.setIdProducto(new Producto(otroProducto));
 
         Mockito.when(descuentoProductoDAO.findById(id)).thenReturn(existente);
 
-        Response res = resource.eliminar(id);
+        Response res = resource.modificar(idProducto, id, new DescuentoProducto());
+
+        Assertions.assertEquals(Response.Status.NOT_FOUND.getStatusCode(), res.getStatus());
+        Assertions.assertEquals(id.toString(), res.getHeaderString("Entity-Not-Found"));
+    }
+
+    @Test
+    public void testModificarRegistroNulo() {
+        UUID idProducto = UUID.randomUUID();
+        UUID id = UUID.randomUUID();
+        
+        Response res = resource.modificar(idProducto, id, null);
+
+        Assertions.assertEquals(422, res.getStatus());
+        Assertions.assertEquals("registro", res.getHeaderString("Wrong-Param"));
+    }
+
+    // Tests de eliminar (DELETE producto/{idProducto}/descuento/{id})
+    @Test
+    public void testEliminarExitoso() {
+        UUID idProducto = UUID.randomUUID();
+        UUID id = UUID.randomUUID();
+        
+        DescuentoProducto existente = new DescuentoProducto();
+        existente.setIdDescuentoProducto(id);
+        existente.setIdProducto(new Producto(idProducto));
+
+        Mockito.when(descuentoProductoDAO.findById(id)).thenReturn(existente);
+
+        Response res = resource.eliminar(idProducto, id);
 
         Assertions.assertEquals(Response.Status.NO_CONTENT.getStatusCode(), res.getStatus());
         Mockito.verify(descuentoProductoDAO).delete(existente);
     }
 
     @Test
-    public void testEliminarNoExistente() {
+    public void testEliminarNoPertenece() {
+        UUID idProducto = UUID.randomUUID();
+        UUID otroProducto = UUID.randomUUID();
         UUID id = UUID.randomUUID();
-        Mockito.when(descuentoProductoDAO.findById(id)).thenReturn(null);
 
-        Response res = resource.eliminar(id);
+        DescuentoProducto existente = new DescuentoProducto();
+        existente.setIdDescuentoProducto(id);
+        existente.setIdProducto(new Producto(otroProducto));
+
+        Mockito.when(descuentoProductoDAO.findById(id)).thenReturn(existente);
+
+        Response res = resource.eliminar(idProducto, id);
 
         Assertions.assertEquals(Response.Status.NOT_FOUND.getStatusCode(), res.getStatus());
         Assertions.assertEquals(id.toString(), res.getHeaderString("Entity-Not-Found"));
