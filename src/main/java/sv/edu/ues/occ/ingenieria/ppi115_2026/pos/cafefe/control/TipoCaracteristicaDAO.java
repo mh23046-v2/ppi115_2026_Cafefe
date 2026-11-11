@@ -44,7 +44,6 @@ public class TipoCaracteristicaDAO extends AbstractDataAccess<TipoCaracteristica
         );
     }
 
-    /** Para autocompletes: solo los registros activos, filtrados en la consulta. */
     public List<TipoCaracteristica> buscarActivosPorNombre(String texto, int max) {
         if (max <= 0) {
             throw new IllegalArgumentException("El máximo debe ser mayor a cero");
@@ -55,5 +54,28 @@ public class TipoCaracteristicaDAO extends AbstractDataAccess<TipoCaracteristica
                 .setMaxResults(max)
                 .getResultList()
         );
+    }
+
+    // Métodos opcionales para filtrado directo por estado activo/inactivo
+    public List<TipoCaracteristica> findByActivo(boolean activo, int first, int max) {
+        if (first < 0 || max <= 0) {
+            throw new IllegalArgumentException("Parámetros de paginación inválidos");
+        }
+        return ejecutar("No se pudieron listar los tipos de característica por estado", () ->
+            em.createNamedQuery("TipoCaracteristica.findByActivo", TipoCaracteristica.class)
+                .setParameter("activo", activo)
+                .setFirstResult(first)
+                .setMaxResults(max)
+                .getResultList()
+        );
+    }
+
+    public int countByActivo(boolean activo) {
+        return ejecutar("No se pudo contar los tipos de característica por estado", () -> {
+            Long count = em.createNamedQuery("TipoCaracteristica.countByActivo", Long.class)
+                    .setParameter("activo", activo)
+                    .getSingleResult();
+            return count != null ? count.intValue() : 0;
+        });
     }
 }

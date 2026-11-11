@@ -1,5 +1,6 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity;
 
+import jakarta.json.bind.annotation.JsonbTransient;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -18,10 +19,6 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
-/**
- *
- * @author hernandez
- */
 @Entity
 @Table(name = "tipo_caracteristica")
 @NamedQueries({
@@ -39,17 +36,23 @@ public class TipoCaracteristica implements Serializable {
     @Convert(converter = UUIDConverter.class)
     @Column(name = "id_tipo_caracteristica")
     private UUID idTipoCaracteristica;
+    
     @Size(max = 155)
     @Column(name = "nombre")
     private String nombre;
+    
     @Size(max = 2147483647)
     @Column(name = "expresion_regular")
     private String expresionRegular;
+    
     @Column(name = "activo")
-    private Boolean activo;
+    private Boolean activo = Boolean.TRUE;
+    
     @Size(max = 2147483647)
     @Column(name = "observaciones")
     private String observaciones;
+    
+    @JsonbTransient
     @OneToMany(mappedBy = "idTipoCaracteristica", fetch = FetchType.LAZY)
     private List<Caracteristica> caracteristicaList;
 

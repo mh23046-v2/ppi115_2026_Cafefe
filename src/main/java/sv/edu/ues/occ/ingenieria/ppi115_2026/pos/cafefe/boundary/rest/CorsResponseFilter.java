@@ -1,53 +1,53 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.boundary.rest;
 
 import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
+import jakarta.ws.rs.container.PreMatching;
 import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
-import java.util.List;
 
 @Provider
-public class CorsResponseFilter implements ContainerResponseFilter {
+@PreMatching
+public class CorsResponseFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
+    public static final String ORIGEN_PERMITIDO = "*";
     public static final String METODOS = "GET, POST, PUT, DELETE, OPTIONS, HEAD";
-    public final static int MAX_AGE = 60 * 60 * 45;
-    public final static String DEFAULT_ALLOWED_HEADERS = "origin, accept, content-type, Total-registros";
-    public final static String DEFAULT_EXPOSED_HEADERS = "location,info, Total-registros";
+    public static final int MAX_AGE = 2 * 60 * 60; // Chrome limita a 2 h
+    public static final String CABECERAS_PERMITIDAS_BASE = "origin, accept, content-type";
+    public static final String CABECERAS_EXPUESTAS
+            = "Location, Total-registros, Wrong-Param, App-Error, Entity-Not-Found, Content-Disposition";
 
     @Override
-    public void filter(ContainerRequestContext reqCtx, ContainerResponseContext respCtx) throws IOException {
-        MultivaluedMap<String, Object> headers = respCtx.getHeaders();
-        headers.add("Access-Control-Allow-Origin", "*");
-        headers.add("Access-Control-Allow-Headers", getCabecerasPermitidas(reqCtx));
-        headers.add("Access-Control-Expose-Headers", getCabecerasExpuestas(reqCtx));
-        headers.add("Access-Control-Allow-Credentials", "true");
-        headers.add("Access-Control-Allow-Methods", METODOS);
-        headers.add("Access-Control-Max-Age", MAX_AGE);
-    }
-
-    String getCabecerasPermitidas(ContainerRequestContext ctx) {
-        List<String> headers = ctx.getHeaders().get("Access-Control-Allow-Headers");
-        return crearListaCabeceras(headers, DEFAULT_ALLOWED_HEADERS);
-    }
-
-    String getCabecerasExpuestas(ContainerRequestContext ctx) {
-        List<String> headers = ctx.getHeaders().get("Access-Control-Expose-Headers");
-        return crearListaCabeceras(headers, DEFAULT_EXPOSED_HEADERS);
-    }
-
-    String crearListaCabeceras(List<String> cabeceras, String cabecerasDefault) {
-        if (cabeceras == null || cabeceras.isEmpty()) {
-            return cabecerasDefault;
+    public void filter(ContainerRequestContext req) throws IOException {
+        if (esPreflight(req)) {
+            req.abortWith(Response.ok().build());
         }
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < cabeceras.size(); i++) {
-            String cabecera = cabeceras.get(i);
-            sb.append(cabecera);
-            sb.append(",");
+    }
+
+    @Override
+    public void filter(ContainerRequestContext req, ContainerResponseContext resp) throws IOException {
+        MultivaluedMap<String, Object> headers = resp.getHeaders();
+        headers.putSingle("Access-Control-Allow-Origin", ORIGEN_PERMITIDO);
+        headers.putSingle("Access-Control-Allow-Methods", METODOS);
+        headers.putSingle("Access-Control-Allow-Headers", cabecerasPermitidas(req));
+        headers.putSingle("Access-Control-Expose-Headers", CABECERAS_EXPUESTAS);
+        headers.putSingle("Access-Control-Max-Age", MAX_AGE);
+    }
+
+    static boolean esPreflight(ContainerRequestContext req) {
+        return "OPTIONS".equalsIgnoreCase(req.getMethod())
+                && req.getHeaderString("Access-Control-Request-Method") != null;
+    }
+
+    static String cabecerasPermitidas(ContainerRequestContext req) {
+        String pedidas = req.getHeaderString("Access-Control-Request-Headers");
+        if (pedidas == null || pedidas.isBlank()) {
+            return CABECERAS_PERMITIDAS_BASE;
         }
-        sb.append(cabecerasDefault);
-        return sb.toString();
+        return pedidas;
     }
 }
