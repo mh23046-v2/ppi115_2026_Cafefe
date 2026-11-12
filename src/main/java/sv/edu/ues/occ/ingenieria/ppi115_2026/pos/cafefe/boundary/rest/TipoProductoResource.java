@@ -32,10 +32,10 @@ public class TipoProductoResource implements Serializable {
     static final int MAX_REGISTROS = 50;
 
     @Inject
-    private TipoProductoDAO tipoProductoDAO;
+    TipoProductoDAO tipoProductoDAO;
 
     @Inject
-    private ProductoDAO productoDAO;
+    ProductoDAO productoDAO;
 
     @GET
     public Response findRange(
