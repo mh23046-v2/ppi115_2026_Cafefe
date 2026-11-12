@@ -56,4 +56,22 @@ public class TipoProductoDAO extends AbstractDataAccess<TipoProducto> {
                 .getResultList()
         );
     }
+
+    // Catálogo del cliente: categorías activas, paginadas.
+    public List<TipoProducto> findActivos(int first, int max) {
+        validarRango(first, max);
+        return ejecutar("No se pudieron cargar los tipos de producto activos", () ->
+            em.createNamedQuery("TipoProducto.findActivos", TipoProducto.class)
+                .setFirstResult(first)
+                .setMaxResults(max)
+                .getResultList()
+        );
+    }
+
+    public long countActivos() {
+        return ejecutar("No se pudo contar los tipos de producto activos", () ->
+            em.createNamedQuery("TipoProducto.countActivos", Long.class)
+                .getSingleResult()
+        );
+    }
 }

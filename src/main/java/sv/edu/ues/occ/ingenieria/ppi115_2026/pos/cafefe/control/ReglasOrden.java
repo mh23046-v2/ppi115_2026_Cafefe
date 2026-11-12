@@ -18,14 +18,16 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity.TipoDescuento;
  */
 public final class ReglasOrden {
 
+    public static final String ROL_EN_LINEA = "tienda en linea";
+    
     /** Roles que pueden tomar órdenes (en minúscula y sin tildes). */
-    public static final Set<String> ROLES_ADMITIDOS = Set.of("camarero", "atencion al cliente", "barista");
+    public static final Set<String> ROLES_ADMITIDOS = Set.of("camarero", "atencion al cliente", "barista", "tienda en linea");
 
     private ReglasOrden() {
     }
 
     /** "Atención al Cliente " → "atencion al cliente" (para comparar nombres sin importar tildes ni mayúsculas). */
-    static String normalizar(String texto) {
+    public static String normalizar(String texto) {
         if (texto == null) {
             return "";
         }
@@ -34,6 +36,10 @@ public final class ReglasOrden {
         return sinTildes.toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
     }
 
+    public static boolean esRolEnLinea(Rol rol) {
+        return rol != null && ROL_EN_LINEA.equals(normalizar(rol.getNombre()));
+    }
+    
     public static boolean rolAdmitido(Rol rol) {
         return rol != null && ROLES_ADMITIDOS.contains(normalizar(rol.getNombre()));
     }

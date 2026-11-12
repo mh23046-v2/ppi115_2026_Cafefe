@@ -1,7 +1,6 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.boundary.rest;
 
 import jakarta.inject.Inject;
-import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
@@ -71,7 +70,7 @@ public class ProductoCaracteristicaResource implements Serializable {
     @POST
     public Response crear(
             @PathParam("idProducto") UUID idProducto,
-            @Valid ProductoCaracteristica registro,
+            ProductoCaracteristica registro,
             @Context UriInfo uriInfo) {
         if (registro == null) {
             return Response.status(422).header("Wrong-Param", "registro").build();
@@ -96,22 +95,25 @@ public class ProductoCaracteristicaResource implements Serializable {
     public Response modificar(
             @PathParam("idProducto") UUID idProducto,
             @PathParam("id") UUID id,
-            @Valid ProductoCaracteristica registro) {
+            ProductoCaracteristica registro) {
         if (registro == null) {
             return Response.status(422).header("Wrong-Param", "registro").build();
         }
-        if (!pertenece(productoCaracteristicaDAO.findById(id), idProducto)) {
+        ProductoCaracteristica existente = productoCaracteristicaDAO.findById(id);
+        if (!pertenece(existente, idProducto)) {
             return noEncontrado(id);
         }
-        registro.setIdProductoCaracteristica(id);
-        registro.setIdProducto(new Producto(idProducto));
+        
+        existente.setValor(registro.getValor());
+        existente.setIdCaracteristica(registro.getIdCaracteristica());
 
-        Response validacion = validarReglas(registro);
+        Response validacion = validarReglas(existente);
         if (validacion != null) {
             return validacion;
         }
 
-        return Response.ok(productoCaracteristicaDAO.modify(registro)).build();
+        ProductoCaracteristica modificado = productoCaracteristicaDAO.modify(existente);
+        return Response.ok(modificado != null ? modificado : existente).build();
     }
 
     @DELETE
@@ -147,7 +149,7 @@ public class ProductoCaracteristicaResource implements Serializable {
 
     private static Response noEncontrado(UUID id) {
         return Response.status(Response.Status.NOT_FOUND)
-                .header("Entity-Not-Found", id.toString())
+                .header("Entity-Not-Found", id != null ? id.toString() : "null")
                 .build();
     }
 }

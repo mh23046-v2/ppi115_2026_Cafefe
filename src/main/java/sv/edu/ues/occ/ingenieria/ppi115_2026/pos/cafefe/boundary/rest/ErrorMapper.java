@@ -15,6 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.AccesoDatosException;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.ReglaNegocioException;
 
 @Provider
 public class ErrorMapper implements ExceptionMapper<Throwable> {
@@ -46,6 +47,12 @@ public class ErrorMapper implements ExceptionMapper<Throwable> {
         AccesoDatosException acceso = buscar(ex, AccesoDatosException.class);
         if (acceso != null) {
             return desdeAccesoDatos(acceso);
+        }
+
+        // Violaciones a reglas del negocio (mensaje pensado para el usuario).
+        ReglaNegocioException regla = buscar(ex, ReglaNegocioException.class);
+        if (regla != null) {
+            return construir(422, regla.getMessage());
         }
 
         // Parámetros inválidos que lanzan el DAO o la lógica de negocio.

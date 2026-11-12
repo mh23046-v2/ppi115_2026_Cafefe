@@ -1,7 +1,6 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.boundary.rest;
 
 import jakarta.inject.Inject;
-import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
@@ -50,6 +49,9 @@ public class DescuentoResource implements Serializable {
     @GET
     @Path("{id}")
     public Response findById(@PathParam("id") UUID id) {
+        if (id == null) {
+            return Response.status(422).header("Wrong-Param", "id").build();
+        }
         Descuento encontrado = descuentoDAO.findById(id);
         if (encontrado == null) {
             return noEncontrado(id);
@@ -58,7 +60,7 @@ public class DescuentoResource implements Serializable {
     }
 
     @POST
-    public Response crear(@Valid Descuento registro, @Context UriInfo uriInfo) {
+    public Response crear(Descuento registro, @Context UriInfo uriInfo) {
         if (registro == null) {
             return Response.status(422).header("Wrong-Param", "registro").build();
         }
@@ -69,23 +71,27 @@ public class DescuentoResource implements Serializable {
                 .entity(registro)
                 .build();
     }
-    
+
     @PUT
     @Path("{id}")
-    public Response modificar(@PathParam("id") UUID id, @Valid Descuento registro) {
-        if (registro == null) {
-            return Response.status(422).header("Wrong-Param", "registro").build();
+    public Response modificar(@PathParam("id") UUID id, Descuento registro) {
+        if (id == null || registro == null) {
+            return Response.status(422).header("Wrong-Param", "id").build();
         }
         if (descuentoDAO.findById(id) == null) {
             return noEncontrado(id);
         }
         registro.setIdDescuento(id);
-        return Response.ok(descuentoDAO.modify(registro)).build();
+        Descuento modificado = descuentoDAO.modify(registro);
+        return Response.ok(modificado != null ? modificado : registro).build();
     }
 
     @DELETE
     @Path("{id}")
     public Response eliminar(@PathParam("id") UUID id) {
+        if (id == null) {
+            return Response.status(422).header("Wrong-Param", "id").build();
+        }
         Descuento existente = descuentoDAO.findById(id);
         if (existente == null) {
             return noEncontrado(id);
@@ -96,7 +102,7 @@ public class DescuentoResource implements Serializable {
 
     private static Response noEncontrado(UUID id) {
         return Response.status(Response.Status.NOT_FOUND)
-                .header("Entity-Not-Found", id.toString())
+                .header("Entity-Not-Found", id != null ? id.toString() : "null")
                 .build();
     }
 }

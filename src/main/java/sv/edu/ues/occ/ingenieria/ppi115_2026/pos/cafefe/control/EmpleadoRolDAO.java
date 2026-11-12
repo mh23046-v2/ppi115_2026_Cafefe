@@ -115,4 +115,33 @@ public class EmpleadoRolDAO extends AbstractDataAccess<EmpleadoRol> {
                 .getSingleResult() > 0
         );
     }
+    
+    /* Busca las asignaciones activas (asignación, empleado y rol activos)
+     * para un empleado específico por su UUID.
+     */
+    public List<EmpleadoRol> findActivosByEmpleadoId(UUID idEmpleado) {
+        if (idEmpleado == null) {
+            return List.of();
+        }
+        return ejecutar("No se pudieron consultar los roles activos del empleado", () ->
+                em.createNamedQuery("EmpleadoRol.findActivosByEmpleadoId", EmpleadoRol.class)
+                        .setParameter("idEmpleado", idEmpleado)
+                        .getResultList()
+        );
+    }
+    
+    /**
+     * Busca una asignación activa (asignación, empleado y rol activos)
+     * para el rol "Tienda en línea" (con o sin tilde).
+     */
+    public EmpleadoRol findActivoTiendaEnLinea() {
+        return ejecutar("No se pudo consultar el empleado del rol Tienda en línea", () -> {
+            List<EmpleadoRol> resultados = em.createNamedQuery("EmpleadoRol.findActivoByRolNombre", EmpleadoRol.class)
+                    .setParameter("rolConTilde", "tienda en línea")
+                    .setParameter("rolSinTilde", "tienda en linea")
+                    .setMaxResults(1)
+                    .getResultList();
+            return resultados.isEmpty() ? null : resultados.get(0);
+        });
+    }
 }

@@ -1,5 +1,6 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity;
 
+import jakarta.json.bind.annotation.JsonbTransient;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -54,6 +55,7 @@ public class OrdenProducto implements Serializable {
     @Size(max = 2147483647)
     @Column(name = "observaciones")
     private String observaciones;
+    @JsonbTransient
     @OneToMany(mappedBy = "idOrdenProducto", fetch = FetchType.LAZY)
     private List<FacturaOrdenProducto> facturaOrdenProductoList;
     @JoinColumn(name = "id_orden", referencedColumnName = "id_orden")

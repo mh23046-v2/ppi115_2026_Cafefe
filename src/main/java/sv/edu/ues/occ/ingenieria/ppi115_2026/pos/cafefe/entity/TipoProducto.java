@@ -1,5 +1,6 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity;
 
+import jakarta.json.bind.annotation.JsonbTransient;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -22,30 +23,41 @@ import java.util.UUID;
  * @author hernandez
  */
 @Entity
-@Table(name = "tipo_producto")
+@Table(name = "tipo_producto", schema = "public")
 @NamedQueries({
-    @NamedQuery(name = "TipoProducto.buscarActivosPorNombre", query = "SELECT tp FROM TipoProducto tp WHERE tp.activo = true AND LOWER(tp.nombre) LIKE :texto ORDER BY tp.nombre, tp.idTipoProducto"),
-    @NamedQuery(name = "TipoProducto.findAll", query = "SELECT tp FROM TipoProducto tp"),
-    @NamedQuery(name = "TipoProducto.buscarPorNombre", query = "SELECT tp FROM TipoProducto tp WHERE LOWER(tp.nombre) LIKE :texto ORDER BY tp.activo DESC, tp.nombre, tp.idTipoProducto")})
+    @NamedQuery(name = "TipoProducto.findAll", query = "SELECT t FROM TipoProducto t"),
+    @NamedQuery(name = "TipoProducto.findByIdTipoProducto", query = "SELECT t FROM TipoProducto t WHERE t.idTipoProducto = :idTipoProducto"),
+    @NamedQuery(name = "TipoProducto.findByNombre", query = "SELECT t FROM TipoProducto t WHERE t.nombre = :nombre"),
+    @NamedQuery(name = "TipoProducto.findByActivo", query = "SELECT t FROM TipoProducto t WHERE t.activo = :activo"),
+    @NamedQuery(name = "TipoProducto.buscarPorNombre", query = "SELECT t FROM TipoProducto t WHERE LOWER(t.nombre) LIKE LOWER(:texto) ORDER BY t.nombre"),
+    @NamedQuery(name = "TipoProducto.buscarActivosPorNombre", query = "SELECT t FROM TipoProducto t WHERE t.activo = true AND LOWER(t.nombre) LIKE LOWER(:texto) ORDER BY t.nombre"),
+    @NamedQuery(name = "TipoProducto.findActivos", query = "SELECT tp FROM TipoProducto tp WHERE tp.activo = true ORDER BY tp.nombre, tp.idTipoProducto"),
+    @NamedQuery(name = "TipoProducto.countActivos", query = "SELECT COUNT(tp) FROM TipoProducto tp WHERE tp.activo = true")
+})
 public class TipoProducto implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
     @Id
     @Basic(optional = false)
     @NotNull
     @Convert(converter = UUIDConverter.class)
     @Column(name = "id_tipo_producto")
     private UUID idTipoProducto;
+    
     @NotBlank(message = "El nombre es obligatorio")
     @Size(max = 155)
     @Column(name = "nombre")
     private String nombre;
+
+    @Column(name = "observaciones", length = 255)
+    private String observaciones;
+
     @Column(name = "activo")
     private Boolean activo;
-    @Size(max = 2147483647)
-    @Column(name = "observaciones")
-    private String observaciones;
-    @OneToMany(mappedBy = "idTipoProducto", fetch = FetchType.LAZY)
+
+    @JsonbTransient
+    @OneToMany(mappedBy = "idTipoProducto")
     private List<ProductoTipoProducto> productoTipoProductoList;
 
     public TipoProducto() {

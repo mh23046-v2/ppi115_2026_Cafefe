@@ -1,5 +1,6 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.entity;
 
+import jakarta.json.bind.annotation.JsonbTransient;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -36,7 +37,17 @@ import java.util.UUID;
             + "WHERE er.activo = true AND e.activo = true AND r.activo = true "
             + "AND (LOWER(CONCAT(e.nombre, ' ', e.apellido)) LIKE :nombre OR LOWER(e.nombre) LIKE :nombre OR LOWER(e.apellido) LIKE :nombre) "
             + "ORDER BY e.apellido ASC, e.nombre ASC"),
-    @NamedQuery(name = "EmpleadoRol.countByEmpleado", query = "SELECT COUNT(e) FROM EmpleadoRol e WHERE e.idEmpleado = :empleado")})
+    @NamedQuery(name = "EmpleadoRol.countByEmpleado", query = "SELECT COUNT(e) FROM EmpleadoRol e WHERE e.idEmpleado = :empleado"),
+    @NamedQuery(name = "EmpleadoRol.findActivosByEmpleadoId",
+            query = "SELECT er FROM EmpleadoRol er JOIN FETCH er.idRol r "
+            + "WHERE er.idEmpleado.idEmpleado = :idEmpleado "
+            + "AND er.activo = true AND er.idEmpleado.activo = true AND r.activo = true "
+            + "ORDER BY r.nombre ASC"),
+    @NamedQuery(name = "EmpleadoRol.findActivoByRolNombre",
+            query = "SELECT er FROM EmpleadoRol er JOIN FETCH er.idEmpleado e JOIN FETCH er.idRol r "
+            + "WHERE er.activo = true AND e.activo = true AND r.activo = true "
+            + "AND (LOWER(r.nombre) = :rolConTilde OR LOWER(r.nombre) = :rolSinTilde) "
+            + "ORDER BY er.idEmpleadoRol ASC")})
 public class EmpleadoRol implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -58,8 +69,10 @@ public class EmpleadoRol implements Serializable {
     @JoinColumn(name = "id_rol", referencedColumnName = "id_rol")
     @ManyToOne(fetch = FetchType.LAZY)
     private Rol idRol;
+    @JsonbTransient
     @OneToMany(mappedBy = "idEmpleadoRol", fetch = FetchType.LAZY)
     private List<Factura> facturaList;
+    @JsonbTransient
     @OneToMany(mappedBy = "idEmpleadoRol", fetch = FetchType.LAZY)
     private List<Orden> ordenList;
 

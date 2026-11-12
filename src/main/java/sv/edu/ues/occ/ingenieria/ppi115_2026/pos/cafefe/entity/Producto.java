@@ -12,9 +12,11 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.NotBlank;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
@@ -29,38 +31,54 @@ import java.util.UUID;
 @NamedQueries({
     @NamedQuery(name = "Producto.findAll", query = "SELECT p FROM Producto p"),
     @NamedQuery(name = "Producto.findByNombreActivos", query = "SELECT p FROM Producto p WHERE p.activo = true AND LOWER(p.nombre) LIKE :nombre ORDER BY p.nombre ASC"),
+    @NamedQuery(name = "Producto.countByNombreActivos", query = "SELECT COUNT(p) FROM Producto p WHERE p.activo = true AND LOWER(p.nombre) LIKE :nombre"),
+    @NamedQuery(name = "Producto.findActivosByTipo", query = "SELECT DISTINCT p FROM Producto p JOIN p.productoTipoProductoList ptp WHERE ptp.idTipoProducto = :tipo AND p.activo = true ORDER BY p.nombre, p.idProducto"),
+    @NamedQuery(name = "Producto.countActivosByTipo", query = "SELECT COUNT(DISTINCT p) FROM Producto p JOIN p.productoTipoProductoList ptp WHERE ptp.idTipoProducto = :tipo AND p.activo = true"),
+    @NamedQuery(name = "Producto.filtrar", query = "SELECT p FROM Producto p WHERE (:texto IS NULL OR LOWER(p.nombre) LIKE :texto) AND (:soloActivos = false OR p.activo = true) ORDER BY p.nombre, p.idProducto"),
+    @NamedQuery(name = "Producto.contarFiltrados", query = "SELECT COUNT(p) FROM Producto p WHERE (:texto IS NULL OR LOWER(p.nombre) LIKE :texto) AND (:soloActivos = false OR p.activo = true)"),
     @NamedQuery(name = "Producto.buscarPorNombre", query = "SELECT p FROM Producto p WHERE LOWER(p.nombre) LIKE :texto ORDER BY p.activo DESC, p.nombre, p.idProducto")})
 public class Producto implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
     @Id
     @Basic(optional = false)
     @NotNull
     @Convert(converter = UUIDConverter.class)
     @Column(name = "id_producto")
     private UUID idProducto;
+
+    @NotBlank
     @Size(max = 155)
     @Column(name = "nombre")
     private String nombre;
+
     @Column(name = "activo")
-    private Boolean activo;
+    private Boolean activo = Boolean.TRUE;
+
     @Size(max = 2147483647)
     @Column(name = "comentarios")
     private String comentarios;
+
+    @DecimalMin("0.00")
     @Basic(optional = false)
     @NotNull
     @Digits(integer = 6, fraction = 2)
     @Column(name = "precio_sugerido")
     private BigDecimal precioSugerido;
+
     @JsonbTransient
     @OneToMany(mappedBy = "idProducto", fetch = FetchType.LAZY)
     private List<ProductoCaracteristica> productoCaracteristicaList;
+
     @JsonbTransient
     @OneToMany(mappedBy = "idProducto", fetch = FetchType.LAZY)
     private List<OrdenProducto> ordenProductoList;
+
     @JsonbTransient
     @OneToMany(mappedBy = "idProducto", fetch = FetchType.LAZY)
     private List<DescuentoProducto> descuentoProductoList;
+
     @JsonbTransient
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "producto", fetch = FetchType.LAZY)
     private List<ProductoTipoProducto> productoTipoProductoList;
