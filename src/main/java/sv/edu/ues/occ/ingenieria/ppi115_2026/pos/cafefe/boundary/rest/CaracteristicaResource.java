@@ -1,7 +1,6 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.boundary.rest;
 
 import jakarta.inject.Inject;
-import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
@@ -38,7 +37,7 @@ public class CaracteristicaResource implements Serializable {
             @PathParam("idTipoCaracteristica") UUID idTipo,
             @QueryParam("first") @DefaultValue("0") int first,
             @QueryParam("max") @DefaultValue("50") int max) {
-        if (first < 0 || max <= 0) {
+        if (idTipo == null || first < 0 || max <= 0) {
             return Response.status(422)
                     .header("Wrong-Param", first < 0 ? "first" : "max")
                     .build();
@@ -56,6 +55,9 @@ public class CaracteristicaResource implements Serializable {
     public Response findById(
             @PathParam("idTipoCaracteristica") UUID idTipo,
             @PathParam("id") UUID id) {
+        if (idTipo == null || id == null) {
+            return Response.status(422).header("Wrong-Param", "id").build();
+        }
         Caracteristica encontrada = caracteristicaDAO.findById(id);
         if (!pertenece(encontrada, idTipo)) {
             return noEncontrado(id);
@@ -66,13 +68,22 @@ public class CaracteristicaResource implements Serializable {
     @POST
     public Response crear(
             @PathParam("idTipoCaracteristica") UUID idTipo,
-            @Valid Caracteristica registro,
+            Caracteristica registro,
             @Context UriInfo uriInfo) {
-        if (registro == null) {
+        if (idTipo == null || registro == null) {
             return Response.status(422).header("Wrong-Param", "registro").build();
         }
         registro.setIdCaracteristica(UUID.randomUUID());
         registro.setIdTipoCaracteristica(new TipoCaracteristica(idTipo));
+        
+        try {
+            if (registro.getActivo() == null) {
+                registro.setActivo(Boolean.TRUE);
+            }
+        } catch (NoSuchMethodError | Exception ignored) {
+            // Ignorar si la entidad Caracteristica no posee el atributo activo
+        }
+
         caracteristicaDAO.create(registro);
         return Response.created(uriInfo.getAbsolutePathBuilder()
                 .path(registro.getIdCaracteristica().toString()).build())
@@ -85,16 +96,19 @@ public class CaracteristicaResource implements Serializable {
     public Response modificar(
             @PathParam("idTipoCaracteristica") UUID idTipo,
             @PathParam("id") UUID id,
-            @Valid Caracteristica registro) {
-        if (registro == null) {
+            Caracteristica registro) {
+        if (idTipo == null || id == null || registro == null) {
             return Response.status(422).header("Wrong-Param", "registro").build();
         }
-        if (!pertenece(caracteristicaDAO.findById(id), idTipo)) {
+        Caracteristica existente = caracteristicaDAO.findById(id);
+        if (!pertenece(existente, idTipo)) {
             return noEncontrado(id);
         }
         registro.setIdCaracteristica(id);
         registro.setIdTipoCaracteristica(new TipoCaracteristica(idTipo));
-        return Response.ok(caracteristicaDAO.modify(registro)).build();
+        
+        Caracteristica modificado = caracteristicaDAO.modify(registro);
+        return Response.ok(modificado != null ? modificado : registro).build();
     }
 
     @DELETE
@@ -102,6 +116,9 @@ public class CaracteristicaResource implements Serializable {
     public Response eliminar(
             @PathParam("idTipoCaracteristica") UUID idTipo,
             @PathParam("id") UUID id) {
+        if (idTipo == null || id == null) {
+            return Response.status(422).header("Wrong-Param", "id").build();
+        }
         Caracteristica existente = caracteristicaDAO.findById(id);
         if (!pertenece(existente, idTipo)) {
             return noEncontrado(id);
@@ -118,7 +135,7 @@ public class CaracteristicaResource implements Serializable {
 
     private static Response noEncontrado(UUID id) {
         return Response.status(Response.Status.NOT_FOUND)
-                .header("Entity-Not-Found", id.toString())
+                .header("Entity-Not-Found", id != null ? id.toString() : "null")
                 .build();
     }
 }

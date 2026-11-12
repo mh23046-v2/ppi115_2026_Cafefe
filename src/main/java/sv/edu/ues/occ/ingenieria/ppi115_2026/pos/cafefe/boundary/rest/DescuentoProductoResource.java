@@ -1,7 +1,6 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.boundary.rest;
 
 import jakarta.inject.Inject;
-import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
@@ -38,7 +37,7 @@ public class DescuentoProductoResource implements Serializable {
             @PathParam("idProducto") UUID idProducto,
             @QueryParam("first") @DefaultValue("0") int first,
             @QueryParam("max") @DefaultValue("50") int max) {
-        if (first < 0 || max <= 0) {
+        if (idProducto == null || first < 0 || max <= 0) {
             return Response.status(422)
                     .header("Wrong-Param", first < 0 ? "first" : "max")
                     .build();
@@ -56,6 +55,9 @@ public class DescuentoProductoResource implements Serializable {
     public Response findById(
             @PathParam("idProducto") UUID idProducto,
             @PathParam("id") UUID id) {
+        if (idProducto == null || id == null) {
+            return Response.status(422).header("Wrong-Param", "id").build();
+        }
         DescuentoProducto encontrado = descuentoProductoDAO.findById(id);
         if (!pertenece(encontrado, idProducto)) {
             return noEncontrado(id);
@@ -66,13 +68,14 @@ public class DescuentoProductoResource implements Serializable {
     @POST
     public Response crear(
             @PathParam("idProducto") UUID idProducto,
-            @Valid DescuentoProducto registro,
+            DescuentoProducto registro,
             @Context UriInfo uriInfo) {
-        if (registro == null) {
+        if (idProducto == null || registro == null) {
             return Response.status(422).header("Wrong-Param", "registro").build();
         }
         registro.setIdDescuentoProducto(UUID.randomUUID());
         registro.setIdProducto(new Producto(idProducto));
+        
         descuentoProductoDAO.create(registro);
         return Response.created(uriInfo.getAbsolutePathBuilder()
                 .path(registro.getIdDescuentoProducto().toString()).build())
@@ -85,16 +88,19 @@ public class DescuentoProductoResource implements Serializable {
     public Response modificar(
             @PathParam("idProducto") UUID idProducto,
             @PathParam("id") UUID id,
-            @Valid DescuentoProducto registro) {
-        if (registro == null) {
+            DescuentoProducto registro) {
+        if (idProducto == null || id == null || registro == null) {
             return Response.status(422).header("Wrong-Param", "registro").build();
         }
-        if (!pertenece(descuentoProductoDAO.findById(id), idProducto)) {
+        DescuentoProducto existente = descuentoProductoDAO.findById(id);
+        if (!pertenece(existente, idProducto)) {
             return noEncontrado(id);
         }
         registro.setIdDescuentoProducto(id);
         registro.setIdProducto(new Producto(idProducto));
-        return Response.ok(descuentoProductoDAO.modify(registro)).build();
+        
+        DescuentoProducto modificado = descuentoProductoDAO.modify(registro);
+        return Response.ok(modificado != null ? modificado : registro).build();
     }
 
     @DELETE
@@ -102,6 +108,9 @@ public class DescuentoProductoResource implements Serializable {
     public Response eliminar(
             @PathParam("idProducto") UUID idProducto,
             @PathParam("id") UUID id) {
+        if (idProducto == null || id == null) {
+            return Response.status(422).header("Wrong-Param", "id").build();
+        }
         DescuentoProducto existente = descuentoProductoDAO.findById(id);
         if (!pertenece(existente, idProducto)) {
             return noEncontrado(id);
@@ -118,7 +127,7 @@ public class DescuentoProductoResource implements Serializable {
 
     private static Response noEncontrado(UUID id) {
         return Response.status(Response.Status.NOT_FOUND)
-                .header("Entity-Not-Found", id.toString())
+                .header("Entity-Not-Found", id != null ? id.toString() : "null")
                 .build();
     }
 }

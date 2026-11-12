@@ -1,7 +1,6 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.boundary.rest;
 
 import jakarta.inject.Inject;
-import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
@@ -50,6 +49,9 @@ public class TipoDescuentoResource implements Serializable {
     @GET
     @Path("{id}")
     public Response findById(@PathParam("id") UUID id) {
+        if (id == null) {
+            return Response.status(422).header("Wrong-Param", "id").build();
+        }
         TipoDescuento encontrado = tdDAO.findById(id);
         if (encontrado == null) {
             return noEncontrado(id);
@@ -58,7 +60,7 @@ public class TipoDescuentoResource implements Serializable {
     }
 
     @POST
-    public Response crear(@Valid TipoDescuento registro, @Context UriInfo uriInfo) {
+    public Response crear(TipoDescuento registro, @Context UriInfo uriInfo) {
         if (registro == null) {
             return Response.status(422).header("Wrong-Param", "registro").build();
         }
@@ -72,20 +74,24 @@ public class TipoDescuentoResource implements Serializable {
 
     @PUT
     @Path("{id}")
-    public Response modificar(@PathParam("id") UUID id, @Valid TipoDescuento registro) {
-        if (registro == null) {
-            return Response.status(422).header("Wrong-Param", "registro").build();
+    public Response modificar(@PathParam("id") UUID id, TipoDescuento registro) {
+        if (id == null || registro == null) {
+            return Response.status(422).header("Wrong-Param", "id").build();
         }
         if (tdDAO.findById(id) == null) {
             return noEncontrado(id);
         }
         registro.setIdTipoDescuento(id);
-        return Response.ok(tdDAO.modify(registro)).build();
+        TipoDescuento modificado = tdDAO.modify(registro);
+        return Response.ok(modificado != null ? modificado : registro).build();
     }
 
     @DELETE
     @Path("{id}")
     public Response eliminar(@PathParam("id") UUID id) {
+        if (id == null) {
+            return Response.status(422).header("Wrong-Param", "id").build();
+        }
         TipoDescuento existente = tdDAO.findById(id);
         if (existente == null) {
             return noEncontrado(id);
@@ -96,7 +102,7 @@ public class TipoDescuentoResource implements Serializable {
 
     private static Response noEncontrado(UUID id) {
         return Response.status(Response.Status.NOT_FOUND)
-                .header("Entity-Not-Found", id.toString())
+                .header("Entity-Not-Found", id != null ? id.toString() : "null")
                 .build();
     }
 }

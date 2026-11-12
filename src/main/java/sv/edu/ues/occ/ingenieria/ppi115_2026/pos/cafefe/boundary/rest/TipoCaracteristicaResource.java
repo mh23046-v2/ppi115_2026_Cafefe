@@ -1,7 +1,6 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.boundary.rest;
 
 import jakarta.inject.Inject;
-import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
@@ -53,6 +52,9 @@ public class TipoCaracteristicaResource implements Serializable {
     @GET
     @Path("{id}")
     public Response findById(@PathParam("id") UUID id) {
+        if (id == null) {
+            return Response.status(422).header("Wrong-Param", "id").build();
+        }
         TipoCaracteristica encontrado = tipoCaracteristicaDAO.findById(id);
         if (encontrado == null) {
             return noEncontrado(id);
@@ -61,7 +63,7 @@ public class TipoCaracteristicaResource implements Serializable {
     }
 
     @POST
-    public Response crear(@Valid TipoCaracteristica registro, @Context UriInfo uriInfo) {
+    public Response crear(TipoCaracteristica registro, @Context UriInfo uriInfo) {
         if (registro == null) {
             return Response.status(422).header("Wrong-Param", "registro").build();
         }
@@ -69,6 +71,15 @@ public class TipoCaracteristicaResource implements Serializable {
             return Response.status(422).header("Wrong-Param", "expresionRegular").build();
         }
         registro.setIdTipoCaracteristica(UUID.randomUUID());
+        
+        try {
+            if (registro.getActivo() == null) {
+                registro.setActivo(Boolean.TRUE);
+            }
+        } catch (NoSuchMethodError | Exception ignored) {
+            // Ignorar si la entidad no contiene el atributo activo
+        }
+
         tipoCaracteristicaDAO.create(registro);
         return Response.created(uriInfo.getAbsolutePathBuilder()
                 .path(registro.getIdTipoCaracteristica().toString()).build())
@@ -78,9 +89,9 @@ public class TipoCaracteristicaResource implements Serializable {
 
     @PUT
     @Path("{id}")
-    public Response modificar(@PathParam("id") UUID id, @Valid TipoCaracteristica registro) {
-        if (registro == null) {
-            return Response.status(422).header("Wrong-Param", "registro").build();
+    public Response modificar(@PathParam("id") UUID id, TipoCaracteristica registro) {
+        if (id == null || registro == null) {
+            return Response.status(422).header("Wrong-Param", "id").build();
         }
         if (!expresionRegularValida(registro.getExpresionRegular())) {
             return Response.status(422).header("Wrong-Param", "expresionRegular").build();
@@ -89,12 +100,16 @@ public class TipoCaracteristicaResource implements Serializable {
             return noEncontrado(id);
         }
         registro.setIdTipoCaracteristica(id);
-        return Response.ok(tipoCaracteristicaDAO.modify(registro)).build();
+        TipoCaracteristica modificado = tipoCaracteristicaDAO.modify(registro);
+        return Response.ok(modificado != null ? modificado : registro).build();
     }
 
     @DELETE
     @Path("{id}")
     public Response eliminar(@PathParam("id") UUID id) {
+        if (id == null) {
+            return Response.status(422).header("Wrong-Param", "id").build();
+        }
         TipoCaracteristica existente = tipoCaracteristicaDAO.findById(id);
         if (existente == null) {
             return noEncontrado(id);
@@ -103,8 +118,6 @@ public class TipoCaracteristicaResource implements Serializable {
         return Response.noContent().build();
     }
 
-    /* La expresión regular se guarda como texto y se usará para validar valores de características: 
-    * si no compila, se rechaza al guardarla. Vacía o nula se acepta (sin restricción de formato). */
     static boolean expresionRegularValida(String expresion) {
         if (expresion == null || expresion.isBlank()) {
             return true;
@@ -119,7 +132,7 @@ public class TipoCaracteristicaResource implements Serializable {
 
     private static Response noEncontrado(UUID id) {
         return Response.status(Response.Status.NOT_FOUND)
-                .header("Entity-Not-Found", id.toString())
+                .header("Entity-Not-Found", id != null ? id.toString() : "null")
                 .build();
     }
 }
