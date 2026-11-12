@@ -42,7 +42,12 @@ import java.util.UUID;
             query = "SELECT er FROM EmpleadoRol er JOIN FETCH er.idRol r "
             + "WHERE er.idEmpleado.idEmpleado = :idEmpleado "
             + "AND er.activo = true AND er.idEmpleado.activo = true AND r.activo = true "
-            + "ORDER BY r.nombre ASC")})
+            + "ORDER BY r.nombre ASC"),
+    @NamedQuery(name = "EmpleadoRol.findActivoByRolNombre",
+            query = "SELECT er FROM EmpleadoRol er JOIN FETCH er.idEmpleado e JOIN FETCH er.idRol r "
+            + "WHERE er.activo = true AND e.activo = true AND r.activo = true "
+            + "AND (LOWER(r.nombre) = :rolConTilde OR LOWER(r.nombre) = :rolSinTilde) "
+            + "ORDER BY er.idEmpleadoRol ASC")})
 public class EmpleadoRol implements Serializable {
 
     private static final long serialVersionUID = 1L;

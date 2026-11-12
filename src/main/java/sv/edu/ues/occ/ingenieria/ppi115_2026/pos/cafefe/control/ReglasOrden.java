@@ -21,7 +21,7 @@ public final class ReglasOrden {
     public static final String ROL_EN_LINEA = "tienda en linea";
     
     /** Roles que pueden tomar órdenes (en minúscula y sin tildes). */
-    public static final Set<String> ROLES_ADMITIDOS = Set.of("camarero", "atencion al cliente", "barista");
+    public static final Set<String> ROLES_ADMITIDOS = Set.of("camarero", "atencion al cliente", "barista", "tienda en linea");
 
     private ReglasOrden() {
     }
