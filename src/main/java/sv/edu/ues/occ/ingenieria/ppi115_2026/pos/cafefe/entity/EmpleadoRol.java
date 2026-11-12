@@ -37,7 +37,12 @@ import java.util.UUID;
             + "WHERE er.activo = true AND e.activo = true AND r.activo = true "
             + "AND (LOWER(CONCAT(e.nombre, ' ', e.apellido)) LIKE :nombre OR LOWER(e.nombre) LIKE :nombre OR LOWER(e.apellido) LIKE :nombre) "
             + "ORDER BY e.apellido ASC, e.nombre ASC"),
-    @NamedQuery(name = "EmpleadoRol.countByEmpleado", query = "SELECT COUNT(e) FROM EmpleadoRol e WHERE e.idEmpleado = :empleado")})
+    @NamedQuery(name = "EmpleadoRol.countByEmpleado", query = "SELECT COUNT(e) FROM EmpleadoRol e WHERE e.idEmpleado = :empleado"),
+    @NamedQuery(name = "EmpleadoRol.findActivosByEmpleadoId",
+            query = "SELECT er FROM EmpleadoRol er JOIN FETCH er.idRol r "
+            + "WHERE er.idEmpleado.idEmpleado = :idEmpleado "
+            + "AND er.activo = true AND er.idEmpleado.activo = true AND r.activo = true "
+            + "ORDER BY r.nombre ASC")})
 public class EmpleadoRol implements Serializable {
 
     private static final long serialVersionUID = 1L;

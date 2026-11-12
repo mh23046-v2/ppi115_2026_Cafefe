@@ -154,7 +154,7 @@ public class DescuentoResourceTest {
         Response res = resource.modificar(null, null);
 
         Assertions.assertEquals(422, res.getStatus());
-        Assertions.assertEquals("id/registro", res.getHeaderString("Wrong-Param"));
+        Assertions.assertEquals("id", res.getHeaderString("Wrong-Param"));
     }
 
     // Tests de eliminar

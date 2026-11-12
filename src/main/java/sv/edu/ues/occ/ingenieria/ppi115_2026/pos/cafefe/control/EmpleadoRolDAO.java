@@ -115,4 +115,18 @@ public class EmpleadoRolDAO extends AbstractDataAccess<EmpleadoRol> {
                 .getSingleResult() > 0
         );
     }
+    
+    /* Busca las asignaciones activas (asignación, empleado y rol activos)
+     * para un empleado específico por su UUID.
+     */
+    public List<EmpleadoRol> findActivosByEmpleadoId(UUID idEmpleado) {
+        if (idEmpleado == null) {
+            return List.of();
+        }
+        return ejecutar("No se pudieron consultar los roles activos del empleado", () ->
+                em.createNamedQuery("EmpleadoRol.findActivosByEmpleadoId", EmpleadoRol.class)
+                        .setParameter("idEmpleado", idEmpleado)
+                        .getResultList()
+        );
+    }
 }
