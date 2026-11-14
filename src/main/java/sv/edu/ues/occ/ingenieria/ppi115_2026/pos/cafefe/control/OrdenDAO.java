@@ -77,4 +77,43 @@ public class OrdenDAO extends AbstractDataAccess<Orden> {
                 .getResultList()
         );
     }
+    /**
+     * Condición "la orden tiene al menos un producto sin cobrar": el producto no
+     * está en ninguna factura, o solo en facturas ANULADAS. Es la misma que usa
+     * la named query Orden.findConPendientesDeFacturar.
+     */
+    static final String CON_PENDIENTES = "EXISTS (SELECT op FROM OrdenProducto op WHERE op.idOrden = o"
+            + " AND NOT EXISTS (SELECT f FROM FacturaOrdenProducto f WHERE f.idOrdenProducto = op"
+            + " AND (f.idFactura.estado IS NULL OR f.idFactura.estado <> :anulada)))";
+
+    static final String JPQL_PENDIENTES = "SELECT o FROM Orden o WHERE " + CON_PENDIENTES
+            + " ORDER BY o.fechaCreacion ASC, o.idOrden";
+
+    static final String JPQL_COUNT_PENDIENTES = "SELECT COUNT(o) FROM Orden o WHERE " + CON_PENDIENTES;
+
+    /**
+     * Órdenes pendientes de cobro, paginadas, de la más antigua a la más
+     * reciente (la cocina atiende primero la que lleva más tiempo esperando).
+     * Las usan la pantalla de Cocina (HU3) y la de Caja (HU4).
+     */
+    public List<Orden> findPendientesDeCobro(int first, int max) {
+        validarRango(first, max);
+        return ejecutar("No se pudieron consultar las órdenes pendientes", () ->
+            em.createQuery(JPQL_PENDIENTES, Orden.class)
+                .setParameter("anulada", ReglasFactura.ANULADA)
+                .setFirstResult(first)
+                .setMaxResults(max)
+                .getResultList()
+        );
+    }
+
+    /** Cuántas órdenes tienen productos sin cobrar (para el header Total-registros). */
+    public int countPendientesDeCobro() {
+        return ejecutar("No se pudieron contar las órdenes pendientes", () -> {
+            Long total = em.createQuery(JPQL_COUNT_PENDIENTES, Long.class)
+                .setParameter("anulada", ReglasFactura.ANULADA)
+                .getSingleResult();
+            return total != null ? total.intValue() : 0;
+        });
+    }
 }

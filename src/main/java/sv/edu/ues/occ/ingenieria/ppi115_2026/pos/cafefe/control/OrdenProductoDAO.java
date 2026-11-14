@@ -146,4 +146,38 @@ public class OrdenProductoDAO extends AbstractDataAccess<OrdenProducto> {
             return aplicados;
         });
     }
+    static final String JPQL_PENDIENTES_DE_ORDENES = "SELECT op FROM OrdenProducto op JOIN FETCH op.idProducto p"
+            + " WHERE op.idOrden IN :ordenes"
+            + " AND NOT EXISTS (SELECT f FROM FacturaOrdenProducto f WHERE f.idOrdenProducto = op"
+            + " AND (f.idFactura.estado IS NULL OR f.idFactura.estado <> :anulada))"
+            + " ORDER BY p.nombre, op.idOrdenProducto";
+
+    /**
+     * Productos sin cobrar de varias órdenes en UNA sola consulta (en lugar de
+     * una consulta por orden). Si la lista viene vacía no consulta la base.
+     */
+    public List<OrdenProducto> findPendientesDeOrdenes(List<Orden> ordenes) {
+        if (ordenes == null || ordenes.isEmpty()) {
+            return List.of();
+        }
+        return ejecutar("No se pudieron consultar los productos pendientes de las órdenes", ()
+                -> em.createQuery(JPQL_PENDIENTES_DE_ORDENES, OrdenProducto.class)
+                        .setParameter("ordenes", ordenes)
+                        .setParameter("anulada", ReglasFactura.ANULADA)
+                        .getResultList()
+        );
+    }
+
+    /** Productos sin cobrar de una orden (ya existía la named query, faltaba el método). */
+    public List<OrdenProducto> findPendientesByOrden(Orden orden) {
+        if (orden == null || orden.getIdOrden() == null) {
+            throw new IllegalArgumentException("La orden es obligatoria");
+        }
+        return ejecutar("No se pudieron consultar los productos pendientes de la orden", ()
+                -> em.createNamedQuery("OrdenProducto.findPendientesByOrden", OrdenProducto.class)
+                        .setParameter("orden", orden)
+                        .setParameter("anulada", ReglasFactura.ANULADA)
+                        .getResultList()
+        );
+    }
 }
