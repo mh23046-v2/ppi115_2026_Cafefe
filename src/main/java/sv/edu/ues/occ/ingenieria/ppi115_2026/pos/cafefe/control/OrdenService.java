@@ -62,12 +62,10 @@ public class OrdenService {
         }
 
         String cliente = validarCliente(solicitud.get("cliente"));
+        UUID idEmpleado = validarIdEmpleado(solicitud.get("idEmpleado"));
         List<ItemSolicitado> items = validarItems(solicitud.get("items"));
 
-        EmpleadoRol empleadoRol = empleadoRolDAO.findActivoTiendaEnLinea();
-        if (empleadoRol == null || !ReglasOrden.puedeTomarOrdenes(empleadoRol)) {
-            throw new AccesoDatosException("Configuración incompleta: no existe un empleado activo con el rol Tienda en línea", null);
-        }
+        EmpleadoRol empleadoRol = resolverEmpleadoRol(idEmpleado);
 
         // Validar existencia y estado activo de todos los productos antes de persistir
         Map<UUID, Producto> productosCache = new HashMap<>();
@@ -131,9 +129,57 @@ public class OrdenService {
         respuesta.put("idOrden", orden.getIdOrden().toString());
         respuesta.put("fechaCreacion", Instant.ofEpochMilli(ahora.getTime()).toString());
         respuesta.put("cliente", cliente);
+        if (empleadoRol.getIdEmpleado() != null && empleadoRol.getIdEmpleado().getIdEmpleado() != null) {
+            respuesta.put("idEmpleado", empleadoRol.getIdEmpleado().getIdEmpleado().toString());
+        }
         respuesta.put("total", total);
         respuesta.put("lineas", lineasDto);
         return respuesta;
+    }
+
+    private UUID validarIdEmpleado(Object rawIdEmpleado) {
+        if (rawIdEmpleado == null) {
+            return null;
+        }
+        if (!(rawIdEmpleado instanceof String idStr)) {
+            throw new SolicitudOrdenInvalidaException("idEmpleado", "Identificador de empleado inválido");
+        }
+        if (idStr.isBlank()) {
+            return null;
+        }
+        try {
+            return UUID.fromString(idStr.trim());
+        } catch (IllegalArgumentException ex) {
+            throw new SolicitudOrdenInvalidaException("idEmpleado", "Identificador de empleado inválido");
+        }
+    }
+
+    private EmpleadoRol resolverEmpleadoRol(UUID idEmpleado) {
+        if (idEmpleado == null) {
+            EmpleadoRol empleadoRol = empleadoRolDAO.findActivoTiendaEnLinea();
+            if (empleadoRol == null || !ReglasOrden.puedeTomarOrdenes(empleadoRol)) {
+                throw new AccesoDatosException("Configuración incompleta: no existe un empleado activo con el rol Tienda en línea", null);
+            }
+            return empleadoRol;
+        }
+
+        List<EmpleadoRol> asignaciones = empleadoRolDAO.findActivosByEmpleadoId(idEmpleado);
+        EmpleadoRol empleadoRol = asignaciones.stream()
+                .filter(ReglasOrden::puedeTomarOrdenes)
+                .filter(er -> !ReglasOrden.esRolEnLinea(er.getIdRol()))
+                .findFirst()
+                .orElseGet(() -> asignaciones.stream()
+                        .filter(ReglasOrden::puedeTomarOrdenes)
+                        .findFirst()
+                        .orElse(null));
+
+        if (empleadoRol == null) {
+            throw new SolicitudOrdenInvalidaException(
+                    "idEmpleado",
+                    "El empleado no existe, está inactivo o no tiene un rol autorizado para tomar órdenes"
+            );
+        }
+        return empleadoRol;
     }
 
     private String validarCliente(Object rawCliente) {
