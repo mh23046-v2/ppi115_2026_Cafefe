@@ -80,9 +80,11 @@ public class OrdenModelTest {
         EmpleadoRol erBarista = empleadoRol("Barista");
         Rol barista = erBarista.getIdRol();
         Rol atencion = empleadoRol("Atención al Cliente").getIdRol();
-        Rol cajero = empleadoRol("Cajero").getIdRol();
+        // Un rol que NO toma órdenes. Se usa uno inventado para que la prueba no se rompa
+        // cada vez que se amplía la lista de roles admitidos (ReglasOrden.ROLES_ADMITIDOS).
+        Rol gerente = empleadoRol("Gerente").getIdRol();
 
-        when(rolDAO.findActivos()).thenReturn(List.of(barista, cajero, atencion));
+        when(rolDAO.findActivos()).thenReturn(List.of(barista, gerente, atencion));
         when(empleadoRolDAO.findActivosPorRolesYNombre(List.of(barista, atencion), "juan", 10))
                 .thenReturn(List.of(erBarista));
 
@@ -110,9 +112,9 @@ public class OrdenModelTest {
         try (MockedStatic<FacesContext> faces = mockStatic(FacesContext.class)) {
             faces.when(FacesContext::getCurrentInstance).thenReturn(facesContext);
             ordenModel.btnNuevoHandler();
-            EmpleadoRol cajero = empleadoRol("Cajero");
-            ordenModel.getRegistro().setIdEmpleadoRol(cajero);
-            when(etiquetas.empleadoRol(cajero)).thenReturn("Cajero Juan");
+            EmpleadoRol gerente = empleadoRol("Gerente"); // rol que no toma órdenes
+            ordenModel.getRegistro().setIdEmpleadoRol(gerente);
+            when(etiquetas.empleadoRol(gerente)).thenReturn("Gerente Juan");
 
             ordenModel.btnCrearHandler();
 
