@@ -9,8 +9,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.CobroService;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.CobroService.NoEncontradoException;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.RegistroDespachos;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -25,6 +28,7 @@ class OrdenPendienteResourceTest {
         cobroService = Mockito.mock(CobroService.class);
         resource = new OrdenPendienteResource();
         resource.cobroService = cobroService;
+        resource.despachos = new RegistroDespachos();
     }
 
     @Test
@@ -36,7 +40,7 @@ class OrdenPendienteResourceTest {
         Response r = resource.findRange(0, 20);
 
         assertEquals(200, r.getStatus());
-        assertEquals(datos, r.getEntity());
+        assertEquals(List.of(Map.of("idOrden", "x", "despachada", false)), r.getEntity());
         assertEquals(7, r.getHeaders().getFirst("Total-registros"));
     }
 
@@ -68,5 +72,63 @@ class OrdenPendienteResourceTest {
         Response r = resource.findById(id);
         assertEquals(404, r.getStatus());
         assertEquals(id.toString(), r.getHeaderString("Entity-Not-Found"));
+    }
+
+    // ------------------------------------------------------------ despacho (en memoria)
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void despacharLaMarcaEnLaListaYEnUnaOrden() {
+        UUID a = UUID.randomUUID();
+        UUID b = UUID.randomUUID();
+        when(cobroService.pendiente(a)).thenReturn(Map.of("idOrden", a.toString()));
+        when(cobroService.pendientes(0, 20)).thenReturn(List.of(
+                Map.of("idOrden", a.toString()), Map.of("idOrden", b.toString())));
+
+        assertEquals(204, resource.despachar(a).getStatus());
+
+        List<Map<String, Object>> lista = (List<Map<String, Object>>) resource.findRange(0, 20).getEntity();
+        assertEquals(true, lista.get(0).get("despachada"));
+        assertEquals(false, lista.get(1).get("despachada"));
+        Map<String, Object> una = (Map<String, Object>) resource.findById(a).getEntity();
+        assertEquals(true, una.get("despachada"));
+    }
+
+    @Test
+    void deshacerDespachoLaRegresaACocina() {
+        UUID a = UUID.randomUUID();
+        when(cobroService.pendiente(a)).thenReturn(Map.of("idOrden", a.toString()));
+        resource.despachar(a);
+
+        assertEquals(204, resource.deshacerDespacho(a).getStatus());
+        assertFalse(resource.despachos.estaDespachada(a));
+        // deshacer una que no estaba despachada tampoco falla
+        assertEquals(204, resource.deshacerDespacho(UUID.randomUUID()).getStatus());
+    }
+
+    @Test
+    void despacharUnaOrdenQueNoExisteDa404YNoLaGuarda() {
+        UUID id = UUID.randomUUID();
+        when(cobroService.pendiente(id)).thenThrow(new NoEncontradoException(id, "La orden no existe"));
+
+        Response r = resource.despachar(id);
+
+        assertEquals(404, r.getStatus());
+        assertEquals(id.toString(), r.getHeaderString("Entity-Not-Found"));
+        assertFalse(resource.despachos.estaDespachada(id));
+    }
+
+    @Test
+    void elDespachoSeCompartePorqueElRegistroEsUnoSolo() {
+        // Dos peticiones distintas (Cocina y Caja) usan el mismo RegistroDespachos (@ApplicationScoped)
+        UUID a = UUID.randomUUID();
+        when(cobroService.pendiente(a)).thenReturn(Map.of("idOrden", a.toString()));
+        OrdenPendienteResource deCaja = new OrdenPendienteResource();
+        deCaja.cobroService = cobroService;
+        deCaja.despachos = resource.despachos;
+
+        resource.despachar(a);
+
+        assertTrue(deCaja.despachos.estaDespachada(a));
     }
 }
