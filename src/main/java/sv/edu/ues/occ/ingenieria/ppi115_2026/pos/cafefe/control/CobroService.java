@@ -149,6 +149,18 @@ public class CobroService {
         return ordenDto(orden, ordenProductoDAO.findPendientesByOrden(orden));
     }
 
+    /** Máximo de productos que se leen de una orden ya pagada (una orden normal trae pocos). */
+    static final int MAX_LINEAS_ORDEN = 500;
+
+    /**
+     * Una orden con TODOS sus productos, aunque ya estén cobrados. La usa Cocina
+     * para seguir viendo las órdenes pagadas por adelantado que aún no entrega.
+     */
+    public Map<String, Object> ordenCompleta(UUID idOrden) {
+        Orden orden = buscarOrden(idOrden);
+        return ordenDto(orden, ordenProductoDAO.findByOrden(orden, 0, MAX_LINEAS_ORDEN));
+    }
+
     static Map<String, Object> ordenDto(Orden o, List<OrdenProducto> lineas) {
         BigDecimal total = BigDecimal.ZERO;
         List<Map<String, Object>> productos = new ArrayList<>();
@@ -202,6 +214,10 @@ public class CobroService {
         EmpleadoRol cajero = buscarCajero(solicitud.idEmpleadoRol);
         List<PagoDetalle> detalles = validarPagos(solicitud.pagos);
 
+        // Candado: dos cajeros cobrando la misma orden a la vez no pueden
+        // crear dos facturas. El segundo espera aquí y luego ve que ya no
+        // quedan productos pendientes (422).
+        ordenDAO.bloquear(orden);
         List<OrdenProducto> pendientes = ordenProductoDAO.findPendientesByOrden(orden);
         if (pendientes.isEmpty()) {
             throw new SolicitudCobroInvalidaException("idOrden", "La orden no tiene productos pendientes de cobro");

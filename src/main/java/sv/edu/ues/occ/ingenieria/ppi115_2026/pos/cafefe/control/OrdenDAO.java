@@ -2,6 +2,7 @@ package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control;
 
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Order;
@@ -29,6 +30,22 @@ public class OrdenDAO extends AbstractDataAccess<Orden> {
         return List.of(
             cb.desc(root.get("fechaCreacion"))
         );
+    }
+
+    /**
+     * Bloquea la fila de la orden hasta que termine la transacción
+     * (SELECT ... FOR UPDATE). Si dos cajeros cobran la misma orden a la vez,
+     * el segundo espera a que el primero termine y entonces ya no encuentra
+     * productos pendientes. No cambia la base de datos: es un candado temporal.
+     */
+    public void bloquear(Orden orden) {
+        if (orden == null || orden.getIdOrden() == null) {
+            throw new IllegalArgumentException("La orden es obligatoria");
+        }
+        ejecutar("No se pudo bloquear la orden para cobrarla", () -> {
+            em.lock(em.contains(orden) ? orden : em.find(Orden.class, orden.getIdOrden()), LockModeType.PESSIMISTIC_WRITE);
+            return null;
+        });
     }
 
     public List<Orden> findRange(int first, int max) {

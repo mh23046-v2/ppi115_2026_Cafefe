@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mockito;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.CobroService.LineaTicket;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.CobroService.NoEncontradoException;
@@ -178,6 +179,25 @@ class CobroServiceTest {
         UUID id = UUID.randomUUID();
         NoEncontradoException ex = assertThrows(NoEncontradoException.class, () -> service.pendiente(id));
         assertEquals(id, ex.getId());
+    }
+
+    @Test
+    void ordenCompletaTraeTodosLosProductosAunqueYaEstenCobrados() {
+        when(ordenProductoDAO.findByOrden(orden, 0, CobroService.MAX_LINEAS_ORDEN)).thenReturn(List.of(
+                linea(orden, "Latte Vainilla", "3.75", "Cliente: Ana | sin azúcar"),
+                linea(orden, "Croissant", "2.00", "Cliente: Ana")));
+
+        Map<String, Object> r = service.ordenCompleta(ID_ORDEN);
+
+        assertEquals("Ana", r.get("cliente"));
+        assertEquals(new BigDecimal("5.75"), r.get("total"));
+        assertEquals(2, ((List<?>) r.get("productos")).size());
+    }
+
+    @Test
+    void ordenCompletaDeUnaQueNoExisteLanzaNoEncontrado() {
+        UUID id = UUID.randomUUID();
+        assertThrows(NoEncontradoException.class, () -> service.ordenCompleta(id));
     }
 
     @Test
@@ -386,5 +406,17 @@ class CobroServiceTest {
     void tomadaPorSinEmpleado() {
         assertNull(CobroService.tomadaPor(null));
         assertNull(CobroService.tomadaPor(new EmpleadoRol(UUID.randomUUID())));
+    }
+
+    @Test
+    void cobrarBloqueaLaOrdenAntesDeLeerLoPendiente() {
+        ordenDeAnaPendiente();
+
+        service.cobrar(ID_ORDEN, solicitud(pago("EFECTIVO", "10.00", null)));
+
+        InOrder orden1 = Mockito.inOrder(ordenDAO, ordenProductoDAO, facturaDAO);
+        orden1.verify(ordenDAO).bloquear(orden);
+        orden1.verify(ordenProductoDAO).findPendientesByOrden(orden);
+        orden1.verify(facturaDAO).create(any(Factura.class));
     }
 }
