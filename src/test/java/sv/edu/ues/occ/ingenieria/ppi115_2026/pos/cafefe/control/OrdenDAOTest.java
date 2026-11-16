@@ -1,6 +1,8 @@
 package sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -36,6 +38,41 @@ class OrdenDAOTest {
 
     @InjectMocks
     private OrdenDAO dao;
+
+    @Test
+    @DisplayName("bloquear: pide SELECT ... FOR UPDATE sobre la orden")
+    void testBloquearOrdenAdministrada() {
+        Orden o = new Orden(UUID.randomUUID());
+        when(em.contains(o)).thenReturn(true);
+
+        dao.bloquear(o);
+
+        verify(em).lock(o, LockModeType.PESSIMISTIC_WRITE);
+    }
+
+    @Test
+    @DisplayName("bloquear: si la orden no está administrada, la busca y la bloquea")
+    void testBloquearOrdenSuelta() {
+        Orden suelta = new Orden(UUID.randomUUID());
+        Orden administrada = new Orden(suelta.getIdOrden());
+        when(em.contains(suelta)).thenReturn(false);
+        when(em.find(Orden.class, suelta.getIdOrden())).thenReturn(administrada);
+
+        dao.bloquear(suelta);
+
+        verify(em).lock(administrada, LockModeType.PESSIMISTIC_WRITE);
+    }
+
+    @Test
+    @DisplayName("bloquear: orden nula o sin id, y fallo de la base")
+    void testBloquearErrores() {
+        assertThrows(IllegalArgumentException.class, () -> dao.bloquear(null));
+        assertThrows(IllegalArgumentException.class, () -> dao.bloquear(new Orden()));
+        Orden o = new Orden(UUID.randomUUID());
+        when(em.contains(o)).thenReturn(true);
+        doThrow(new PersistenceException("timeout")).when(em).lock(o, LockModeType.PESSIMISTIC_WRITE);
+        assertThrows(AccesoDatosException.class, () -> dao.bloquear(o));
+    }
 
     @Test
     @DisplayName("findRange: Lanza excepción ante paginación inválida")

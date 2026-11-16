@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mockito;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.CobroService.LineaTicket;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.CobroService.NoEncontradoException;
@@ -405,5 +406,17 @@ class CobroServiceTest {
     void tomadaPorSinEmpleado() {
         assertNull(CobroService.tomadaPor(null));
         assertNull(CobroService.tomadaPor(new EmpleadoRol(UUID.randomUUID())));
+    }
+
+    @Test
+    void cobrarBloqueaLaOrdenAntesDeLeerLoPendiente() {
+        ordenDeAnaPendiente();
+
+        service.cobrar(ID_ORDEN, solicitud(pago("EFECTIVO", "10.00", null)));
+
+        InOrder orden1 = Mockito.inOrder(ordenDAO, ordenProductoDAO, facturaDAO);
+        orden1.verify(ordenDAO).bloquear(orden);
+        orden1.verify(ordenProductoDAO).findPendientesByOrden(orden);
+        orden1.verify(facturaDAO).create(any(Factura.class));
     }
 }

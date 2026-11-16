@@ -214,6 +214,10 @@ public class CobroService {
         EmpleadoRol cajero = buscarCajero(solicitud.idEmpleadoRol);
         List<PagoDetalle> detalles = validarPagos(solicitud.pagos);
 
+        // Candado: dos cajeros cobrando la misma orden a la vez no pueden
+        // crear dos facturas. El segundo espera aquí y luego ve que ya no
+        // quedan productos pendientes (422).
+        ordenDAO.bloquear(orden);
         List<OrdenProducto> pendientes = ordenProductoDAO.findPendientesByOrden(orden);
         if (pendientes.isEmpty()) {
             throw new SolicitudCobroInvalidaException("idOrden", "La orden no tiene productos pendientes de cobro");
