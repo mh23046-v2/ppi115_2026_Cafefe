@@ -26,6 +26,7 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.RegistroDespacho
  *
  * GET orden/pendiente?first=0&max=20 → lista + header Total-registros
  * GET orden/pendiente/{id}           → una orden con sus productos pendientes
+ * GET    orden/pendiente/pagada        → pagadas por adelantado que Cocina aún no despacha
  * PUT    orden/pendiente/{id}/despacho → la cocina la entregó (204)
  * DELETE orden/pendiente/{id}/despacho → deshacer el despacho (204)
  *
@@ -75,6 +76,28 @@ public class OrdenPendienteResource implements Serializable {
         } catch (NoEncontradoException ex) {
             return Respuestas.noEncontrado(ex.getId());
         }
+    }
+
+    /**
+     * Órdenes que la Caja cobró por adelantado y que Cocina todavía no despacha,
+     * con todos sus productos. Cada una trae "pagada": true y "despachada": false.
+     * Va antes de {id} en el código, pero JAX-RS igual prefiere la ruta fija.
+     */
+    @GET
+    @Path("pagada")
+    public Response pagadasSinDespachar() {
+        List<Map<String, Object>> lista = new ArrayList<>();
+        for (UUID id : despachos.pagadasSinDespachar()) {
+            try {
+                Map<String, Object> orden = new LinkedHashMap<>(cobroService.ordenCompleta(id));
+                orden.put("despachada", false);
+                orden.put("pagada", true);
+                lista.add(orden);
+            } catch (NoEncontradoException ex) {
+                despachos.olvidar(id);      // la orden ya no existe
+            }
+        }
+        return Response.ok(lista).build();
     }
 
     /** La cocina entregó la orden. 404 si la orden no existe. */

@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,5 +54,52 @@ class RegistroDespachosTest {
         assertFalse(registro.estaDespachada(vieja));
         assertTrue(registro.estaDespachada(reciente));
         assertEquals(1, registro.cantidad());
+    }
+
+    // ---------------------------------------------------------------- pago por adelantado
+
+    @Test
+    void unaOrdenPagadaAntesDeDespacharSigueParaCocinaHastaDespacharla() {
+        UUID id = UUID.randomUUID();
+        registro.registrarCobro(id);
+        assertEquals(List.of(id), registro.pagadasSinDespachar());
+
+        registro.despachar(id);
+        assertTrue(registro.pagadasSinDespachar().isEmpty());
+
+        // "Volver a la lista" en Cocina: vuelve a aparecer
+        registro.deshacer(id);
+        assertEquals(List.of(id), registro.pagadasSinDespachar());
+    }
+
+    @Test
+    void cobrarUnaOrdenYaDespachadaNoLaRegresaACocina() {
+        UUID id = UUID.randomUUID();
+        registro.despachar(id);
+        registro.registrarCobro(id);
+        assertTrue(registro.pagadasSinDespachar().isEmpty());
+    }
+
+    @Test
+    void lasPagadasVanDeLaMasAntiguaALaMasNuevaYVencenAlDia() {
+        UUID primera = UUID.randomUUID();
+        UUID segunda = UUID.randomUUID();
+        registro.registrarCobro(primera);
+        registro.setReloj(Clock.fixed(AHORA.plus(Duration.ofHours(2)), ZoneOffset.UTC));
+        registro.registrarCobro(segunda);
+        assertEquals(List.of(primera, segunda), registro.pagadasSinDespachar());
+
+        registro.setReloj(Clock.fixed(AHORA.plus(Duration.ofHours(25)), ZoneOffset.UTC));
+        assertEquals(List.of(segunda), registro.pagadasSinDespachar());
+    }
+
+    @Test
+    void olvidarQuitaLaOrdenDeTodo() {
+        UUID id = UUID.randomUUID();
+        registro.registrarCobro(id);
+        registro.olvidar(id);
+        assertTrue(registro.pagadasSinDespachar().isEmpty());
+        registro.registrarCobro(null);
+        assertTrue(registro.pagadasSinDespachar().isEmpty());
     }
 }

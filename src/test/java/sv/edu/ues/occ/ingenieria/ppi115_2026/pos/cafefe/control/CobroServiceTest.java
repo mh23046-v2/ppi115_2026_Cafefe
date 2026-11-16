@@ -181,6 +181,25 @@ class CobroServiceTest {
     }
 
     @Test
+    void ordenCompletaTraeTodosLosProductosAunqueYaEstenCobrados() {
+        when(ordenProductoDAO.findByOrden(orden, 0, CobroService.MAX_LINEAS_ORDEN)).thenReturn(List.of(
+                linea(orden, "Latte Vainilla", "3.75", "Cliente: Ana | sin azúcar"),
+                linea(orden, "Croissant", "2.00", "Cliente: Ana")));
+
+        Map<String, Object> r = service.ordenCompleta(ID_ORDEN);
+
+        assertEquals("Ana", r.get("cliente"));
+        assertEquals(new BigDecimal("5.75"), r.get("total"));
+        assertEquals(2, ((List<?>) r.get("productos")).size());
+    }
+
+    @Test
+    void ordenCompletaDeUnaQueNoExisteLanzaNoEncontrado() {
+        UUID id = UUID.randomUUID();
+        assertThrows(NoEncontradoException.class, () -> service.ordenCompleta(id));
+    }
+
+    @Test
     void contarPendientesDelegaEnElDAO() {
         when(ordenDAO.countPendientesDeCobro()).thenReturn(4);
         assertEquals(4, service.contarPendientes());

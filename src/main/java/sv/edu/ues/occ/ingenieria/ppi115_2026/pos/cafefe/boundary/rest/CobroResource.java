@@ -15,6 +15,7 @@ import java.net.URI;
 import java.util.Map;
 import java.util.UUID;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.CobroService;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.RegistroDespachos;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.CobroService.NoEncontradoException;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.CobroService.SolicitudCobro;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.CobroService.SolicitudCobroInvalidaException;
@@ -30,6 +31,9 @@ import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.CobroService.Sol
  * 201 + Location: .../factura/{idFactura}/ticket
  *     + {idFactura, idOrden, cliente, total, pagado, cambio}
  * 404 Entity-Not-Found si la orden no existe; 422 Wrong-Param si algo no cumple.
+ *
+ * Si Cocina todavía no la despachaba (pago por adelantado), se avisa a
+ * RegistroDespachos para que la orden siga en la lista de Cocina.
  */
 @Path("orden/{id}/cobro")
 @Produces(MediaType.APPLICATION_JSON)
@@ -39,10 +43,14 @@ public class CobroResource implements Serializable {
     @Inject
     CobroService cobroService;
 
+    @Inject
+    RegistroDespachos despachos;
+
     @POST
     public Response cobrar(@PathParam("id") UUID id, SolicitudCobro solicitud, @Context UriInfo uriInfo) {
         try {
             Map<String, Object> resultado = cobroService.cobrar(id, solicitud);
+            despachos.registrarCobro(id);
             URI location = uriInfo.getBaseUriBuilder()
                     .path("factura").path(String.valueOf(resultado.get("idFactura"))).path("ticket")
                     .build();

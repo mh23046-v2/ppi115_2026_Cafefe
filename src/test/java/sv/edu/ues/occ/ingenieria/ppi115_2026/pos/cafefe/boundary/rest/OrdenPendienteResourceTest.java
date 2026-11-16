@@ -131,4 +131,36 @@ class OrdenPendienteResourceTest {
 
         assertTrue(deCaja.despachos.estaDespachada(a));
     }
+
+    // ------------------------------------------------------------ pagadas por adelantado (Cocina)
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void pagadasSinDespacharTraeLaOrdenCompletaMarcadaComoPagada() {
+        UUID a = UUID.randomUUID();
+        when(cobroService.ordenCompleta(a)).thenReturn(Map.of("idOrden", a.toString(), "total", 5));
+        resource.despachos.registrarCobro(a);
+
+        Response r = resource.pagadasSinDespachar();
+
+        assertEquals(200, r.getStatus());
+        List<Map<String, Object>> lista = (List<Map<String, Object>>) r.getEntity();
+        assertEquals(1, lista.size());
+        assertEquals(true, lista.get(0).get("pagada"));
+        assertEquals(false, lista.get(0).get("despachada"));
+        assertEquals(5, lista.get(0).get("total"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void unaPagadaQueYaNoExisteSeOlvida() {
+        UUID a = UUID.randomUUID();
+        when(cobroService.ordenCompleta(a)).thenThrow(new NoEncontradoException(a, "La orden no existe"));
+        resource.despachos.registrarCobro(a);
+
+        List<Map<String, Object>> lista = (List<Map<String, Object>>) resource.pagadasSinDespachar().getEntity();
+
+        assertTrue(lista.isEmpty());
+        assertTrue(resource.despachos.pagadasSinDespachar().isEmpty());
+    }
 }

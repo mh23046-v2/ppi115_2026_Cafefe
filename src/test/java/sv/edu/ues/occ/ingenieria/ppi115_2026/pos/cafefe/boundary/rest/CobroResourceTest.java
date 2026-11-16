@@ -11,12 +11,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.CobroService;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.RegistroDespachos;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.CobroService.NoEncontradoException;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.CobroService.SolicitudCobro;
 import sv.edu.ues.occ.ingenieria.ppi115_2026.pos.cafefe.control.CobroService.SolicitudCobroInvalidaException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 class CobroResourceTest {
@@ -33,6 +35,7 @@ class CobroResourceTest {
         uriInfo = Mockito.mock(UriInfo.class);
         resource = new CobroResource();
         resource.cobroService = cobroService;
+        resource.despachos = new RegistroDespachos();
         // UriBuilder real de Jersey (jersey-common está en el pom con scope test)
         when(uriInfo.getBaseUriBuilder())
                 .thenAnswer(i -> UriBuilder.fromUri("http://localhost:9080/Cafefe-1.0-SNAPSHOT/resources/v2/"));
@@ -77,5 +80,38 @@ class CobroResourceTest {
         Response r = resource.cobrar(idOrden, solicitud, uriInfo);
         assertEquals(422, r.getStatus());
         assertNull(r.getHeaderString("Wrong-Param"));
+    }
+
+    @Test
+    void cobrarAntesDeDespacharLaDejaEnCocina() {
+        Map<String, Object> resultado = new LinkedHashMap<>();
+        resultado.put("idFactura", "fa000010");
+        when(cobroService.cobrar(idOrden, solicitud)).thenReturn(resultado);
+
+        resource.cobrar(idOrden, solicitud, uriInfo);
+
+        assertEquals(java.util.List.of(idOrden), resource.despachos.pagadasSinDespachar());
+    }
+
+    @Test
+    void cobrarUnaYaDespachadaNoLaRegresaACocina() {
+        Map<String, Object> resultado = new LinkedHashMap<>();
+        resultado.put("idFactura", "fa000011");
+        when(cobroService.cobrar(idOrden, solicitud)).thenReturn(resultado);
+        resource.despachos.despachar(idOrden);
+
+        resource.cobrar(idOrden, solicitud, uriInfo);
+
+        assertTrue(resource.despachos.pagadasSinDespachar().isEmpty());
+    }
+
+    @Test
+    void siElCobroFallaNoSeRegistraNada() {
+        when(cobroService.cobrar(idOrden, solicitud))
+                .thenThrow(new SolicitudCobroInvalidaException("pagos", "Falta dinero"));
+
+        resource.cobrar(idOrden, solicitud, uriInfo);
+
+        assertTrue(resource.despachos.pagadasSinDespachar().isEmpty());
     }
 }
